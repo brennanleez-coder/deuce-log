@@ -33,25 +33,61 @@ interface Settlement {
 
 export function useMatchTracker() {
   const [sessions, setSessions] = useState<Session[]>([])
-  const [name, setName] = useState<string>("bren")
+  const [name, setName] = useState<string>("")
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [selectedSession, setSelectedSession] = useState<string | null>(null)
 
+  // 1) On mount, read from local storage:
+  // On mount, load everything from localStorage
   useEffect(() => {
+    const storedName = localStorage.getItem("userName")
     const storedSessions = localStorage.getItem("sessions")
     const storedTransactions = localStorage.getItem("transactions")
-    if (storedSessions) setSessions(JSON.parse(storedSessions))
-    if (storedTransactions) setTransactions(JSON.parse(storedTransactions))
+    const storedSelectedSession = localStorage.getItem("selectedSession")
+
+    // (1) Load userName
+    if (storedName) {
+      setName(storedName)
+    }
+
+    // (2) Load sessions
+    if (storedSessions) {
+      setSessions(JSON.parse(storedSessions))
+    }
+
+    // (3) Load transactions
+    if (storedTransactions) {
+      setTransactions(JSON.parse(storedTransactions))
+    }
+
+    // (4) Load selectedSession
+    if (storedSelectedSession) {
+      setSelectedSession(storedSelectedSession)
+    }
   }, [])
 
+  // Whenever "name" changes, save to localStorage
   useEffect(() => {
-    localStorage.setItem("sessions", JSON.stringify(sessions))
-  }, [sessions])
+    localStorage.setItem("userName", name)
+  }, [name])
 
+  // 2) Whenever sessions change, rewrite local storage:
   useEffect(() => {
-    localStorage.setItem("transactions", JSON.stringify(transactions))
-  }, [transactions])
+    localStorage.setItem("sessions", JSON.stringify(sessions));
+  }, [sessions]);
+  // 3) Whenever transactions change, rewrite local storage:
+  useEffect(() => {
+    localStorage.setItem("transactions", JSON.stringify(transactions));
+  }, [transactions]);
 
+  // 4) Persist selected session as well
+  useEffect(() => {
+    if (selectedSession) {
+      localStorage.setItem("selectedSession", selectedSession);
+    } else {
+      localStorage.removeItem("selectedSession");
+    }
+  }, [selectedSession]);
   const createSession = (name: string, courtFee: number) => {
     const newSession: Session = {
       id: Date.now().toString(),
@@ -61,6 +97,18 @@ export function useMatchTracker() {
     }
     setSessions([...sessions, newSession])
   }
+
+  const deleteSession = (sessionId: string) => {
+    // Remove from state
+    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+    setTransactions((prev) => prev.filter((t) => t.sessionId !== sessionId));
+
+    // If the deleted session was selected, clear selection
+    setSelectedSession((prev) => (prev === sessionId ? null : prev));
+
+    // ❌ Do NOT removeItem("sessions") or removeItem("transactions")
+    // because that erases *all* sessions & transactions from localStorage.
+  };
 
   const addTransaction = (
     sessionId: string,
@@ -251,6 +299,7 @@ export function useMatchTracker() {
     setSelectedSession,
     calculateTotalCourtFees,
     calculateSettlement,
+    deleteSession,
   }
 }
 

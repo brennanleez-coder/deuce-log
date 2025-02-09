@@ -24,19 +24,22 @@ export default function Home() {
     setSelectedSession,
     calculateTotalCourtFees,
     calculateSettlement,
+    deleteSession,
   } = useMatchTracker()
 
   return (
     <main className="min-h-screen bg-white text-gray-900 p-4 font-sans">
       <div className="max-w-4xl mx-auto space-y-6">
-        <h1 className="text-3xl font-bold text-center mb-8">Dollar Duel</h1>
+        <h1 className="text-3xl font-bold text-center mb-8">Deuce Log</h1>
         <SessionManagement
           sessions={sessions}
+          name={name}
           setName={setName}
           createSession={createSession}
           calculateNetGain={calculateNetGain}
           selectedSession={selectedSession}
           setSelectedSession={setSelectedSession}
+          deleteSession={deleteSession}
         />
         {selectedSession && (
           <>
