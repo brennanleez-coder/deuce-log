@@ -1,5 +1,8 @@
-import { useState, useEffect } from "react";
+"use client";
+
+import { useState } from "react";
 import type { Session } from "../../hooks/useMatchTracker";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,7 +15,57 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+
 import { CheckCircle, Trash2, Plus } from "lucide-react";
+
+// Import AnimatePresence & motion from Framer Motion
+import { AnimatePresence, motion } from "framer-motion";
+
+// Define some reusable motion variants
+const containerVariants = {
+  hidden: {
+    opacity: 0,
+    scale: 0.95,
+  },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: {
+      when: "beforeChildren",      // Make sure container anim completes first
+      staggerChildren: 0.08,      // Stagger each item’s entry
+      delayChildren: 0.1,         // Delay before item animations start
+    },
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.95,
+    transition: { duration: 0.2 },
+  },
+};
+
+const itemVariants = {
+  hidden: {
+    opacity: 0,
+    y: 20,
+    scale: 0.95,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      type: "spring",
+      stiffness: 180,
+      damping: 20,
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: 20,
+    scale: 0.95,
+    transition: { duration: 0.2 },
+  },
+};
 
 interface SessionManagementProps {
   sessions: Session[];
@@ -41,28 +94,28 @@ export default function SessionManagement({
   const [formErrors, setFormErrors] = useState<{ name?: string; fee?: string }>(
     {}
   );
-
   const [isEditingName, setIsEditingName] = useState(false);
 
+  // Name submission
   const handleNameSubmit = () => {
     if (!name.trim()) return;
     setName(name.trim());
     setIsEditingName(false);
   };
 
+  // Form validation
   const validateForm = () => {
     const errors: { name?: string; fee?: string } = {};
     if (!newSessionName.trim()) errors.name = "Session name is required";
-    if (
-      isNaN(Number.parseFloat(newCourtFee)) ||
-      Number.parseFloat(newCourtFee) < 0
-    ) {
+    const feeValue = Number.parseFloat(newCourtFee);
+    if (isNaN(feeValue) || feeValue < 0) {
       errors.fee = "Valid court fee is required";
     }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
+  // Create session form submit
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
@@ -74,8 +127,9 @@ export default function SessionManagement({
     }
   };
 
+  // Delete session
   const handleDeleteSession = (sessionId: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card click from being triggered
+    e.stopPropagation(); // Prevent card click
     const confirmed = window.confirm(
       "Are you sure you want to delete this session?"
     );
@@ -84,6 +138,7 @@ export default function SessionManagement({
     }
   };
 
+  // Format date
   const formatDate = (dateString: number) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -100,13 +155,18 @@ export default function SessionManagement({
       <CardHeader className="flex flex-col gap-2 px-6 py-4 bg-gray-50 rounded-t-xl">
         <CardTitle className="flex justify-between items-center w-full">
           <span className="text-lg font-bold text-gray-800">Sessions</span>
+
+          {/* Normal "New Session" button - hidden on small screens */}
           <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-            <DialogTrigger asChild>
-              <Button variant="default" className="gap-2">
-                <Plus size={16} />
-                New Session
-              </Button>
-            </DialogTrigger>
+            <div className="hidden md:block">
+              <DialogTrigger asChild>
+                <Button variant="default" className="gap-2">
+                  <Plus size={16} />
+                  New Session
+                </Button>
+              </DialogTrigger>
+            </div>
+
             <DialogContent className="rounded-lg">
               <DialogHeader>
                 <DialogTitle className="text-gray-800">
@@ -210,76 +270,102 @@ export default function SessionManagement({
             </p>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {sessions.map((session) => {
-              const netGain = calculateNetGain(session.id);
-              const isSelected = selectedSession === session.id;
+          // Container for the card list, using motion.div
+          <motion.div
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+          >
+            <AnimatePresence>
+              {sessions.map((session) => {
+                const netGain = calculateNetGain(session.id);
+                const isSelected = selectedSession === session.id;
 
-              return (
-                <Card
-                  key={session.id}
-                  onClick={() => setSelectedSession(session.id)}
-                  className={`relative cursor-pointer transition-all duration-200 group 
-                  ${
-                    isSelected
-                      ? "border-blue-500 ring-2 ring-blue-500/20"
-                      : "border-gray-200 hover:shadow-md hover:border-blue-200"
-                  }`}
-                >
-                  {/* SELECTED ICON */}
-                  {isSelected && (
-                    <CheckCircle className="absolute top-2 right-2 w-5 h-5 text-blue-500" />
-                  )}
-
-                  <CardContent className="p-4">
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between">
-                        <h3 className="font-semibold text-gray-800 truncate">
-                          {session.name}
-                        </h3>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => handleDeleteSession(session.id, e)}
-                          className="opacity-60 hover:opacity-100"
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </div>
-                      <p className="text-sm text-gray-500">
-                        {formatDate(session.createdAt)}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm text-gray-600">
-                          <span className="font-medium">Court Fee:</span>{" "}
-                          {session.courtFee.toLocaleString("en-US", {
-                            style: "currency",
-                            currency: "USD",
-                          })}
+                return (
+                  // Each session in AnimatePresence
+                  <motion.div
+                    key={session.id}
+                    variants={itemVariants}
+                    layout
+                    exit="exit" // Ensure it uses our exit variant
+                  >
+                    <Card
+                      onClick={() => setSelectedSession(session.id)}
+                      className={`relative cursor-pointer transition-all duration-200 group 
+                        ${
+                          isSelected
+                            ? "border-blue-500 ring-2 ring-blue-500/20"
+                            : "border-gray-200 hover:shadow-md hover:border-blue-200"
+                        }`}
+                    >
+                      {/* SELECTED ICON */}
+                      {isSelected && (
+                        <CheckCircle className="absolute top-2 right-2 w-5 h-5 text-blue-500" />
+                      )}
+                      <CardContent className="p-4">
+                        <div className="space-y-3">
+                          <div className="flex items-start justify-between">
+                            <h3 className="font-semibold text-gray-800 truncate">
+                              {session.name}
+                            </h3>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => handleDeleteSession(session.id, e)}
+                              className="opacity-60 hover:opacity-100"
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </div>
+                          <p className="text-sm text-gray-500">
+                            {formatDate(session.createdAt)}
+                          </p>
+                          <div className="flex items-center justify-between">
+                            <div className="text-sm text-gray-600">
+                              <span className="font-medium">Court Fee:</span>{" "}
+                              {session.courtFee.toLocaleString("en-US", {
+                                style: "currency",
+                                currency: "USD",
+                              })}
+                            </div>
+                            {/* NET GAIN/LOSS BADGE */}
+                            <span
+                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium 
+                                ${
+                                  netGain >= 0
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-red-100 text-red-800"
+                                }`}
+                            >
+                              {netGain.toLocaleString("en-US", {
+                                style: "currency",
+                                currency: "USD",
+                              })}
+                            </span>
+                          </div>
                         </div>
-                        {/* NET GAIN/LOSS BADGE */}
-                        <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium 
-                          ${
-                            netGain >= 0
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {netGain.toLocaleString("en-US", {
-                            style: "currency",
-                            currency: "USD",
-                          })}
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </motion.div>
         )}
       </CardContent>
+
+      {/* Floating Action Button for small screens */}
+      <div className="md:hidden fixed bottom-16 right-4 z-50">
+        <Button
+          variant="outline"
+          className="h-14 w-14 rounded-full flex items-center justify-center shadow-lg"
+          onClick={() => setIsModalOpen(true)}
+        >
+          <Plus className="h-5 w-5" />
+        </Button>
+      </div>
     </Card>
   );
 }

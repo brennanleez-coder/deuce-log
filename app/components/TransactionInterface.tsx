@@ -1,8 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import type { Transaction } from "../../hooks/useMatchTracker";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -34,6 +38,20 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+
+interface Transaction {
+  id: string;
+  timestamp: number;
+  type: "Match" | "SideBet";
+  amount: number;
+  players: string[];
+  payerIndex: number;
+  receiverIndex: number;
+  bettorWon?: boolean;
+  userSide?: "Bettor" | "Bookmaker";
+  paid?: boolean;
+  paidBy?: string;
+}
 
 interface TransactionInterfaceProps {
   user: string;
@@ -76,7 +94,7 @@ export default function TransactionInterface({
   const [transactionType, setTransactionType] = useState<"Match" | "SideBet">(
     "Match"
   );
-  const [amount, setAmount] = useState(""); // <--- controlled input for amount
+  const [amount, setAmount] = useState(""); 
   const [players, setPlayers] = useState<string[]>([user, "", "", "", "", ""]);
   const [payerIndex, setPayerIndex] = useState(2);
   const [receiverIndex, setReceiverIndex] = useState(0);
@@ -88,24 +106,24 @@ export default function TransactionInterface({
   // For filtering / searching the transaction list
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Track which transaction is expanded
-  const [expandedTransactionId, setExpandedTransactionId] = useState<string | null>(null);
+  // Track expanded transaction
+  const [expandedTransactionId, setExpandedTransactionId] = useState<string | null>(
+    null
+  );
 
   const transactionsEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Scroll logic
   useEffect(() => {
     if (transactions.length > 0) {
       transactionsEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [transactions]);
 
-  // Load existing transaction data into form states if editing
+  // Load existing transaction data if editing
   useEffect(() => {
     if (editingTransaction) {
       setTransactionType(editingTransaction.type);
-      setAmount(editingTransaction.amount.toString()); // Convert number to string
-      // Copy the existing players, but ensure the first one is always the current user
+      setAmount(editingTransaction.amount.toString());
       setPlayers([user, ...editingTransaction.players.slice(1)]);
       setPayerIndex(editingTransaction.payerIndex);
       setReceiverIndex(editingTransaction.receiverIndex);
@@ -116,7 +134,6 @@ export default function TransactionInterface({
     }
   }, [editingTransaction, user]);
 
-  // Reset form states
   const resetForm = () => {
     setTransactionType("Match");
     setAmount("");
@@ -127,13 +144,10 @@ export default function TransactionInterface({
     setUserSide("Bettor");
   };
 
-  // On submit: either update or add transaction
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Example validation: require 4 non-empty players & a non-empty amount
     if (amount && players.filter(Boolean).length >= 4) {
-      const numericAmount = Number.parseFloat(amount); // Convert string to number
+      const numericAmount = Number.parseFloat(amount);
 
       if (editingTransaction) {
         updateTransaction(
@@ -159,39 +173,37 @@ export default function TransactionInterface({
           transactionType === "SideBet" ? userSide : undefined
         );
       }
-
-      // Close the form & reset
       resetForm();
       setIsFormOpen(false);
     }
   };
 
-  // Open the modal form for a new transaction
+  // Show the form for a new transaction
   const openFormForAdd = () => {
     setEditingTransaction(null);
     resetForm();
     setIsFormOpen(true);
   };
 
-  // Click to edit an existing transaction
+  // Edit an existing transaction
   const handleEdit = (transaction: Transaction) => {
     setEditingTransaction(transaction);
     setIsFormOpen(true);
   };
 
-  // Cancel editing
+  // Cancel
   const handleCancelEdit = () => {
     setEditingTransaction(null);
     resetForm();
     setIsFormOpen(false);
   };
 
-  // Expand/collapse a transaction card
+  // Expand/collapse card
   const toggleExpanded = (transactionId: string) => {
     setExpandedTransactionId((prev) => (prev === transactionId ? null : transactionId));
   };
 
-  // Utility to check if user "won" a transaction
+  // Determine if user "won" a transaction
   const userWonTransaction = (t: Transaction): boolean => {
     if (t.type === "Match") {
       return t.players[t.receiverIndex] === user;
@@ -201,37 +213,48 @@ export default function TransactionInterface({
     }
   };
 
-  // Filter transactions based on searchTerm (by player names)
+  // Filter transactions by player name
   const filtered = transactions.filter((t) =>
     t.players.some((player) =>
       player.toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
 
-  // Split into wins vs losses
-  const userWins = filtered.filter((t) => userWonTransaction(t));
+  // Split into wins/losses
+  const userWins = filtered.filter(userWonTransaction);
   const userLosses = filtered.filter((t) => !userWonTransaction(t));
 
   // Compute total amounts
   const totalWinsAmount = userWins.reduce((acc, t) => acc + t.amount, 0);
   const totalLossesAmount = userLosses.reduce((acc, t) => acc + t.amount, 0);
 
+  // UI helper
+  const formatCurrency = (value: number) =>
+    value.toLocaleString("en-US", { style: "currency", currency: "USD" });
+
   return (
     <Card className="bg-white border border-gray-200 shadow-lg rounded-xl">
-      <CardHeader className="bg-gray-50 rounded-t-xl">
-        <CardTitle className="text-xl font-bold text-gray-800">
+      {/* CARD HEADER */}
+      <CardHeader className="bg-gray-50 rounded-t-xl px-6 py-4">
+        <CardTitle className="text-2xl font-bold text-gray-800 mb-1">
           Transaction Manager
         </CardTitle>
+        <p className="text-sm text-gray-600">
+          Quickly log and view your Match and Side Bet transactions. 
+        </p>
       </CardHeader>
 
-      <CardContent className="space-y-6 p-6">
-        <div className="flex items-center justify-between gap-x-2">
-          {/* Search / Filter */}
-          <div className="flex items-center gap-2 my-4 w-full">
+      {/* CARD CONTENT */}
+      <CardContent className="p-6 space-y-6">
+
+        {/* SEARCH + ADD TRANSACTION */}
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          {/* Search */}
+          <div className="flex flex-1 items-center gap-2 max-w-sm">
             <Label htmlFor="search" className="sr-only">
               Search
             </Label>
-            <div className="relative flex-1">
+            <div className="relative w-full">
               <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400">
                 <Search className="h-4 w-4" />
               </span>
@@ -246,16 +269,14 @@ export default function TransactionInterface({
             </div>
           </div>
 
-          {/* Add Transaction button */}
-          <div className="flex items-center justify-end">
-            <Button onClick={openFormForAdd}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Transaction
-            </Button>
-          </div>
+          {/* Add Transaction Button */}
+          <Button onClick={openFormForAdd} className="flex-shrink-0">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Transaction
+          </Button>
         </div>
 
-        {/* Two-column layout: Wins on the left, Losses on the right */}
+        {/* WINS & LOSSES GRID */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Left: My Wins */}
           <div>
@@ -263,15 +284,10 @@ export default function TransactionInterface({
               <h3 className="text-lg font-semibold text-gray-800">
                 My Wins ({userWins.length})
               </h3>
-              {/* Show total dollar amount of wins */}
-              <span className="text-sm font-medium text-green-600">
-                {totalWinsAmount.toLocaleString("en-US", {
-                  style: "currency",
-                  currency: "USD",
-                })}
+              <span className="inline-flex items-center rounded-full bg-green-100 text-green-800 px-3 py-1 text-xs font-medium">
+                {formatCurrency(totalWinsAmount)}
               </span>
             </div>
-
             <div className="space-y-3">
               {userWins.map((transaction) => {
                 const isExpanded = expandedTransactionId === transaction.id;
@@ -283,24 +299,25 @@ export default function TransactionInterface({
                 return (
                   <Card
                     key={transaction.id}
-                    className="border-gray-200 hover:border-blue-200 transition-colors group"
+                    className="border-gray-200 hover:shadow-sm transition group"
                   >
-                    {/* Clickable preview row */}
+                    {/* Collapsed row */}
                     <div
                       onClick={() => toggleExpanded(transaction.id)}
                       className="cursor-pointer p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2"
                     >
                       <div className="flex items-center space-x-2 font-semibold text-gray-700">
                         <span>
-                          {transaction.players[0]} & {transaction.players[1]}
+                          {transaction.players[0]} &amp; {transaction.players[1]}
                         </span>
                         <span className="text-sm text-gray-400">VS</span>
                         <span>
-                          {transaction.players[2]} & {transaction.players[3]}
+                          {transaction.players[2]} &amp; {transaction.players[3]}
                         </span>
                       </div>
+
                       <div className="flex items-center gap-2">
-                        {/* Show a chip for Match or SideBet */}
+                        {/* Match or Side Bet chip */}
                         {transaction.type === "Match" ? (
                           <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
                             Match
@@ -310,31 +327,29 @@ export default function TransactionInterface({
                             Side Bet vs. {bookmakerName}
                           </span>
                         )}
-
-                        {/* Since these are all wins, we can just say "You Won" */}
+                        {/* "You Won" */}
                         <span className="text-xs text-green-600 font-semibold">
                           You Won
                         </span>
                       </div>
                     </div>
 
+                    {/* Expanded details */}
                     {isExpanded && (
-                      <CardContent className="p-4 border-t">
-                        {/* Amount + Time */}
+                      <CardContent className="p-4 border-t bg-gray-50">
+                        {/* Timestamp + Amount */}
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm text-gray-500">
-                            {new Date(
-                              transaction.timestamp
-                            ).toLocaleTimeString("en-US", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
+                          <span className="text-xs text-gray-500">
+                            {new Date(transaction.timestamp).toLocaleTimeString(
+                              "en-US",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )}
                           </span>
-                          <div className="text-lg font-semibold text-green-600">
-                            {transaction.amount.toLocaleString("en-US", {
-                              style: "currency",
-                              currency: "USD",
-                            })}
+                          <div className="text-lg font-semibold text-green-700">
+                            {formatCurrency(transaction.amount)}
                           </div>
                         </div>
 
@@ -348,29 +363,30 @@ export default function TransactionInterface({
                         {/* Actions */}
                         <div className="mt-4 flex items-center gap-4">
                           <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-blue-600 hover:text-blue-800 px-0"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleEdit(transaction);
                             }}
-                            variant="ghost"
-                            size="sm"
-                            className="text-blue-600 hover:text-blue-800 px-0"
                           >
                             <Edit className="h-4 w-4 mr-2" />
-                            Edit Transaction
+                            Edit
                           </Button>
+
                           {transaction.paid ? (
-                            <div className="inline-block text-sm text-green-600">
+                            <span className="text-sm text-green-600 font-medium">
                               Paid
-                            </div>
+                            </span>
                           ) : (
                             <Button
+                              variant="outline"
+                              size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 markTransactionPaid(transaction.id, user);
                               }}
-                              variant="outline"
-                              size="sm"
                             >
                               Mark as Paid
                             </Button>
@@ -390,15 +406,10 @@ export default function TransactionInterface({
               <h3 className="text-lg font-semibold text-gray-800">
                 My Losses ({userLosses.length})
               </h3>
-              {/* Show total dollar amount of losses */}
-              <span className="text-sm font-medium text-red-600">
-                {totalLossesAmount.toLocaleString("en-US", {
-                  style: "currency",
-                  currency: "USD",
-                })}
+              <span className="inline-flex items-center rounded-full bg-red-100 text-red-800 px-3 py-1 text-xs font-medium">
+                {formatCurrency(totalLossesAmount)}
               </span>
             </div>
-
             <div className="space-y-3">
               {userLosses.map((transaction) => {
                 const isExpanded = expandedTransactionId === transaction.id;
@@ -410,24 +421,23 @@ export default function TransactionInterface({
                 return (
                   <Card
                     key={transaction.id}
-                    className="border-gray-200 hover:border-blue-200 transition-colors group"
+                    className="border-gray-200 hover:shadow-sm transition group"
                   >
-                    {/* Clickable preview row */}
                     <div
                       onClick={() => toggleExpanded(transaction.id)}
                       className="cursor-pointer p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2"
                     >
                       <div className="flex items-center space-x-2 font-semibold text-gray-700">
                         <span>
-                          {transaction.players[0]} & {transaction.players[1]}
+                          {transaction.players[0]} &amp; {transaction.players[1]}
                         </span>
                         <span className="text-sm text-gray-400">VS</span>
                         <span>
-                          {transaction.players[2]} & {transaction.players[3]}
+                          {transaction.players[2]} &amp; {transaction.players[3]}
                         </span>
                       </div>
+
                       <div className="flex items-center gap-2">
-                        {/* Show a chip for Match or SideBet */}
                         {transaction.type === "Match" ? (
                           <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
                             Match
@@ -437,8 +447,6 @@ export default function TransactionInterface({
                             Side Bet vs. {bookmakerName}
                           </span>
                         )}
-
-                        {/* Loss */}
                         <span className="text-xs text-red-600 font-semibold">
                           You Lost
                         </span>
@@ -446,58 +454,54 @@ export default function TransactionInterface({
                     </div>
 
                     {isExpanded && (
-                      <CardContent className="p-4 border-t">
-                        {/* Amount + Time */}
+                      <CardContent className="p-4 border-t bg-gray-50">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm text-gray-500">
-                            {new Date(
-                              transaction.timestamp
-                            ).toLocaleTimeString("en-US", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
+                          <span className="text-xs text-gray-500">
+                            {new Date(transaction.timestamp).toLocaleTimeString(
+                              "en-US",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )}
                           </span>
-                          <div className="text-lg font-semibold text-red-600">
-                            {transaction.amount.toLocaleString("en-US", {
-                              style: "currency",
-                              currency: "USD",
-                            })}
+                          <div className="text-lg font-semibold text-red-700">
+                            {formatCurrency(transaction.amount)}
                           </div>
                         </div>
 
-                        {/* 2v2 Layout */}
                         {transaction.type === "Match" ? (
                           <MatchLayout transaction={transaction} user={user} />
                         ) : (
                           <SideBetLayout transaction={transaction} user={user} />
                         )}
 
-                        {/* Actions */}
                         <div className="mt-4 flex items-center gap-4">
                           <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-blue-600 hover:text-blue-800 px-0"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleEdit(transaction);
                             }}
-                            variant="ghost"
-                            size="sm"
-                            className="text-blue-600 hover:text-blue-800 px-0"
                           >
                             <Edit className="h-4 w-4 mr-2" />
-                            Edit Transaction
+                            Edit
                           </Button>
+
                           {transaction.paid ? (
-                            <div className="inline-block text-sm text-green-600">
+                            <span className="text-sm text-green-600 font-medium">
                               Paid
-                            </div>
+                            </span>
                           ) : (
                             <Button
+                              variant="outline"
+                              size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 markTransactionPaid(transaction.id, user);
                               }}
-                              variant="outline"
-                              size="sm"
                             >
                               Mark as Paid
                             </Button>
@@ -512,10 +516,11 @@ export default function TransactionInterface({
           </div>
         </div>
 
+        {/* Scroll anchor */}
         <div ref={transactionsEndRef} />
       </CardContent>
 
-      {/* ============= Dialog for Add/Edit Form ============= */}
+      {/* Dialog for Add/Edit Form */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
@@ -524,13 +529,14 @@ export default function TransactionInterface({
             </DialogTitle>
             <DialogDescription>
               {editingTransaction
-                ? "Update the transaction details."
-                : "Fill out the form to add a new transaction."}
+                ? "Update the transaction details below."
+                : "Fill out the fields to create a new transaction."}
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-6 mt-4">
-            {/* Transaction type radio group */}
+
+            {/* Transaction Type Selector */}
             <RadioGroup
               value={transactionType}
               onValueChange={(value) =>
@@ -546,7 +552,8 @@ export default function TransactionInterface({
                 />
                 <Label
                   htmlFor="match"
-                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary"
+                  className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent peer-data-[state=checked]:border-primary 
+                  [&:has([data-state=checked])]:border-primary transition-colors"
                 >
                   <Trophy className="mb-2 h-6 w-6 text-yellow-600" />
                   <span className="font-semibold">Match</span>
@@ -560,7 +567,8 @@ export default function TransactionInterface({
                 />
                 <Label
                   htmlFor="sideBet"
-                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary"
+                  className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent peer-data-[state=checked]:border-primary 
+                  [&:has([data-state=checked])]:border-primary transition-colors"
                 >
                   <Coins className="mb-2 h-6 w-6 text-emerald-600" />
                   <span className="font-semibold">Side Bet</span>
@@ -637,14 +645,17 @@ export default function TransactionInterface({
                       <SelectValue placeholder="Select your role" />
                     </SelectTrigger>
                     <SelectContent>
-                      {/* Example: only Bettor is selectable */}
-                      <SelectItem disabled value="Bettor">
-                        <User className="mr-2 h-4 w-4" />
+                      <SelectItem
+                        disabled
+                        value="Bettor"
+                        className="flex items-center gap-2"
+                      >
+                        <User className="h-4 w-4" />
                         Bettor
                       </SelectItem>
-                      {/* If you want 'Bookmaker' selectable, remove 'disabled' */}
+                      {/* If you want 'Bookmaker' to be selectable, remove disabled */}
                       {/* <SelectItem value="Bookmaker">
-                        <Banknote className="mr-2 h-4 w-4" />
+                        <Banknote className="h-4 w-4" />
                         Bookmaker
                       </SelectItem> */}
                     </SelectContent>
@@ -770,11 +781,7 @@ export default function TransactionInterface({
   );
 }
 
-/** 
- * MatchLayout and SideBetLayout remain the same.
- * They simply display 2v2 players plus extra info 
- * and do not store local state for editing. 
- */
+/* ===== LAYOUT COMPONENTS ===== */
 function MatchLayout({
   transaction,
   user,
@@ -785,7 +792,7 @@ function MatchLayout({
   const winningTeam = transaction.receiverIndex < 2 ? 1 : 2;
 
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between mt-2">
       {/* Team 1 */}
       <div
         className={`flex flex-col items-center p-4 border rounded-lg w-5/12 ${
@@ -800,7 +807,6 @@ function MatchLayout({
         </div>
       </div>
 
-      {/* VS */}
       <div className="flex flex-col items-center">
         <span className="text-xl font-bold text-gray-700">VS</span>
       </div>
@@ -830,7 +836,7 @@ function SideBetLayout({
   user: string;
 }) {
   return (
-    <div>
+    <div className="mt-2">
       <div className="flex items-center justify-between">
         <div className="flex flex-col items-center p-4 border rounded-lg w-5/12">
           <div className="font-semibold text-gray-800">Team 1</div>
@@ -852,7 +858,6 @@ function SideBetLayout({
           </div>
         </div>
       </div>
-      {/* SideBet extra details */}
       <div className="space-y-2 text-sm mt-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
@@ -867,7 +872,9 @@ function SideBetLayout({
         <div className="pt-2 text-sm border-t">
           <span className="text-gray-500">Outcome: </span>
           <span className="font-medium">
-            {transaction.bettorWon ? "You Won" : `${transaction.players[4]} Won`}{" "}
+            {transaction.bettorWon
+              ? "You Won"
+              : `${transaction.players[4]} Won`}{" "}
             •{" "}
             <span className="text-blue-600">
               Your Side: {transaction.userSide}

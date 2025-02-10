@@ -102,6 +102,7 @@ export function useMatchTracker() {
     setSelectedSession((prev) => (prev === sessionId ? null : prev))
   }
 
+  
   // Add a new transaction
   const addTransaction = (
     sessionId: string,
