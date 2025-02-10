@@ -72,9 +72,9 @@ export function useMatchTracker() {
   }, [name])
 
   // 2) Whenever sessions change, rewrite local storage:
-  // useEffect(() => {
-  //   localStorage.setItem("sessions", JSON.stringify(sessions));
-  // }, [sessions]);
+  useEffect(() => {
+    localStorage.setItem("sessions", JSON.stringify(sessions));
+  }, [sessions]);
   // 3) Whenever transactions change, rewrite local storage:
   useEffect(() => {
     localStorage.setItem("transactions", JSON.stringify(transactions));
