@@ -12,6 +12,8 @@ export interface Transaction {
   timestamp: number
   bettorWon?: boolean
   userSide?: "Bettor" | "Bookmaker"
+  paid?: boolean
+  paidBy?: string
 }
 
 export interface Session {
@@ -122,10 +124,27 @@ export function useMatchTracker() {
       timestamp: Date.now(),
       bettorWon,
       userSide,
+      paid: false,        // <-- new
+      paidBy: undefined,  // <-- new
     }
     setTransactions((prev) => [...prev, newTransaction])
   }
 
+
+  // Mark a transaction as paid
+  const markTransactionPaid = (transactionId: string, paidBy: string) => {
+    setTransactions((prev) =>
+      prev.map((t) =>
+        t.id === transactionId
+          ? {
+            ...t,
+            paid: true,
+            paidBy,
+          }
+          : t
+      )
+    )
+  }
   // Update an existing transaction
   const updateTransaction = (
     transactionId: string,
@@ -141,15 +160,15 @@ export function useMatchTracker() {
       prev.map((t) =>
         t.id === transactionId
           ? {
-              ...t,
-              type,
-              amount,
-              players,
-              payerIndex,
-              receiverIndex,
-              bettorWon,
-              userSide,
-            }
+            ...t,
+            type,
+            amount,
+            players,
+            payerIndex,
+            receiverIndex,
+            bettorWon,
+            userSide,
+          }
           : t
       )
     )
@@ -337,5 +356,7 @@ export function useMatchTracker() {
     calculateSideBetLosses,
     calculateTotalCourtFees,
     calculateSettlement,
+    markTransactionPaid,
+
   }
 }

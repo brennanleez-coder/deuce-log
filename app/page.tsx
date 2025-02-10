@@ -25,6 +25,7 @@ export default function Home() {
     calculateTotalCourtFees,
     calculateSettlement,
     deleteSession,
+    markTransactionPaid
   } = useMatchTracker()
 
   return (
@@ -49,6 +50,7 @@ export default function Home() {
               addTransaction={addTransaction}
               updateTransaction={updateTransaction}
               transactions={getSessionTransactions(selectedSession)}
+              markTransactionPaid={markTransactionPaid}
             />
             {/* <SettlementSummary user={name} settlements={calculateSettlement(selectedSession)} /> */}
           </>

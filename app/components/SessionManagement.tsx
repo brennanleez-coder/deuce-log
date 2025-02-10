@@ -42,15 +42,13 @@ export default function SessionManagement({
     {}
   );
 
-
   const [isEditingName, setIsEditingName] = useState(false);
 
   const handleNameSubmit = () => {
     if (!name.trim()) return;
-    setName(name.trim()); // <-- this automatically saves to localStorage
+    setName(name.trim());
     setIsEditingName(false);
   };
-
 
   const validateForm = () => {
     const errors: { name?: string; fee?: string } = {};
@@ -86,7 +84,6 @@ export default function SessionManagement({
     }
   };
 
-
   const formatDate = (dateString: number) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -97,80 +94,82 @@ export default function SessionManagement({
     });
   };
 
-
   return (
     <Card className="bg-white border border-gray-200 shadow-lg rounded-xl">
-      <CardHeader className="flex flex-row items-center justify-between px-6 py-4 bg-gray-50 rounded-t-xl">
-        <CardTitle className="text-lg font-semibold text-gray-800">
-          Sessions
-        </CardTitle>
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogTrigger asChild>
-            <Button variant="default" className="gap-2">
-              <Plus size={16} />
-              New Session
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="rounded-lg">
-            <DialogHeader>
-              <DialogTitle className="text-gray-800">
-                Create New Session
-              </DialogTitle>
-              <DialogDescription className="text-gray-600">
-                Start tracking your matches by creating a new session.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="sessionName" className="text-gray-700">
-                  Session Name
-                </Label>
-                <Input
-                  id="sessionName"
-                  type="text"
-                  value={newSessionName}
-                  onChange={(e) => setNewSessionName(e.target.value)}
-                  placeholder="Friday Night Session"
-                  className={formErrors.name ? "border-red-500" : ""}
-                  autoFocus // <-- AUTOFOCUS
-                />
-                {formErrors.name && (
-                  <p className="text-sm text-red-500">{formErrors.name}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="courtFee" className="text-gray-700">
-                  Court Fee
-                </Label>
-                <Input
-                  id="courtFee"
-                  type="number"
-                  value={newCourtFee}
-                  onChange={(e) => setNewCourtFee(e.target.value)}
-                  placeholder="30.00"
-                  step="0.01"
-                  min="0"
-                  className={formErrors.fee ? "border-red-500" : ""}
-                />
-                {formErrors.fee && (
-                  <p className="text-sm text-red-500">{formErrors.fee}</p>
-                )}
-              </div>
-              <Button type="submit" className="w-full gap-2">
+      {/* HEADER */}
+      <CardHeader className="flex flex-col gap-2 px-6 py-4 bg-gray-50 rounded-t-xl">
+        <CardTitle className="flex justify-between items-center w-full">
+          <span className="text-lg font-bold text-gray-800">Sessions</span>
+          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            <DialogTrigger asChild>
+              <Button variant="default" className="gap-2">
                 <Plus size={16} />
-                Create Session
+                New Session
               </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent className="rounded-lg">
+              <DialogHeader>
+                <DialogTitle className="text-gray-800">
+                  Create New Session
+                </DialogTitle>
+                <DialogDescription className="text-gray-600">
+                  Start tracking your matches by creating a new session.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="sessionName" className="text-gray-700">
+                    Session Name
+                  </Label>
+                  <Input
+                    id="sessionName"
+                    type="text"
+                    value={newSessionName}
+                    onChange={(e) => setNewSessionName(e.target.value)}
+                    placeholder="Friday Night Session"
+                    className={formErrors.name ? "border-red-500" : ""}
+                    autoFocus
+                  />
+                  {formErrors.name && (
+                    <p className="text-sm text-red-500">{formErrors.name}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="courtFee" className="text-gray-700">
+                    Court Fee
+                  </Label>
+                  <Input
+                    id="courtFee"
+                    type="number"
+                    value={newCourtFee}
+                    onChange={(e) => setNewCourtFee(e.target.value)}
+                    placeholder="30.00"
+                    step="0.01"
+                    min="0"
+                    className={formErrors.fee ? "border-red-500" : ""}
+                  />
+                  {formErrors.fee && (
+                    <p className="text-sm text-red-500">{formErrors.fee}</p>
+                  )}
+                </div>
+                <Button type="submit" className="w-full gap-2">
+                  <Plus size={16} />
+                  Create Session
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </CardTitle>
       </CardHeader>
 
-      <CardContent className="p-4 bg-gray-50 rounded-b-xl">
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="userName" className="text-gray-700">
-              Your Name
-            </Label>
+      {/* CONTENT */}
+      <CardContent className="p-6">
+        {/* Name Edit Section */}
+        <div className="mb-6 rounded-lg border border-gray-200 p-4 bg-gray-50">
+          <Label htmlFor="userName" className="text-gray-700 font-semibold">
+            Your Name
+          </Label>
+          <div className="mt-2">
             {isEditingName ? (
               <div className="flex items-center gap-2">
                 <Input
@@ -182,7 +181,7 @@ export default function SessionManagement({
                   autoFocus
                 />
                 <Button variant="secondary" onClick={handleNameSubmit}>
-                  Submit
+                  Save
                 </Button>
               </div>
             ) : (
@@ -194,85 +193,92 @@ export default function SessionManagement({
                   className="bg-gray-100"
                   disabled
                 />
-                <Button
-                  variant="secondary"
-                  onClick={() => setIsEditingName(true)}
-                >
+                <Button variant="outline" onClick={() => setIsEditingName(true)}>
                   Edit
                 </Button>
               </div>
             )}
           </div>
-          {sessions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-8 text-center rounded-lg bg-gray-100/50">
-              <p className="text-gray-500">No sessions created yet</p>
-              <p className="text-sm text-gray-400">
-                Get started by creating a new session
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {sessions.map((session) => {
-                const netGain = calculateNetGain(session.id);
-                const isSelected = selectedSession === session.id;
-                return (
-                  <Card
-                    key={session.id}
-                    onClick={() => setSelectedSession(session.id)}
-                    className={`relative cursor-pointer transition-all duration-200 ${
-                      isSelected
-                        ? "border-blue-500 ring-2 ring-blue-500/20"
-                        : "border-gray-200 hover:border-blue-200"
-                    } hover:shadow-md group`}
-                  >
-                    {isSelected && (
-                      <CheckCircle className="absolute top-2 right-2 w-5 h-5 text-blue-500" />
-                    )}
-
-                    <CardContent className="p-4">
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-semibold text-gray-800 truncate">
-                            {session.name}
-                          </h3>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => handleDeleteSession(session.id, e)}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
-                        <p className="text-sm text-gray-500">
-                          {formatDate(session.createdAt)}
-                        </p>
-                        <div className="flex items-center justify-between">
-                          <div className="text-sm text-gray-600">
-                            <span className="font-medium">Court Fee:</span>{" "}
-                            {session.courtFee.toLocaleString("en-US", {
-                              style: "currency",
-                              currency: "USD",
-                            })}
-                          </div>
-                          <div
-                            className={`font-semibold ${
-                              netGain >= 0 ? "text-green-600" : "text-red-600"
-                            }`}
-                          >
-                            {netGain.toLocaleString("en-US", {
-                              style: "currency",
-                              currency: "USD",
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
         </div>
+
+        {/* Sessions List */}
+        {sessions.length === 0 ? (
+          <div className="flex flex-col items-center justify-center p-8 text-center rounded-lg bg-gray-100">
+            <p className="text-gray-500">No sessions created yet</p>
+            <p className="text-sm text-gray-400">
+              Get started by creating a new session.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {sessions.map((session) => {
+              const netGain = calculateNetGain(session.id);
+              const isSelected = selectedSession === session.id;
+
+              return (
+                <Card
+                  key={session.id}
+                  onClick={() => setSelectedSession(session.id)}
+                  className={`relative cursor-pointer transition-all duration-200 group 
+                  ${
+                    isSelected
+                      ? "border-blue-500 ring-2 ring-blue-500/20"
+                      : "border-gray-200 hover:shadow-md hover:border-blue-200"
+                  }`}
+                >
+                  {/* SELECTED ICON */}
+                  {isSelected && (
+                    <CheckCircle className="absolute top-2 right-2 w-5 h-5 text-blue-500" />
+                  )}
+
+                  <CardContent className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between">
+                        <h3 className="font-semibold text-gray-800 truncate">
+                          {session.name}
+                        </h3>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => handleDeleteSession(session.id, e)}
+                          className="opacity-60 hover:opacity-100"
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                      <p className="text-sm text-gray-500">
+                        {formatDate(session.createdAt)}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-gray-600">
+                          <span className="font-medium">Court Fee:</span>{" "}
+                          {session.courtFee.toLocaleString("en-US", {
+                            style: "currency",
+                            currency: "USD",
+                          })}
+                        </div>
+                        {/* NET GAIN/LOSS BADGE */}
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium 
+                          ${
+                            netGain >= 0
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {netGain.toLocaleString("en-US", {
+                            style: "currency",
+                            currency: "USD",
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

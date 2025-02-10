@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useRef } from "react";
 import type { Transaction } from "../../hooks/useMatchTracker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +23,17 @@ import {
   Banknote,
   Save,
   PlusCircle,
+  Search,
 } from "lucide-react";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 interface TransactionInterfaceProps {
   user: string;
@@ -46,6 +58,7 @@ interface TransactionInterfaceProps {
     bettorWon?: boolean,
     userSide?: "Bettor" | "Bookmaker"
   ) => void;
+  markTransactionPaid: (transactionId: string, paidBy: string) => void;
   transactions: Transaction[];
 }
 
@@ -55,13 +68,15 @@ export default function TransactionInterface({
   addTransaction,
   updateTransaction,
   transactions,
+  markTransactionPaid,
 }: TransactionInterfaceProps) {
-  console.log(transactions);
-  // Always use the passed in user as Player 1 (index 0).
+  const [isFormOpen, setIsFormOpen] = useState(false);
+
+  // Form states
   const [transactionType, setTransactionType] = useState<"Match" | "SideBet">(
     "Match"
   );
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState(""); // <--- controlled input for amount
   const [players, setPlayers] = useState<string[]>([user, "", "", "", "", ""]);
   const [payerIndex, setPayerIndex] = useState(2);
   const [receiverIndex, setReceiverIndex] = useState(0);
@@ -70,23 +85,27 @@ export default function TransactionInterface({
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
 
+  // For filtering / searching the transaction list
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Track which transaction is expanded
+  const [expandedTransactionId, setExpandedTransactionId] = useState<string | null>(null);
+
   const transactionsEndRef = useRef<HTMLDivElement | null>(null);
 
-  // 2. Whenever `transactions` changes, scroll to the bottom
+  // Scroll logic
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
     if (transactions.length > 0) {
       transactionsEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [transactions]);
-  useEffect(() => {
-    if (typeof window === "undefined") return;
 
+  // Load existing transaction data into form states if editing
+  useEffect(() => {
     if (editingTransaction) {
-      // When editing, ensure that Player 1 remains the current user.
       setTransactionType(editingTransaction.type);
-      setAmount(editingTransaction.amount.toString());
+      setAmount(editingTransaction.amount.toString()); // Convert number to string
+      // Copy the existing players, but ensure the first one is always the current user
       setPlayers([user, ...editingTransaction.players.slice(1)]);
       setPayerIndex(editingTransaction.payerIndex);
       setReceiverIndex(editingTransaction.receiverIndex);
@@ -97,8 +116,8 @@ export default function TransactionInterface({
     }
   }, [editingTransaction, user]);
 
+  // Reset form states
   const resetForm = () => {
-    // Reset the form with Player 1 preset as the user.
     setTransactionType("Match");
     setAmount("");
     setPlayers([user, "", "", "", "", ""]);
@@ -108,15 +127,19 @@ export default function TransactionInterface({
     setUserSide("Bettor");
   };
 
+  // On submit: either update or add transaction
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Require at least 4 non-empty players (Player 1 is always set).
+
+    // Example validation: require 4 non-empty players & a non-empty amount
     if (amount && players.filter(Boolean).length >= 4) {
+      const numericAmount = Number.parseFloat(amount); // Convert string to number
+
       if (editingTransaction) {
         updateTransaction(
           editingTransaction.id,
           transactionType,
-          Number.parseFloat(amount),
+          numericAmount,
           players,
           payerIndex,
           receiverIndex,
@@ -128,7 +151,7 @@ export default function TransactionInterface({
         addTransaction(
           sessionId,
           transactionType,
-          Number.parseFloat(amount),
+          numericAmount,
           players,
           payerIndex,
           receiverIndex,
@@ -136,18 +159,62 @@ export default function TransactionInterface({
           transactionType === "SideBet" ? userSide : undefined
         );
       }
+
+      // Close the form & reset
       resetForm();
+      setIsFormOpen(false);
     }
   };
 
-  const handleEdit = (transaction: Transaction) => {
-    setEditingTransaction(transaction);
+  // Open the modal form for a new transaction
+  const openFormForAdd = () => {
+    setEditingTransaction(null);
+    resetForm();
+    setIsFormOpen(true);
   };
 
+  // Click to edit an existing transaction
+  const handleEdit = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setIsFormOpen(true);
+  };
+
+  // Cancel editing
   const handleCancelEdit = () => {
     setEditingTransaction(null);
     resetForm();
+    setIsFormOpen(false);
   };
+
+  // Expand/collapse a transaction card
+  const toggleExpanded = (transactionId: string) => {
+    setExpandedTransactionId((prev) => (prev === transactionId ? null : transactionId));
+  };
+
+  // Utility to check if user "won" a transaction
+  const userWonTransaction = (t: Transaction): boolean => {
+    if (t.type === "Match") {
+      return t.players[t.receiverIndex] === user;
+    } else {
+      // SideBet
+      return t.userSide === "Bettor" && t.bettorWon === true;
+    }
+  };
+
+  // Filter transactions based on searchTerm (by player names)
+  const filtered = transactions.filter((t) =>
+    t.players.some((player) =>
+      player.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  );
+
+  // Split into wins vs losses
+  const userWins = filtered.filter((t) => userWonTransaction(t));
+  const userLosses = filtered.filter((t) => !userWonTransaction(t));
+
+  // Compute total amounts
+  const totalWinsAmount = userWins.reduce((acc, t) => acc + t.amount, 0);
+  const totalLossesAmount = userLosses.reduce((acc, t) => acc + t.amount, 0);
 
   return (
     <Card className="bg-white border border-gray-200 shadow-lg rounded-xl">
@@ -156,57 +223,361 @@ export default function TransactionInterface({
           Transaction Manager
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6 p-6">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <RadioGroup
-            value={transactionType}
-            onValueChange={(value) =>
-              setTransactionType(value as "Match" | "SideBet")
-            }
-            className="grid grid-cols-2 gap-4"
-          >
-            <div>
-              <RadioGroupItem
-                value="Match"
-                id="match"
-                className="peer sr-only"
-              />
-              <Label
-                htmlFor="match"
-                className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-              >
-                <Trophy className="mb-2 h-6 w-6 text-yellow-600" />
-                <span className="font-semibold">Match</span>
-              </Label>
-            </div>
-            <div>
-              <RadioGroupItem
-                value="SideBet"
-                id="sideBet"
-                className="peer sr-only"
-              />
-              <Label
-                htmlFor="sideBet"
-                className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-              >
-                <Coins className="mb-2 h-6 w-6 text-emerald-600" />
-                <span className="font-semibold">Side Bet</span>
-              </Label>
-            </div>
-          </RadioGroup>
 
-          <div className="space-y-6">
+      <CardContent className="space-y-6 p-6">
+        <div className="flex items-center justify-between gap-x-2">
+          {/* Search / Filter */}
+          <div className="flex items-center gap-2 my-4 w-full">
+            <Label htmlFor="search" className="sr-only">
+              Search
+            </Label>
+            <div className="relative flex-1">
+              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400">
+                <Search className="h-4 w-4" />
+              </span>
+              <Input
+                id="search"
+                type="text"
+                placeholder="Search by player name..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8 w-full"
+              />
+            </div>
+          </div>
+
+          {/* Add Transaction button */}
+          <div className="flex items-center justify-end">
+            <Button onClick={openFormForAdd}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Transaction
+            </Button>
+          </div>
+        </div>
+
+        {/* Two-column layout: Wins on the left, Losses on the right */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Left: My Wins */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold text-gray-800">
+                My Wins ({userWins.length})
+              </h3>
+              {/* Show total dollar amount of wins */}
+              <span className="text-sm font-medium text-green-600">
+                {totalWinsAmount.toLocaleString("en-US", {
+                  style: "currency",
+                  currency: "USD",
+                })}
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              {userWins.map((transaction) => {
+                const isExpanded = expandedTransactionId === transaction.id;
+                const bookmakerName =
+                  transaction.type === "SideBet"
+                    ? transaction.players[4] ?? "N/A"
+                    : "";
+
+                return (
+                  <Card
+                    key={transaction.id}
+                    className="border-gray-200 hover:border-blue-200 transition-colors group"
+                  >
+                    {/* Clickable preview row */}
+                    <div
+                      onClick={() => toggleExpanded(transaction.id)}
+                      className="cursor-pointer p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2"
+                    >
+                      <div className="flex items-center space-x-2 font-semibold text-gray-700">
+                        <span>
+                          {transaction.players[0]} & {transaction.players[1]}
+                        </span>
+                        <span className="text-sm text-gray-400">VS</span>
+                        <span>
+                          {transaction.players[2]} & {transaction.players[3]}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {/* Show a chip for Match or SideBet */}
+                        {transaction.type === "Match" ? (
+                          <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+                            Match
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800">
+                            Side Bet vs. {bookmakerName}
+                          </span>
+                        )}
+
+                        {/* Since these are all wins, we can just say "You Won" */}
+                        <span className="text-xs text-green-600 font-semibold">
+                          You Won
+                        </span>
+                      </div>
+                    </div>
+
+                    {isExpanded && (
+                      <CardContent className="p-4 border-t">
+                        {/* Amount + Time */}
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm text-gray-500">
+                            {new Date(
+                              transaction.timestamp
+                            ).toLocaleTimeString("en-US", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                          <div className="text-lg font-semibold text-green-600">
+                            {transaction.amount.toLocaleString("en-US", {
+                              style: "currency",
+                              currency: "USD",
+                            })}
+                          </div>
+                        </div>
+
+                        {/* 2v2 Layout */}
+                        {transaction.type === "Match" ? (
+                          <MatchLayout transaction={transaction} user={user} />
+                        ) : (
+                          <SideBetLayout transaction={transaction} user={user} />
+                        )}
+
+                        {/* Actions */}
+                        <div className="mt-4 flex items-center gap-4">
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEdit(transaction);
+                            }}
+                            variant="ghost"
+                            size="sm"
+                            className="text-blue-600 hover:text-blue-800 px-0"
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit Transaction
+                          </Button>
+                          {transaction.paid ? (
+                            <div className="inline-block text-sm text-green-600">
+                              Paid
+                            </div>
+                          ) : (
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                markTransactionPaid(transaction.id, user);
+                              }}
+                              variant="outline"
+                              size="sm"
+                            >
+                              Mark as Paid
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    )}
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Right: My Losses */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold text-gray-800">
+                My Losses ({userLosses.length})
+              </h3>
+              {/* Show total dollar amount of losses */}
+              <span className="text-sm font-medium text-red-600">
+                {totalLossesAmount.toLocaleString("en-US", {
+                  style: "currency",
+                  currency: "USD",
+                })}
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              {userLosses.map((transaction) => {
+                const isExpanded = expandedTransactionId === transaction.id;
+                const bookmakerName =
+                  transaction.type === "SideBet"
+                    ? transaction.players[4] ?? "N/A"
+                    : "";
+
+                return (
+                  <Card
+                    key={transaction.id}
+                    className="border-gray-200 hover:border-blue-200 transition-colors group"
+                  >
+                    {/* Clickable preview row */}
+                    <div
+                      onClick={() => toggleExpanded(transaction.id)}
+                      className="cursor-pointer p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2"
+                    >
+                      <div className="flex items-center space-x-2 font-semibold text-gray-700">
+                        <span>
+                          {transaction.players[0]} & {transaction.players[1]}
+                        </span>
+                        <span className="text-sm text-gray-400">VS</span>
+                        <span>
+                          {transaction.players[2]} & {transaction.players[3]}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {/* Show a chip for Match or SideBet */}
+                        {transaction.type === "Match" ? (
+                          <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+                            Match
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800">
+                            Side Bet vs. {bookmakerName}
+                          </span>
+                        )}
+
+                        {/* Loss */}
+                        <span className="text-xs text-red-600 font-semibold">
+                          You Lost
+                        </span>
+                      </div>
+                    </div>
+
+                    {isExpanded && (
+                      <CardContent className="p-4 border-t">
+                        {/* Amount + Time */}
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm text-gray-500">
+                            {new Date(
+                              transaction.timestamp
+                            ).toLocaleTimeString("en-US", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                          <div className="text-lg font-semibold text-red-600">
+                            {transaction.amount.toLocaleString("en-US", {
+                              style: "currency",
+                              currency: "USD",
+                            })}
+                          </div>
+                        </div>
+
+                        {/* 2v2 Layout */}
+                        {transaction.type === "Match" ? (
+                          <MatchLayout transaction={transaction} user={user} />
+                        ) : (
+                          <SideBetLayout transaction={transaction} user={user} />
+                        )}
+
+                        {/* Actions */}
+                        <div className="mt-4 flex items-center gap-4">
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEdit(transaction);
+                            }}
+                            variant="ghost"
+                            size="sm"
+                            className="text-blue-600 hover:text-blue-800 px-0"
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit Transaction
+                          </Button>
+                          {transaction.paid ? (
+                            <div className="inline-block text-sm text-green-600">
+                              Paid
+                            </div>
+                          ) : (
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                markTransactionPaid(transaction.id, user);
+                              }}
+                              variant="outline"
+                              size="sm"
+                            >
+                              Mark as Paid
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    )}
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div ref={transactionsEndRef} />
+      </CardContent>
+
+      {/* ============= Dialog for Add/Edit Form ============= */}
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>
+              {editingTransaction ? "Edit Transaction" : "Add Transaction"}
+            </DialogTitle>
+            <DialogDescription>
+              {editingTransaction
+                ? "Update the transaction details."
+                : "Fill out the form to add a new transaction."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit} className="space-y-6 mt-4">
+            {/* Transaction type radio group */}
+            <RadioGroup
+              value={transactionType}
+              onValueChange={(value) =>
+                setTransactionType(value as "Match" | "SideBet")
+              }
+              className="grid grid-cols-2 gap-4"
+            >
+              <div>
+                <RadioGroupItem
+                  value="Match"
+                  id="match"
+                  className="peer sr-only"
+                />
+                <Label
+                  htmlFor="match"
+                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary"
+                >
+                  <Trophy className="mb-2 h-6 w-6 text-yellow-600" />
+                  <span className="font-semibold">Match</span>
+                </Label>
+              </div>
+              <div>
+                <RadioGroupItem
+                  value="SideBet"
+                  id="sideBet"
+                  className="peer sr-only"
+                />
+                <Label
+                  htmlFor="sideBet"
+                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary"
+                >
+                  <Coins className="mb-2 h-6 w-6 text-emerald-600" />
+                  <span className="font-semibold">Side Bet</span>
+                </Label>
+              </div>
+            </RadioGroup>
+
+            {/* Player fields */}
             <div className="grid gap-6 md:grid-cols-2">
               <fieldset className="space-y-3 rounded-lg border p-4">
                 <legend className="px-2 text-sm font-medium text-gray-700">
                   Your Pair
                 </legend>
                 <div className="space-y-2">
-                  {/* Player 1 is always the user and disabled */}
                   <Input
                     value={user}
                     disabled
-                    placeholder="Player 1 name"
                     className="bg-gray-100 cursor-not-allowed"
                   />
                   <Input
@@ -214,8 +585,7 @@ export default function TransactionInterface({
                     onChange={(e) =>
                       setPlayers([user, e.target.value, ...players.slice(2)])
                     }
-                    placeholder="Player 2 name"
-                    className="bg-white"
+                    placeholder="Player 2"
                   />
                 </div>
               </fieldset>
@@ -235,8 +605,7 @@ export default function TransactionInterface({
                         ...players.slice(4),
                       ])
                     }
-                    placeholder="Player 3 name"
-                    className="bg-white"
+                    placeholder="Player 3"
                   />
                   <Input
                     value={players[3]}
@@ -247,13 +616,13 @@ export default function TransactionInterface({
                         ...players.slice(4),
                       ])
                     }
-                    placeholder="Player 4 name"
-                    className="bg-white"
+                    placeholder="Player 4"
                   />
                 </div>
               </fieldset>
             </div>
 
+            {/* SideBet options */}
             {transactionType === "SideBet" && (
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
@@ -268,18 +637,15 @@ export default function TransactionInterface({
                       <SelectValue placeholder="Select your role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem
-                        disabled={true}
-                        value="Bettor"
-                        className="flex items-center gap-2"
-                      >
-                        <User className="h-4 w-4" /> Bettor
+                      {/* Example: only Bettor is selectable */}
+                      <SelectItem disabled value="Bettor">
+                        <User className="mr-2 h-4 w-4" />
+                        Bettor
                       </SelectItem>
-                      {/* <SelectItem
-                        value="Bookmaker"
-                        className="flex items-center gap-2"
-                      >
-                        <Banknote className="h-4 w-4" /> Bookmaker
+                      {/* If you want 'Bookmaker' selectable, remove 'disabled' */}
+                      {/* <SelectItem value="Bookmaker">
+                        <Banknote className="mr-2 h-4 w-4" />
+                        Bookmaker
                       </SelectItem> */}
                     </SelectContent>
                   </Select>
@@ -290,7 +656,7 @@ export default function TransactionInterface({
                     {userSide === "Bettor" ? "Bookmaker Name" : "Bettor Name"}
                   </Label>
                   <Input
-                    value={players[4]} // Using the 5th index to store the opponent’s name.
+                    value={players[4]}
                     onChange={(e) =>
                       setPlayers([...players.slice(0, 4), e.target.value])
                     }
@@ -299,12 +665,12 @@ export default function TransactionInterface({
                         ? "Enter Bookmaker name"
                         : "Enter Bettor name"
                     }
-                    className="bg-white"
                   />
                 </div>
               </div>
             )}
 
+            {/* Amount field */}
             <div className="space-y-2">
               <Label className="text-sm font-medium">Amount</Label>
               <div className="relative">
@@ -318,11 +684,12 @@ export default function TransactionInterface({
                   placeholder="0.00"
                   step="0.01"
                   min="0"
-                  className="pl-8 bg-white"
+                  className="pl-8"
                 />
               </div>
             </div>
 
+            {/* Match-specific fields */}
             {transactionType === "Match" && (
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
@@ -336,12 +703,10 @@ export default function TransactionInterface({
                     </SelectTrigger>
                     <SelectContent>
                       {players.slice(0, 4).map(
-                        (player, index) =>
-                          player && (
-                            <SelectItem key={index} value={index.toString()}>
-                              {index < 2
-                                ? `Team 1: ${player}`
-                                : `Team 2: ${player}`}
+                        (p, idx) =>
+                          p && (
+                            <SelectItem key={idx} value={idx.toString()}>
+                              {idx < 2 ? `Team 1: ${p}` : `Team 2: ${p}`}
                             </SelectItem>
                           )
                       )}
@@ -359,12 +724,10 @@ export default function TransactionInterface({
                     </SelectTrigger>
                     <SelectContent>
                       {players.slice(0, 4).map(
-                        (player, index) =>
-                          player && (
-                            <SelectItem key={index} value={index.toString()}>
-                              {index < 2
-                                ? `Team 1: ${player}`
-                                : `Team 2: ${player}`}
+                        (p, idx) =>
+                          p && (
+                            <SelectItem key={idx} value={idx.toString()}>
+                              {idx < 2 ? `Team 1: ${p}` : `Team 2: ${p}`}
                             </SelectItem>
                           )
                       )}
@@ -374,6 +737,7 @@ export default function TransactionInterface({
               </div>
             )}
 
+            {/* SideBet-specific fields */}
             {transactionType === "SideBet" && (
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="flex items-center space-x-3 p-4 rounded-lg border bg-white">
@@ -391,247 +755,126 @@ export default function TransactionInterface({
               </div>
             )}
 
-            <div className="flex gap-3">
-              <Button
-                type="submit"
-                className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                {editingTransaction ? (
-                  <span className="flex items-center gap-2">
-                    <Save className="h-4 w-4" /> Update Transaction
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    <PlusCircle className="h-4 w-4" /> Add Transaction
-                  </span>
-                )}
+            <DialogFooter className="mt-6 flex justify-end gap-2">
+              <Button type="submit">
+                {editingTransaction ? "Update Transaction" : "Add Transaction"}
               </Button>
-              {editingTransaction && (
-                <Button
-                  type="button"
-                  onClick={handleCancelEdit}
-                  variant="outline"
-                  className="flex-1 h-12"
-                >
-                  Cancel Edit
-                </Button>
-              )}
-            </div>
-          </div>
-        </form>
+              <Button variant="outline" onClick={handleCancelEdit}>
+                Cancel
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
 
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-800">
-            Transaction History
-            <span className="ml-2 text-sm text-gray-500">
-              ({transactions.length} recorded)
-            </span>
-          </h3>
-          <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
-            {transactions.map((transaction: any) => {
-              let settlementColor = "text-red-600"; // default color
+/** 
+ * MatchLayout and SideBetLayout remain the same.
+ * They simply display 2v2 players plus extra info 
+ * and do not store local state for editing. 
+ */
+function MatchLayout({
+  transaction,
+  user,
+}: {
+  transaction: Transaction;
+  user: string;
+}) {
+  const winningTeam = transaction.receiverIndex < 2 ? 1 : 2;
 
-              if (transaction.type === "Match") {
-                // Match color logic
-                const userIsWinner =
-                  transaction.players[transaction.receiverIndex] === user;
-                settlementColor = userIsWinner
-                  ? "text-green-600"
-                  : "text-red-600";
-              } else if (transaction.type === "SideBet") {
-                const userIsWinner =
-                  transaction.userSide === "Bettor" && transaction.bettorWon;
-                settlementColor = userIsWinner
-                  ? "text-green-600"
-                  : "text-red-600";
-              }
+  return (
+    <div className="flex items-center justify-between">
+      {/* Team 1 */}
+      <div
+        className={`flex flex-col items-center p-4 border rounded-lg w-5/12 ${
+          winningTeam === 1 ? "bg-green-100 border-green-500" : "bg-white"
+        }`}
+      >
+        <div className="font-semibold text-gray-800">Team 1</div>
+        <div className="text-sm text-gray-600 flex flex-col justify-center items-center">
+          {transaction.players.slice(0, 2).map((player, i) => (
+            <p key={i}>{player}</p>
+          ))}
+        </div>
+      </div>
 
-              return (
-                <Card
-                  key={transaction.id}
-                  className="border-gray-200 hover:border-blue-200 transition-colors group"
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
-                            transaction.type === "Match"
-                              ? "bg-blue-100 text-blue-800"
-                              : "bg-purple-100 text-purple-800"
-                          }`}
-                        >
-                          {transaction.type}
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          {new Date(transaction.timestamp).toLocaleDateString(
-                            "en-US",
-                            {
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            }
-                          )}
-                        </span>
-                      </div>
-                      <div
-                        className={`text-lg font-semibold ${settlementColor}`}
-                      >
-                        {transaction.amount.toLocaleString("en-US", {
-                          style: "currency",
-                          currency: "USD",
-                        })}
-                      </div>
-                    </div>
+      {/* VS */}
+      <div className="flex flex-col items-center">
+        <span className="text-xl font-bold text-gray-700">VS</span>
+      </div>
 
-                    {transaction.type === "Match" ? (
-                      // New layout: two team cards with a VS in the middle
-                      (() => {
-                        // Determine the winning team based on receiverIndex
-                        const winningTeam =
-                          transaction.receiverIndex < 2 ? 1 : 2;
-                        return (
-                          <div className="flex items-center justify-between">
-                            {/* Team 1 */}
-                            <div
-                              className={`flex flex-col items-center p-4 border rounded-lg w-5/12 ${
-                                winningTeam === 1
-                                  ? "bg-green-100 border-green-500"
-                                  : "bg-white"
-                              }`}
-                            >
-                              <div className="font-semibold text-gray-800">
-                                Team 1
-                              </div>
-                              <div className="text-sm text-gray-600 flex flex-col justify-center items-center">
-                                {transaction.players
-                                  .slice(0, 2)
-                                  .map((player: string, i: string) => (
-                                    <p key={i}>{player}</p>
-                                  ))}
-                              </div>
-                            </div>
+      {/* Team 2 */}
+      <div
+        className={`flex flex-col items-center p-4 border rounded-lg w-5/12 ${
+          winningTeam === 2 ? "bg-green-100 border-green-500" : "bg-white"
+        }`}
+      >
+        <div className="font-semibold text-gray-800">Team 2</div>
+        <div className="text-sm text-gray-600 flex flex-col justify-center items-center">
+          {transaction.players.slice(2, 4).map((player, i) => (
+            <p key={i}>{player}</p>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
-                            {/* VS Separator */}
-                            <div className="flex flex-col items-center">
-                              <span className="text-xl font-bold text-gray-700">
-                                VS
-                              </span>
-                            </div>
-
-                            {/* Team 2 */}
-                            <div
-                              className={`flex flex-col items-center p-4 border rounded-lg w-5/12 ${
-                                winningTeam === 2
-                                  ? "bg-green-100 border-green-500"
-                                  : "bg-white"
-                              }`}
-                            >
-                              <div className="font-semibold text-gray-800">
-                                Team 2
-                              </div>
-                              <div className="text-sm text-gray-600 flex flex-col justify-center items-center">
-                                {transaction.players
-                                  .slice(2, 4)
-                                  .map((player: string, i: string) => (
-                                    <p key={i}>{player}</p>
-                                  ))}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })()
-                    ) : (
-                      // For SideBet transactions, retain the existing layout
-                      <div>
-                        {/* 2v2 Team Cards */}
-                        <div className="flex items-center justify-between">
-                          {/* Team 1 */}
-                          <div className="flex flex-col items-center p-4 border rounded-lg w-5/12">
-                            <div className="font-semibold text-gray-800">
-                              Team 1
-                            </div>
-                            <div className="text-sm text-gray-600 flex flex-col justify-center items-center">
-                              {transaction.players
-                                .slice(0, 2)
-                                .map((player: string, i: string) => (
-                                  <p key={i}>{player}</p>
-                                ))}
-                            </div>
-                          </div>
-
-                          {/* VS Separator */}
-                          <div className="flex flex-col items-center">
-                            <span className="text-xl font-bold text-gray-700">
-                              VS
-                            </span>
-                          </div>
-
-                          {/* Team 2 */}
-                          <div className="flex flex-col items-center p-4 border rounded-lg w-5/12">
-                            <div className="font-semibold text-gray-800">
-                              Team 2
-                            </div>
-                            <div className="text-sm text-gray-600 flex flex-col justify-center items-center">
-                              {transaction.players
-                                .slice(2, 4)
-                                .map((player: string, i: string) => (
-                                  <p key={i}>{player}</p>
-                                ))}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Existing SideBet details below */}
-                        <div className="space-y-2 text-sm mt-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                              <div className="text-gray-500">Bettor</div>
-                              <div className="font-medium">
-                                {transaction.players[0]}
-                              </div>
-                            </div>
-                            <div className="space-y-1">
-                              <div className="text-gray-500">Bookmaker</div>
-                              <div className="font-medium">
-                                {transaction.players[4]}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="pt-2 text-sm border-t">
-                            <span className="text-gray-500">Outcome: </span>
-                            <span className="font-medium">
-                              {transaction.bettorWon
-                                ? "You Won"
-                                : `${transaction.players[4]} Won`}
-                              {" • "}
-                              <span className="text-blue-600">
-                                Your Side: {transaction.userSide}
-                              </span>
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    <Button
-                      onClick={() => handleEdit(transaction)}
-                      variant="ghost"
-                      size="sm"
-                      className="mt-3 text-blue-600 hover:text-blue-800 px-0"
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit Transaction
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
-            <div ref={transactionsEndRef} />
+function SideBetLayout({
+  transaction,
+  user,
+}: {
+  transaction: Transaction;
+  user: string;
+}) {
+  return (
+    <div>
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col items-center p-4 border rounded-lg w-5/12">
+          <div className="font-semibold text-gray-800">Team 1</div>
+          <div className="text-sm text-gray-600 flex flex-col justify-center items-center">
+            {transaction.players.slice(0, 2).map((player, i) => (
+              <p key={i}>{player}</p>
+            ))}
           </div>
         </div>
-      </CardContent>
-    </Card>
+        <div className="flex flex-col items-center">
+          <span className="text-xl font-bold text-gray-700">VS</span>
+        </div>
+        <div className="flex flex-col items-center p-4 border rounded-lg w-5/12">
+          <div className="font-semibold text-gray-800">Team 2</div>
+          <div className="text-sm text-gray-600 flex flex-col justify-center items-center">
+            {transaction.players.slice(2, 4).map((player, i) => (
+              <p key={i}>{player}</p>
+            ))}
+          </div>
+        </div>
+      </div>
+      {/* SideBet extra details */}
+      <div className="space-y-2 text-sm mt-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <div className="text-gray-500">Bettor</div>
+            <div className="font-medium">{transaction.players[0]}</div>
+          </div>
+          <div className="space-y-1">
+            <div className="text-gray-500">Bookmaker</div>
+            <div className="font-medium">{transaction.players[4]}</div>
+          </div>
+        </div>
+        <div className="pt-2 text-sm border-t">
+          <span className="text-gray-500">Outcome: </span>
+          <span className="font-medium">
+            {transaction.bettorWon ? "You Won" : `${transaction.players[4]} Won`}{" "}
+            •{" "}
+            <span className="text-blue-600">
+              Your Side: {transaction.userSide}
+            </span>
+          </span>
+        </div>
+      </div>
+    </div>
   );
 }
