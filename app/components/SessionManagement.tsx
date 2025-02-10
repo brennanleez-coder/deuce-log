@@ -42,9 +42,7 @@ export default function SessionManagement({
     {}
   );
 
-  // -------------------------------------------------------------
-  // 1) Handle persisting the userName to localStorage
-  // -------------------------------------------------------------
+
   const [isEditingName, setIsEditingName] = useState(false);
 
   const handleNameSubmit = () => {
@@ -53,9 +51,7 @@ export default function SessionManagement({
     setIsEditingName(false);
   };
 
-  // -------------------------------------------------------------
-  // Session creation / form validation
-  // -------------------------------------------------------------
+
   const validateForm = () => {
     const errors: { name?: string; fee?: string } = {};
     if (!newSessionName.trim()) errors.name = "Session name is required";
@@ -90,9 +86,7 @@ export default function SessionManagement({
     }
   };
 
-  // -------------------------------------------------------------
-  // Utility
-  // -------------------------------------------------------------
+
   const formatDate = (dateString: number) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -103,9 +97,7 @@ export default function SessionManagement({
     });
   };
 
-  // -------------------------------------------------------------
-  // Render
-  // -------------------------------------------------------------
+
   return (
     <Card className="bg-white border border-gray-200 shadow-lg rounded-xl">
       <CardHeader className="flex flex-row items-center justify-between px-6 py-4 bg-gray-50 rounded-t-xl">
@@ -175,9 +167,6 @@ export default function SessionManagement({
 
       <CardContent className="p-4 bg-gray-50 rounded-b-xl">
         <div className="space-y-4">
-          {/* ------------------------------------------ */}
-          {/*   Name section with Edit and Submit logic  */}
-          {/* ------------------------------------------ */}
           <div className="space-y-2">
             <Label htmlFor="userName" className="text-gray-700">
               Your Name
@@ -214,10 +203,6 @@ export default function SessionManagement({
               </div>
             )}
           </div>
-
-          {/* ------------------------------------------ */}
-          {/*  Session list                             */}
-          {/* ------------------------------------------ */}
           {sessions.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-8 text-center rounded-lg bg-gray-100/50">
               <p className="text-gray-500">No sessions created yet</p>
@@ -240,7 +225,6 @@ export default function SessionManagement({
                         : "border-gray-200 hover:border-blue-200"
                     } hover:shadow-md group`}
                   >
-                    {/* Check Circle for selected session */}
                     {isSelected && (
                       <CheckCircle className="absolute top-2 right-2 w-5 h-5 text-blue-500" />
                     )}
@@ -251,7 +235,6 @@ export default function SessionManagement({
                           <h3 className="font-semibold text-gray-800 truncate">
                             {session.name}
                           </h3>
-                          {/* Delete Button (stopPropagation to prevent card click) */}
                           <Button
                             variant="ghost"
                             size="icon"

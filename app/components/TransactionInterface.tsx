@@ -74,11 +74,15 @@ export default function TransactionInterface({
 
   // 2. Whenever `transactions` changes, scroll to the bottom
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     if (transactions.length > 0) {
       transactionsEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [transactions]);
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     if (editingTransaction) {
       // When editing, ensure that Player 1 remains the current user.
       setTransactionType(editingTransaction.type);

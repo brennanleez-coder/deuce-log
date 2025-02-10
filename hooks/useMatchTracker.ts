@@ -1,3 +1,4 @@
+'use client'
 import { useState, useEffect } from "react"
 
 export interface Transaction {
@@ -20,11 +21,6 @@ export interface Session {
   courtFee: number
 }
 
-interface PlayerBalance {
-  name: string
-  balance: number
-}
-
 interface Settlement {
   from: string
   to: string
@@ -37,79 +33,74 @@ export function useMatchTracker() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [selectedSession, setSelectedSession] = useState<string | null>(null)
 
-  // 1) On mount, read from local storage:
-  // On mount, load everything from localStorage
+  // On mount, read from local storage
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     const storedName = localStorage.getItem("userName")
     const storedSessions = localStorage.getItem("sessions")
     const storedTransactions = localStorage.getItem("transactions")
     const storedSelectedSession = localStorage.getItem("selectedSession")
 
-    // (1) Load userName
-    if (storedName) {
-      setName(storedName)
-    }
-
-    // (2) Load sessions
-    if (storedSessions) {
-      setSessions(JSON.parse(storedSessions))
-    }
-
-    // (3) Load transactions
-    if (storedTransactions) {
-      setTransactions(JSON.parse(storedTransactions))
-    }
-
-    // (4) Load selectedSession
-    if (storedSelectedSession) {
-      setSelectedSession(storedSelectedSession)
-    }
+    if (storedName) setName(storedName)
+    if (storedSessions) setSessions(JSON.parse(storedSessions))
+    if (storedTransactions) setTransactions(JSON.parse(storedTransactions))
+    if (storedSelectedSession) setSelectedSession(storedSelectedSession)
   }, [])
 
   // Whenever "name" changes, save to localStorage
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     localStorage.setItem("userName", name)
   }, [name])
 
-  // 2) Whenever sessions change, rewrite local storage:
+  // Whenever sessions change, rewrite localStorage
   useEffect(() => {
-    localStorage.setItem("sessions", JSON.stringify(sessions));
-  }, [sessions]);
-  // 3) Whenever transactions change, rewrite local storage:
-  useEffect(() => {
-    localStorage.setItem("transactions", JSON.stringify(transactions));
-  }, [transactions]);
+    if (typeof window === "undefined") return;
 
-  // 4) Persist selected session as well
+    localStorage.setItem("sessions", JSON.stringify(sessions))
+  }, [sessions])
+
+  // Whenever transactions change, rewrite localStorage
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    localStorage.setItem("transactions", JSON.stringify(transactions))
+  }, [transactions])
+
+  // Persist selected session as well
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
     if (selectedSession) {
-      localStorage.setItem("selectedSession", selectedSession);
+      localStorage.setItem("selectedSession", selectedSession)
     } else {
-      localStorage.removeItem("selectedSession");
+      localStorage.removeItem("selectedSession")
     }
-  }, [selectedSession]);
-  const createSession = (name: string, courtFee: number) => {
+  }, [selectedSession])
+
+  // Create a new session
+  const createSession = (sessionName: string, courtFee: number) => {
     const newSession: Session = {
       id: Date.now().toString(),
-      name,
+      name: sessionName,
       createdAt: Date.now(),
       courtFee,
     }
-    setSessions([...sessions, newSession])
+    setSessions((prev) => [...prev, newSession])
   }
 
+  // Delete a session
   const deleteSession = (sessionId: string) => {
-    // Remove from state
-    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
-    setTransactions((prev) => prev.filter((t) => t.sessionId !== sessionId));
+    setSessions((prev) => prev.filter((s) => s.id !== sessionId))
+    setTransactions((prev) => prev.filter((t) => t.sessionId !== sessionId))
 
     // If the deleted session was selected, clear selection
-    setSelectedSession((prev) => (prev === sessionId ? null : prev));
+    setSelectedSession((prev) => (prev === sessionId ? null : prev))
+  }
 
-    // ❌ Do NOT removeItem("sessions") or removeItem("transactions")
-    // because that erases *all* sessions & transactions from localStorage.
-  };
-
+  // Add a new transaction
   const addTransaction = (
     sessionId: string,
     type: "Match" | "SideBet",
@@ -118,7 +109,7 @@ export function useMatchTracker() {
     payerIndex: number,
     receiverIndex: number,
     bettorWon?: boolean,
-    userSide?: "Bettor" | "Bookmaker",
+    userSide?: "Bettor" | "Bookmaker"
   ) => {
     const newTransaction: Transaction = {
       id: Date.now().toString(),
@@ -132,9 +123,10 @@ export function useMatchTracker() {
       bettorWon,
       userSide,
     }
-    setTransactions([...transactions, newTransaction])
+    setTransactions((prev) => [...prev, newTransaction])
   }
 
+  // Update an existing transaction
   const updateTransaction = (
     transactionId: string,
     type: "Match" | "SideBet",
@@ -143,25 +135,42 @@ export function useMatchTracker() {
     payerIndex: number,
     receiverIndex: number,
     bettorWon?: boolean,
-    userSide?: "Bettor" | "Bookmaker",
+    userSide?: "Bettor" | "Bookmaker"
   ) => {
-    setTransactions(
-      transactions.map((t) =>
-        t.id === transactionId ? { ...t, type, amount, players, payerIndex, receiverIndex, bettorWon, userSide } : t,
-      ),
+    setTransactions((prev) =>
+      prev.map((t) =>
+        t.id === transactionId
+          ? {
+              ...t,
+              type,
+              amount,
+              players,
+              payerIndex,
+              receiverIndex,
+              bettorWon,
+              userSide,
+            }
+          : t
+      )
     )
   }
 
+  // Get transactions for a given session
   const getSessionTransactions = (sessionId: string) => {
     return transactions.filter((t) => t.sessionId === sessionId)
   }
 
+  // Various calculations
   const calculateNetGain = (sessionId: string) => {
     return getSessionTransactions(sessionId).reduce((sum, t) => {
       if (t.type === "Match") {
+        // if receiverIndex < payerIndex => user is the receiver?
+        // This logic depends on your indexing. Adjust if needed:
         return sum + (t.receiverIndex < t.payerIndex ? t.amount : -t.amount)
       } else if (t.type === "SideBet") {
-        const userWon = (t.bettorWon && t.userSide === "Bettor") || (!t.bettorWon && t.userSide === "Bookmaker")
+        const userWon =
+          (t.bettorWon && t.userSide === "Bettor") ||
+          (!t.bettorWon && t.userSide === "Bookmaker")
         return sum + (userWon ? t.amount : -t.amount)
       }
       return sum
@@ -173,7 +182,9 @@ export function useMatchTracker() {
       if (t.type === "Match") {
         return sum + (t.receiverIndex < t.payerIndex ? t.amount : 0)
       } else if (t.type === "SideBet") {
-        const userWon = (t.bettorWon && t.userSide === "Bettor") || (!t.bettorWon && t.userSide === "Bookmaker")
+        const userWon =
+          (t.bettorWon && t.userSide === "Bettor") ||
+          (!t.bettorWon && t.userSide === "Bookmaker")
         return sum + (userWon ? t.amount : 0)
       }
       return sum
@@ -185,7 +196,9 @@ export function useMatchTracker() {
       if (t.type === "Match") {
         return sum + (t.receiverIndex > t.payerIndex ? t.amount : 0)
       } else if (t.type === "SideBet") {
-        const userLost = (t.bettorWon && t.userSide === "Bookmaker") || (!t.bettorWon && t.userSide === "Bettor")
+        const userLost =
+          (t.bettorWon && t.userSide === "Bookmaker") ||
+          (!t.bettorWon && t.userSide === "Bettor")
         return sum + (userLost ? t.amount : 0)
       }
       return sum
@@ -195,7 +208,9 @@ export function useMatchTracker() {
   const calculateSideBetWinnings = () => {
     return transactions.reduce((sum, t) => {
       if (t.type === "SideBet") {
-        const userWon = (t.bettorWon && t.userSide === "Bettor") || (!t.bettorWon && t.userSide === "Bookmaker")
+        const userWon =
+          (t.bettorWon && t.userSide === "Bettor") ||
+          (!t.bettorWon && t.userSide === "Bookmaker")
         return sum + (userWon ? t.amount : 0)
       }
       return sum
@@ -205,7 +220,9 @@ export function useMatchTracker() {
   const calculateSideBetLosses = () => {
     return transactions.reduce((sum, t) => {
       if (t.type === "SideBet") {
-        const userLost = (t.bettorWon && t.userSide === "Bookmaker") || (!t.bettorWon && t.userSide === "Bettor")
+        const userLost =
+          (t.bettorWon && t.userSide === "Bookmaker") ||
+          (!t.bettorWon && t.userSide === "Bettor")
         return sum + (userLost ? t.amount : 0)
       }
       return sum
@@ -220,33 +237,51 @@ export function useMatchTracker() {
     return sessions.reduce((sum, session) => sum + session.courtFee, 0)
   }
 
+  // MAIN FIX: remove references to array indices 4/5 or "Me"
+  //           and rely on payerIndex, receiverIndex, and actual user name.
   const calculateSettlement = (sessionId: string): Settlement[] => {
     const sessionTransactions = getSessionTransactions(sessionId)
-    const playerBalances: { [key: string]: number } = {}
+    const playerBalances: { [name: string]: number } = {}
 
-    // Calculate initial balances
+    // 1. Ensure all players show up in playerBalances so we don’t get undefined
+    sessionTransactions.forEach((t) => {
+      t.players.forEach((p) => {
+        if (!playerBalances[p]) {
+          playerBalances[p] = 0
+        }
+      })
+    })
+
+    // 2. Populate balances according to each transaction
     sessionTransactions.forEach((t) => {
       if (t.type === "Match") {
-        playerBalances[t.players[t.payerIndex]] = (playerBalances[t.players[t.payerIndex]] || 0) - t.amount
-        playerBalances[t.players[t.receiverIndex]] = (playerBalances[t.players[t.receiverIndex]] || 0) + t.amount
+        const payer = t.players[t.payerIndex]
+        const receiver = t.players[t.receiverIndex]
+        playerBalances[payer] -= t.amount
+        playerBalances[receiver] += t.amount
       } else if (t.type === "SideBet") {
-        const bettorIndex = 4
-        const bookmakerIndex = 5
+        // Use bettorWon + indexes:
+        const payer = t.players[t.payerIndex]
+        const receiver = t.players[t.receiverIndex]
+
         if (t.bettorWon) {
-          playerBalances[t.players[bettorIndex]] = (playerBalances[t.players[bettorIndex]] || 0) + t.amount
-          playerBalances[t.players[bookmakerIndex]] = (playerBalances[t.players[bookmakerIndex]] || 0) - t.amount
+          // bettor won => money flows from the other side to the bettor
+          playerBalances[payer] -= t.amount
+          playerBalances[receiver] += t.amount
         } else {
-          playerBalances[t.players[bettorIndex]] = (playerBalances[t.players[bettorIndex]] || 0) - t.amount
-          playerBalances[t.players[bookmakerIndex]] = (playerBalances[t.players[bookmakerIndex]] || 0) + t.amount
+          // bettor lost => money flows from bettor to the other side
+          playerBalances[payer] += t.amount
+          playerBalances[receiver] -= t.amount
         }
       }
     })
 
-    // Convert to array and sort
+    // 3. Convert to an array + sort
     const sortedBalances = Object.entries(playerBalances)
       .map(([name, balance]) => ({ name, balance }))
       .sort((a, b) => a.balance - b.balance)
 
+    // 4. Pair off the most negative with the most positive
     const settlements: Settlement[] = []
     let i = 0
     let j = sortedBalances.length - 1
@@ -255,28 +290,30 @@ export function useMatchTracker() {
       const debtor = sortedBalances[i]
       const creditor = sortedBalances[j]
 
-      if (Math.abs(debtor.balance) < creditor.balance) {
+      const amount = Math.min(Math.abs(debtor.balance), creditor.balance)
+      if (amount > 0) {
         settlements.push({
           from: debtor.name,
           to: creditor.name,
-          amount: Math.abs(debtor.balance),
+          amount,
         })
-        creditor.balance += debtor.balance
-        i++
-      } else {
-        settlements.push({
-          from: debtor.name,
-          to: creditor.name,
-          amount: creditor.balance,
-        })
-        debtor.balance += creditor.balance
-        j--
       }
+
+      // Update their balances
+      debtor.balance += amount
+      creditor.balance -= amount
+
+      if (debtor.balance === 0) i++
+      if (creditor.balance === 0) j--
     }
 
-    // Prioritize payments to cover the user's losses
-    const userSettlements = settlements.filter((s) => s.to === "Me" || s.from === "Me")
-    const otherSettlements = settlements.filter((s) => s.to !== "Me" && s.from !== "Me")
+    // 5. Put the user’s own settlements up front
+    const userSettlements = settlements.filter(
+      (s) => s.to === name || s.from === name
+    )
+    const otherSettlements = settlements.filter(
+      (s) => s.to !== name && s.from !== name
+    )
 
     return [...userSettlements, ...otherSettlements]
   }
@@ -286,20 +323,19 @@ export function useMatchTracker() {
     setName,
     sessions,
     createSession,
+    deleteSession,
     addTransaction,
     updateTransaction,
     getSessionTransactions,
+    selectedSession,
+    setSelectedSession,
     calculateNetGain,
     calculateTotalWinnings,
     calculateTotalLosses,
     calculateNetGainTotal,
     calculateSideBetWinnings,
     calculateSideBetLosses,
-    selectedSession,
-    setSelectedSession,
     calculateTotalCourtFees,
     calculateSettlement,
-    deleteSession,
   }
 }
-
