@@ -89,8 +89,6 @@ export default function TransactionInterface({
   markTransactionPaid,
 }: TransactionInterfaceProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
-
-  // Form states
   const [transactionType, setTransactionType] = useState<"Match" | "SideBet">(
     "Match"
   );
@@ -103,10 +101,8 @@ export default function TransactionInterface({
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
 
-  // For filtering / searching the transaction list
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Track expanded transaction
   const [expandedTransactionId, setExpandedTransactionId] = useState<string | null>(
     null
   );
@@ -119,7 +115,6 @@ export default function TransactionInterface({
     }
   }, [transactions]);
 
-  // Load existing transaction data if editing
   useEffect(() => {
     if (editingTransaction) {
       setTransactionType(editingTransaction.type);
@@ -178,57 +173,57 @@ export default function TransactionInterface({
     }
   };
 
-  // Show the form for a new transaction
+
   const openFormForAdd = () => {
     setEditingTransaction(null);
     resetForm();
     setIsFormOpen(true);
   };
 
-  // Edit an existing transaction
+
   const handleEdit = (transaction: Transaction) => {
     setEditingTransaction(transaction);
     setIsFormOpen(true);
   };
 
-  // Cancel
+
   const handleCancelEdit = () => {
     setEditingTransaction(null);
     resetForm();
     setIsFormOpen(false);
   };
 
-  // Expand/collapse card
+
   const toggleExpanded = (transactionId: string) => {
     setExpandedTransactionId((prev) => (prev === transactionId ? null : transactionId));
   };
 
-  // Determine if user "won" a transaction
+
   const userWonTransaction = (t: Transaction): boolean => {
     if (t.type === "Match") {
       return t.players[t.receiverIndex] === user;
     } else {
-      // SideBet
+    
       return t.userSide === "Bettor" && t.bettorWon === true;
     }
   };
 
-  // Filter transactions by player name
+
   const filtered = transactions.filter((t) =>
     t.players.some((player) =>
       player.toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
 
-  // Split into wins/losses
+
   const userWins = filtered.filter(userWonTransaction);
   const userLosses = filtered.filter((t) => !userWonTransaction(t));
 
-  // Compute total amounts
+
   const totalWinsAmount = userWins.reduce((acc, t) => acc + t.amount, 0);
   const totalLossesAmount = userLosses.reduce((acc, t) => acc + t.amount, 0);
 
-  // UI helper
+
   const formatCurrency = (value: number) =>
     value.toLocaleString("en-US", { style: "currency", currency: "USD" });
 

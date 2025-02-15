@@ -15,13 +15,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
 import { CheckCircle, Trash2, Plus } from "lucide-react";
-
-// Import AnimatePresence & motion from Framer Motion
 import { AnimatePresence, motion } from "framer-motion";
 
-// Define some reusable motion variants
+
 const containerVariants = {
   hidden: {
     opacity: 0,
@@ -31,9 +28,9 @@ const containerVariants = {
     opacity: 1,
     scale: 1,
     transition: {
-      when: "beforeChildren",      // Make sure container anim completes first
-      staggerChildren: 0.08,      // Stagger each item’s entry
-      delayChildren: 0.1,         // Delay before item animations start
+      when: "beforeChildren",      
+      staggerChildren: 0.08,      
+      delayChildren: 0.1,         
     },
   },
   exit: {
@@ -91,22 +88,35 @@ export default function SessionManagement({
   const [newSessionName, setNewSessionName] = useState("");
   const [newCourtFee, setNewCourtFee] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formErrors, setFormErrors] = useState<{ name?: string; fee?: string }>(
-    {}
-  );
+  const [formErrors, setFormErrors] = useState<{ name?: string; fee?: string; userName?: string }>({});
   const [isEditingName, setIsEditingName] = useState(false);
 
-  // Name submission
-  const handleNameSubmit = () => {
-    if (!name.trim()) return;
-    setName(name.trim());
-    setIsEditingName(false);
+  // Determine if this is the first session
+  const isFirstSession = sessions.length === 0;
+
+  // Validate the user's name
+  const validateUserName = () => {
+    if (!name.trim()) {
+      setFormErrors((prev) => ({ ...prev, userName: "Name is required" }));
+      return false;
+    }
+    setFormErrors((prev) => ({ ...prev, userName: undefined }));
+    return true;
   };
 
-  // Form validation
+  // Handle name submission with validation
+  const handleNameSubmit = () => {
+    if (validateUserName()) {
+      setName(name.trim());
+      setIsEditingName(false);
+    }
+  };
+
+  // Validate the form for creating a session
   const validateForm = () => {
-    const errors: { name?: string; fee?: string } = {};
+    const errors: { name?: string; fee?: string; userName?: string } = {};
     if (!newSessionName.trim()) errors.name = "Session name is required";
+    if (isFirstSession && !name.trim()) errors.userName = "Name is required";
     const feeValue = Number.parseFloat(newCourtFee);
     if (isNaN(feeValue) || feeValue < 0) {
       errors.fee = "Valid court fee is required";
@@ -115,10 +125,13 @@ export default function SessionManagement({
     return Object.keys(errors).length === 0;
   };
 
-  // Create session form submit
+  // Handle form submission for creating a session
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
+      if (isFirstSession) {
+        setName(name.trim());
+      }
       createSession(newSessionName.trim(), Number.parseFloat(newCourtFee));
       setNewSessionName("");
       setNewCourtFee("");
@@ -127,9 +140,9 @@ export default function SessionManagement({
     }
   };
 
-  // Delete session
+  // Handle session deletion
   const handleDeleteSession = (sessionId: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card click
+    e.stopPropagation(); 
     const confirmed = window.confirm(
       "Are you sure you want to delete this session?"
     );
@@ -177,6 +190,25 @@ export default function SessionManagement({
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
+                {isFirstSession && (
+                  <div className="space-y-2">
+                    <Label htmlFor="userName" className="text-gray-700">
+                      Your Name
+                    </Label>
+                    <Input
+                      id="userName"
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Enter your name"
+                      className={formErrors.userName ? "border-red-500" : ""}
+                      autoFocus
+                    />
+                    {formErrors.userName && (
+                      <p className="text-sm text-red-500">{formErrors.userName}</p>
+                    )}
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="sessionName" className="text-gray-700">
                     Session Name
@@ -188,7 +220,6 @@ export default function SessionManagement({
                     onChange={(e) => setNewSessionName(e.target.value)}
                     placeholder="Friday Night Session"
                     className={formErrors.name ? "border-red-500" : ""}
-                    autoFocus
                   />
                   {formErrors.name && (
                     <p className="text-sm text-red-500">{formErrors.name}</p>
@@ -225,41 +256,46 @@ export default function SessionManagement({
       {/* CONTENT */}
       <CardContent className="p-6">
         {/* Name Edit Section */}
-        <div className="mb-6 rounded-lg border border-gray-200 p-4 bg-gray-50">
-          <Label htmlFor="userName" className="text-gray-700 font-semibold">
-            Your Name
-          </Label>
-          <div className="mt-2">
-            {isEditingName ? (
-              <div className="flex items-center gap-2">
-                <Input
-                  id="userName"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="bg-white"
-                  autoFocus
-                />
-                <Button variant="secondary" onClick={handleNameSubmit}>
-                  Save
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Input
-                  id="userName"
-                  type="text"
-                  value={name}
-                  className="bg-gray-100"
-                  disabled
-                />
-                <Button variant="outline" onClick={() => setIsEditingName(true)}>
-                  Edit
-                </Button>
-              </div>
-            )}
+        {!isFirstSession && (
+          <div className="mb-6 rounded-lg border border-gray-200 p-4 bg-gray-50">
+            <Label htmlFor="userName" className="text-gray-700 font-semibold">
+              Your Name
+            </Label>
+            <div className="mt-2">
+              {isEditingName ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="userName"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className={formErrors.userName ? "border-red-500" : "bg-white"}
+                    autoFocus
+                  />
+                  <Button variant="secondary" onClick={handleNameSubmit}>
+                    Save
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="userName"
+                    type="text"
+                    value={name}
+                    className="bg-gray-100"
+                    disabled
+                  />
+                  <Button variant="outline" onClick={() => setIsEditingName(true)}>
+                    Edit
+                  </Button>
+                </div>
+              )}
+              {formErrors.userName && (
+                <p className="text-sm text-red-500">{formErrors.userName}</p>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Sessions List */}
         {sessions.length === 0 ? (
@@ -270,7 +306,7 @@ export default function SessionManagement({
             </p>
           </div>
         ) : (
-          // Container for the card list, using motion.div
+          
           <motion.div
             className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
             variants={containerVariants}
@@ -284,12 +320,12 @@ export default function SessionManagement({
                 const isSelected = selectedSession === session.id;
 
                 return (
-                  // Each session in AnimatePresence
+                  
                   <motion.div
                     key={session.id}
                     variants={itemVariants}
                     layout
-                    exit="exit" // Ensure it uses our exit variant
+                    exit="exit" 
                   >
                     <Card
                       onClick={() => setSelectedSession(session.id)}
