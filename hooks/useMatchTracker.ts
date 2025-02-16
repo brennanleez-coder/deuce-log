@@ -1,33 +1,8 @@
 'use client'
 import { useState, useEffect } from "react"
+import { Transaction, Session, Settlement } from "@/types/types"
 
-export interface Transaction {
-  id: string
-  sessionId: string
-  type: "Match" | "SideBet"
-  amount: number
-  players: string[]
-  payerIndex: number
-  receiverIndex: number
-  timestamp: number
-  bettorWon?: boolean
-  userSide?: "Bettor" | "Bookmaker"
-  paid?: boolean
-  paidBy?: string
-}
 
-export interface Session {
-  id: string
-  name: string
-  createdAt: number
-  courtFee: number
-}
-
-interface Settlement {
-  from: string
-  to: string
-  amount: number
-}
 
 export function useMatchTracker() {
   const [sessions, setSessions] = useState<Session[]>([])
@@ -83,26 +58,38 @@ export function useMatchTracker() {
   }, [selectedSession])
 
 
-  const createSession = (sessionName: string, courtFee: number) => {
+  const createSession = (sessionName: string, courtFee: number, players: string[]) => {
     const newSession: Session = {
       id: Date.now().toString(),
       name: sessionName,
       createdAt: Date.now(),
       courtFee,
-    }
-    setSessions((prev) => [...prev, newSession])
+      players, // Include players in the session
+    };
+    setSessions((prev) => [...prev, newSession]);
+  };
+
+  const addPlayerToSession = (sessionId: string, playerName: string) => {
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === sessionId
+          ? {
+            ...s,
+            players: [...(s.players || []), playerName],
+          }
+          : s
+      )
+    )
   }
-
-
   const deleteSession = (sessionId: string) => {
     setSessions((prev) => prev.filter((s) => s.id !== sessionId))
     setTransactions((prev) => prev.filter((t) => t.sessionId !== sessionId))
 
-  
+
     setSelectedSession((prev) => (prev === sessionId ? null : prev))
   }
 
-  
+
 
   const addTransaction = (
     sessionId: string,
@@ -125,13 +112,11 @@ export function useMatchTracker() {
       timestamp: Date.now(),
       bettorWon,
       userSide,
-      paid: false,       
-      paidBy: undefined, 
+      paid: false,
+      paidBy: undefined,
     }
     setTransactions((prev) => [...prev, newTransaction])
   }
-
-
 
   const markTransactionPaid = (transactionId: string, paidBy: string) => {
     setTransactions((prev) =>
@@ -146,6 +131,21 @@ export function useMatchTracker() {
       )
     )
   }
+
+  const markTransactionUnpaid = (transactionId: string, paidBy: string) => {
+    setTransactions((prev) =>
+      prev.map((t) =>
+        t.id === transactionId
+          ? {
+            ...t,
+            paid: false,
+            paidBy,
+          }
+          : t
+      )
+    )
+  }
+
 
   const updateTransaction = (
     transactionId: string,
@@ -184,8 +184,8 @@ export function useMatchTracker() {
   const calculateNetGain = (sessionId: string) => {
     return getSessionTransactions(sessionId).reduce((sum, t) => {
       if (t.type === "Match") {
-      
-      
+
+
         return sum + (t.receiverIndex < t.payerIndex ? t.amount : -t.amount)
       } else if (t.type === "SideBet") {
         const userWon =
@@ -263,7 +263,7 @@ export function useMatchTracker() {
     const sessionTransactions = getSessionTransactions(sessionId)
     const playerBalances: { [name: string]: number } = {}
 
-  
+
     sessionTransactions.forEach((t) => {
       t.players.forEach((p) => {
         if (!playerBalances[p]) {
@@ -272,7 +272,7 @@ export function useMatchTracker() {
       })
     })
 
-  
+
     sessionTransactions.forEach((t) => {
       if (t.type === "Match") {
         const payer = t.players[t.payerIndex]
@@ -280,28 +280,28 @@ export function useMatchTracker() {
         playerBalances[payer] -= t.amount
         playerBalances[receiver] += t.amount
       } else if (t.type === "SideBet") {
-      
+
         const payer = t.players[t.payerIndex]
         const receiver = t.players[t.receiverIndex]
 
         if (t.bettorWon) {
-        
+
           playerBalances[payer] -= t.amount
           playerBalances[receiver] += t.amount
         } else {
-        
+
           playerBalances[payer] += t.amount
           playerBalances[receiver] -= t.amount
         }
       }
     })
 
-  
+
     const sortedBalances = Object.entries(playerBalances)
       .map(([name, balance]) => ({ name, balance }))
       .sort((a, b) => a.balance - b.balance)
 
-  
+
     const settlements: Settlement[] = []
     let i = 0
     let j = sortedBalances.length - 1
@@ -319,7 +319,7 @@ export function useMatchTracker() {
         })
       }
 
-    
+
       debtor.balance += amount
       creditor.balance -= amount
 
@@ -327,7 +327,7 @@ export function useMatchTracker() {
       if (creditor.balance === 0) j--
     }
 
-  
+
     const userSettlements = settlements.filter(
       (s) => s.to === name || s.from === name
     )
@@ -358,6 +358,8 @@ export function useMatchTracker() {
     calculateTotalCourtFees,
     calculateSettlement,
     markTransactionPaid,
+    markTransactionUnpaid,
+    addPlayerToSession
 
   }
 }

@@ -25,7 +25,9 @@ export default function Home() {
     calculateTotalCourtFees,
     calculateSettlement,
     deleteSession,
-    markTransactionPaid
+    markTransactionPaid,
+    markTransactionUnpaid,
+    addPlayerToSession
   } = useMatchTracker()
 
   return (
@@ -47,10 +49,13 @@ export default function Home() {
             <TransactionInterface
               user={name}
               sessionId={selectedSession}
+              sessions={sessions}
               addTransaction={addTransaction}
               updateTransaction={updateTransaction}
               transactions={getSessionTransactions(selectedSession)}
               markTransactionPaid={markTransactionPaid}
+              markTransactionUnpaid={markTransactionUnpaid}
+              addPlayerToSession={addPlayerToSession}
             />
             {/* <SettlementSummary user={name} settlements={calculateSettlement(selectedSession)} /> */}
           </>

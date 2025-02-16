@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Session } from "../../hooks/useMatchTracker";
+import { Session } from "@/types/types"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -68,7 +68,7 @@ interface SessionManagementProps {
   sessions: Session[];
   name: string;
   setName: (name: string) => void;
-  createSession: (name: string, courtFee: number) => void;
+  createSession: (name: string, courtFee: number, players: string[]) => void;
   calculateNetGain: (sessionId: string) => number;
   selectedSession: string | null;
   setSelectedSession: (sessionId: string | null) => void;
@@ -88,6 +88,8 @@ export default function SessionManagement({
   const [newSessionName, setNewSessionName] = useState("");
   const [newCourtFee, setNewCourtFee] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newPlayers, setNewPlayers] = useState<string>("");
+
   const [formErrors, setFormErrors] = useState<{ name?: string; fee?: string; userName?: string }>({});
   const [isEditingName, setIsEditingName] = useState(false);
 
@@ -125,16 +127,18 @@ export default function SessionManagement({
     return Object.keys(errors).length === 0;
   };
 
-  // Handle form submission for creating a session
+// Handle form submission for creating a session
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
       if (isFirstSession) {
         setName(name.trim());
       }
-      createSession(newSessionName.trim(), Number.parseFloat(newCourtFee));
+      const playersArray = newPlayers.split(',').map(player => player.trim()).filter(player => player);
+      createSession(newSessionName.trim(), Number.parseFloat(newCourtFee), playersArray);
       setNewSessionName("");
       setNewCourtFee("");
+      setNewPlayers(""); // Reset player names
       setIsModalOpen(false);
       setFormErrors({});
     }
@@ -242,6 +246,18 @@ export default function SessionManagement({
                   {formErrors.fee && (
                     <p className="text-sm text-red-500">{formErrors.fee}</p>
                   )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="players" className="text-gray-700">
+                    Players (comma-separated)
+                  </Label>
+                  <Input
+                    id="players"
+                    type="text"
+                    value={newPlayers}
+                    onChange={(e) => setNewPlayers(e.target.value)}
+                    placeholder="Player1, Player2, Player3"
+                  />
                 </div>
                 <Button type="submit" className="w-full gap-2">
                   <Plus size={16} />
