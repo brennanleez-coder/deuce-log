@@ -7,25 +7,31 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Coins, Trophy, User } from "lucide-react";
 import FuzzyCreatableSelect from "@/components/FuzzyCreatableSelect";
 
 interface TransactionFormProps {
   // Required data
-  user: string;                            // The current user’s name
-  selectedSessionPlayers: string[];        // Players in the current session
+  user: string; // The current user’s name
+  selectedSessionPlayers: string[]; // Players in the current session
   onAddPlayerToSession: (newPlayerName: string) => void;
 
   // State & Handlers
-  initialTransactionType?: "Match" | "SideBet";  
-  initialPlayers?: string[];   // e.g. [user, '', '', '', '']
+  initialTransactionType?: "Match" | "SideBet";
+  initialPlayers?: string[]; // e.g. [user, '', '', '', '']
   initialAmount?: string;
   initialPayerIndex?: number;
   initialReceiverIndex?: number;
   initialBettorWon?: boolean;
   initialUserSide?: "Bettor" | "Bookmaker";
-  
+
   onSubmit: (formData: {
     transactionType: "Match" | "SideBet";
     players: string[];
@@ -36,7 +42,7 @@ interface TransactionFormProps {
     userSide: "Bettor" | "Bookmaker";
   }) => void;
   onCancel: () => void;
-  isEditing?: boolean;  // If true, the button text = "Update Transaction", else "Add Transaction"
+  isEditing?: boolean; // If true, the button text = "Update Transaction", else "Add Transaction"
 }
 
 export default function TransactionForm({
@@ -55,13 +61,17 @@ export default function TransactionForm({
   isEditing = false,
 }: TransactionFormProps) {
   // Local form state
-  const [transactionType, setTransactionType] = useState<"Match" | "SideBet">(initialTransactionType);
+  const [transactionType, setTransactionType] = useState<"Match" | "SideBet">(
+    initialTransactionType
+  );
   const [players, setPlayers] = useState<string[]>(initialPlayers);
   const [amount, setAmount] = useState(initialAmount);
   const [payerIndex, setPayerIndex] = useState(initialPayerIndex);
   const [receiverIndex, setReceiverIndex] = useState(initialReceiverIndex);
   const [bettorWon, setBettorWon] = useState(initialBettorWon);
-  const [userSide, setUserSide] = useState<"Bettor" | "Bookmaker">(initialUserSide);
+  const [userSide, setUserSide] = useState<"Bettor" | "Bookmaker">(
+    initialUserSide
+  );
 
   // Handle form submission
   const handleFormSubmit = (e: React.FormEvent) => {
@@ -116,18 +126,25 @@ export default function TransactionForm({
       <div className="grid gap-6 md:grid-cols-2">
         {/* YOUR PAIR */}
         <fieldset className="space-y-3 rounded-lg border p-4">
-          <legend className="px-2 text-sm font-medium text-gray-700">Your Pair</legend>
+          <legend className="px-2 text-sm font-medium text-gray-700">
+            Your Pair
+          </legend>
+
+          {/* Player 1 (You) */}
           <div className="space-y-2">
-            {/* Player 1 (You) */}
+            <Label className="text-sm font-medium">Player 1 (You)</Label>
             <Input
               value={user}
               disabled
               className="bg-gray-100 cursor-not-allowed"
             />
+          </div>
 
-            {/* Player 2 */}
+          {/* Player 2 */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Player 2</Label>
             <FuzzyCreatableSelect
-              label="Player 2"
+              label=""
               value={players[1] || ""}
               onChange={(newVal) => {
                 setPlayers([user, newVal, ...players.slice(2)]);
@@ -142,11 +159,15 @@ export default function TransactionForm({
 
         {/* OPPONENT PAIR */}
         <fieldset className="space-y-3 rounded-lg border p-4">
-          <legend className="px-2 text-sm font-medium text-gray-700">Opponent Pair</legend>
+          <legend className="px-2 text-sm font-medium text-gray-700">
+            Opponent Pair
+          </legend>
+
+          {/* Player 3 */}
           <div className="space-y-2">
-            {/* Player 3 */}
+            <Label className="text-sm font-medium">Player 3</Label>
             <FuzzyCreatableSelect
-              label="Player 3"
+              label=""
               value={players[2] || ""}
               onChange={(newVal) => {
                 const updated = [...players];
@@ -158,10 +179,13 @@ export default function TransactionForm({
               exclude={[user, players[1] ?? ""]}
               placeholder="Select or add Player 3"
             />
+          </div>
 
-            {/* Player 4 */}
+          {/* Player 4 */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Player 4</Label>
             <FuzzyCreatableSelect
-              label="Player 4"
+              label=""
               value={players[3] || ""}
               onChange={(newVal) => {
                 const updated = [...players];
@@ -207,7 +231,7 @@ export default function TransactionForm({
               {userSide === "Bettor" ? "Bookmaker Name" : "Bettor Name"}
             </Label>
             <FuzzyCreatableSelect
-              label="" // We already have a <Label> above
+              label=""
               value={players[4] || ""}
               onChange={(newVal) => {
                 // Update players[4] with the selected or newly created name
@@ -229,7 +253,9 @@ export default function TransactionForm({
       <div className="space-y-2">
         <Label className="text-sm font-medium">Amount</Label>
         <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+            $
+          </span>
           <Input
             type="number"
             value={amount}
@@ -257,7 +283,7 @@ export default function TransactionForm({
               <SelectContent>
                 {players.slice(0, 4).map((p, idx) => {
                   if (!p) return null;
-                  // EXCLUDE the currently-selected payer
+                  // Exclude the currently-selected payer
                   if (idx === payerIndex) return null;
                   return (
                     <SelectItem key={idx} value={idx.toString()}>
@@ -281,7 +307,7 @@ export default function TransactionForm({
               <SelectContent>
                 {players.slice(0, 4).map((p, idx) => {
                   if (!p) return null;
-                  // EXCLUDE the currently-selected winner
+                  // Exclude the currently-selected winner
                   if (idx === receiverIndex) return null;
                   return (
                     <SelectItem key={idx} value={idx.toString()}>

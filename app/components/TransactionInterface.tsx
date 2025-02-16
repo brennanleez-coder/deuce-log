@@ -319,7 +319,7 @@ export default function TransactionInterface({
 
       {/* Dialog for Add/Edit Form */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="max-w-xl">
+        <DialogContent className="max-w-xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingTransaction ? "Edit Transaction" : "Add Transaction"}
@@ -332,93 +332,90 @@ export default function TransactionInterface({
           </DialogHeader>
 
           <TransactionForm
-      user={user}
-      selectedSessionPlayers={selectedSessionPlayers}
-      onAddPlayerToSession={handleAddPlayerToSession}
+            user={user}
+            selectedSessionPlayers={selectedSessionPlayers}
+            onAddPlayerToSession={handleAddPlayerToSession}
+            initialTransactionType={editingTransaction?.type ?? "Match"}
+            initialPlayers={
+              editingTransaction
+                ? [user, ...editingTransaction.players.slice(1)]
+                : [user, "", "", "", "", ""]
+            }
+            initialAmount={
+              editingTransaction ? editingTransaction.amount.toString() : ""
+            }
+            initialPayerIndex={editingTransaction?.payerIndex ?? 2}
+            initialReceiverIndex={editingTransaction?.receiverIndex ?? 0}
+            initialBettorWon={editingTransaction?.bettorWon ?? false}
+            initialUserSide={editingTransaction?.userSide ?? "Bettor"}
+            isEditing={Boolean(editingTransaction)}
+            // Called when user clicks “Add” or “Update”
+            onSubmit={({
+              transactionType,
+              players,
+              amount,
+              payerIndex,
+              receiverIndex,
+              bettorWon,
+              userSide,
+            }: {
+              transactionType: "Match" | "SideBet";
+              players: string[];
+              amount: string;
+              payerIndex: number;
+              receiverIndex: number;
+              bettorWon: boolean;
+              userSide: "Bettor" | "Bookmaker";
+            }) => {
+              const numericAmount = parseFloat(amount);
 
-      // If editing, set initial values from the transaction we’re editing
-      initialTransactionType={editingTransaction?.type ?? "Match"}
-      initialPlayers={
-        editingTransaction
-          ? [user, ...editingTransaction.players.slice(1)]
-          : [user, "", "", "", "", ""]
-      }
-      initialAmount={editingTransaction ? editingTransaction.amount.toString() : ""}
-      initialPayerIndex={editingTransaction?.payerIndex ?? 2}
-      initialReceiverIndex={editingTransaction?.receiverIndex ?? 0}
-      initialBettorWon={editingTransaction?.bettorWon ?? false}
-      initialUserSide={editingTransaction?.userSide ?? "Bettor"}
-      isEditing={Boolean(editingTransaction)}
+              // Basic validation checks
+              if (Number.isNaN(numericAmount) || numericAmount < 0) {
+                alert("Please enter a valid amount.");
+                return;
+              }
+              // For a Match, ensure payer != winner
+              if (transactionType === "Match" && payerIndex === receiverIndex) {
+                alert("Winner and Payer must be different people.");
+                return;
+              }
 
-      // Called when user clicks “Add” or “Update”
-      onSubmit={({
-        transactionType,
-        players,
-        amount,
-        payerIndex,
-        receiverIndex,
-        bettorWon,
-        userSide,
-      }: {
-        transactionType: "Match" | "SideBet";
-        players: string[];
-        amount: string;
-        payerIndex: number;
-        receiverIndex: number;
-        bettorWon: boolean;
-        userSide: "Bettor" | "Bookmaker";
-      }
-    ) => {
-        const numericAmount = parseFloat(amount);
+              if (editingTransaction) {
+                // Update existing transaction
+                updateTransaction(
+                  editingTransaction.id,
+                  transactionType,
+                  numericAmount,
+                  players,
+                  payerIndex,
+                  receiverIndex,
+                  transactionType === "SideBet" ? bettorWon : undefined,
+                  transactionType === "SideBet" ? userSide : undefined
+                );
+                setEditingTransaction(null);
+              } else {
+                // Add new transaction
+                addTransaction(
+                  sessionId,
+                  transactionType,
+                  numericAmount,
+                  players,
+                  payerIndex,
+                  receiverIndex,
+                  transactionType === "SideBet" ? bettorWon : undefined,
+                  transactionType === "SideBet" ? userSide : undefined
+                );
+              }
 
-        // Basic validation checks
-        if (Number.isNaN(numericAmount) || numericAmount < 0) {
-          alert("Please enter a valid amount.");
-          return;
-        }
-        // For a Match, ensure payer != winner
-        if (transactionType === "Match" && payerIndex === receiverIndex) {
-          alert("Winner and Payer must be different people.");
-          return;
-        }
-
-        if (editingTransaction) {
-          // Update existing transaction
-          updateTransaction(
-            editingTransaction.id,
-            transactionType,
-            numericAmount,
-            players,
-            payerIndex,
-            receiverIndex,
-            transactionType === "SideBet" ? bettorWon : undefined,
-            transactionType === "SideBet" ? userSide : undefined
-          );
-          setEditingTransaction(null);
-        } else {
-          // Add new transaction
-          addTransaction(
-            sessionId,
-            transactionType,
-            numericAmount,
-            players,
-            payerIndex,
-            receiverIndex,
-            transactionType === "SideBet" ? bettorWon : undefined,
-            transactionType === "SideBet" ? userSide : undefined
-          );
-        }
-
-        // Close the dialog after saving
-        setIsFormOpen(false);
-      }}
-
-      // Called when user clicks “Cancel”
-      onCancel={() => {
-        setEditingTransaction(null);
-        setIsFormOpen(false);
-      }}
-    />
+              // Close the dialog after saving
+              setIsFormOpen(false);
+            }}
+            // Called when user clicks “Cancel”
+            onCancel={() => {
+              setEditingTransaction(null);
+              setIsFormOpen(false);
+            }}
+          />
         </DialogContent>
       </Dialog>
     </Card>
