@@ -338,61 +338,45 @@ export function useMatchTracker() {
     return [...userSettlements, ...otherSettlements]
   }
 
-  const getHeadToHeadForSession = (sessionId: string, userName: string): HeadToHeadStats =>{
+  const getHeadToHeadForSession = (sessionId: string): HeadToHeadStats => {
     const stats: HeadToHeadStats = {};
 
-    if (!userName) {
-        console.warn("User name is undefined or empty. Ensure it's correctly set.");
-        return stats;
-    }
-
-    // Normalize userName for comparison
-    const normalizedUserName = userName.trim().toLowerCase();
-
-    // Filter transactions involving user
+    // Filter to the session's Match transactions
     const sessionMatches = transactions.filter(
-        (t) =>
-            t.sessionId === sessionId &&
-            t.type === "Match" &&
-            t.players.some(p => p.trim().toLowerCase() === normalizedUserName)
+        (t) => t.sessionId === sessionId && t.type === "Match"
     );
 
     sessionMatches.forEach((match) => {
         const { amount, payerIndex, receiverIndex, players } = match;
 
-        // Normalize players
-        const validPlayers = players.filter((p) => p.trim() !== "").map(p => p.trim());
-        const normalizedPlayers = validPlayers.map(p => p.toLowerCase());
+        // Ensure valid opponents (skip empty slots)
+        if (!players[2] || !players[3]) return;
+        const opponentNames = [players[2], players[3]];
 
-        // Find user index
-        const userIndex = normalizedPlayers.indexOf(normalizedUserName);
+        // Determine if "you" (players[0]) won
+        const userIsWinner = receiverIndex === 0; // If players[0] received money, they won
 
-        if (userIndex !== payerIndex && userIndex !== receiverIndex) {
-            return;
-        }
+        opponentNames.forEach((opponent) => {
+            if (!stats[opponent]) {
+                stats[opponent] = { matches: 0, wins: 0, losses: 0, net: 0 };
+            }
 
-        // Determine opponent
-        const opponentIndex = userIndex === payerIndex ? receiverIndex : payerIndex;
-        const opponentName = validPlayers[opponentIndex]; // Keep original name format
+            stats[opponent].matches += 1;
 
-        if (!stats[opponentName]) {
-            stats[opponentName] = { matches: 0, wins: 0, losses: 0, net: 0 };
-        }
-
-        stats[opponentName].matches += 1;
-
-        if (userIndex === receiverIndex) {
-            stats[opponentName].wins += 1;
-            stats[opponentName].net += amount;
-        } else {
-            stats[opponentName].losses += 1;
-            stats[opponentName].net = 0; // Net remains 0 for those who received payment
-        }
+            if (userIsWinner) {
+                stats[opponent].wins += 1;
+                stats[opponent].net += amount; // Net should be positive only if "you" got paid
+            } else {
+                stats[opponent].losses += 1;
+                stats[opponent].net = 0; // Opponent does not owe anything if they were the receiver
+            }
+        });
     });
 
-    console.log("Final head-to-head stats:", stats);
     return stats;
 }
+
+
 
 
 

@@ -136,49 +136,6 @@ export default function TransactionInterface({
     }
   };
 
-  // Add or update a transaction
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (amount && players.filter(Boolean).length >= 4) {
-      const numericAmount = parseFloat(amount);
-      if (Number.isNaN(numericAmount) || numericAmount < 0) return;
-
-      // Ensure winner != payer (Match-specific check)
-      if (transactionType === "Match" && receiverIndex === payerIndex) {
-        alert("Winner and Payer must be different people.");
-        return;
-      }
-
-      if (editingTransaction) {
-        // Updating an existing transaction
-        updateTransaction(
-          editingTransaction.id,
-          transactionType,
-          numericAmount,
-          players,
-          payerIndex,
-          receiverIndex,
-          transactionType === "SideBet" ? bettorWon : undefined,
-          transactionType === "SideBet" ? userSide : undefined
-        );
-        setEditingTransaction(null);
-      } else {
-        // Adding a new transaction
-        addTransaction(
-          sessionId,
-          transactionType,
-          numericAmount,
-          players,
-          payerIndex,
-          receiverIndex,
-          transactionType === "SideBet" ? bettorWon : undefined,
-          transactionType === "SideBet" ? userSide : undefined
-        );
-      }
-      resetForm();
-      setIsFormOpen(false);
-    }
-  };
 
   // Opens form in "Add Transaction" mode
   const openFormForAdd = () => {
@@ -248,9 +205,9 @@ export default function TransactionInterface({
           <div className="text-sm text-gray-600">
             Quickly log and view your Match and Side Bet transactions.
           </div>
-          <Button variant="outline" onClick={() => setIsStatsOpen(true)}>
+          {/* <Button variant="outline" onClick={() => setIsStatsOpen(true)}>
             View Stats
-          </Button>
+          </Button> */}
         </div>
       </CardHeader>
 

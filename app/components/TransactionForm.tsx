@@ -339,7 +339,7 @@ export default function TransactionForm({
 
       <DialogFooter className="mt-6 flex justify-end gap-2">
         <Button type="submit">
-          {isEditing ? "Update Match" : "Add Match"}
+          {isEditing ? "Update Transaction" : "Add Match"}
         </Button>
         <Button variant="outline" onClick={onCancel}>
           Cancel
