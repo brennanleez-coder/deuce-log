@@ -4,29 +4,19 @@ import { useState, useEffect, useRef } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Trophy, Coins, User, PlusCircle, Search } from "lucide-react";
+import { PlusCircle, Search } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Transaction, Session } from "@/types/types";
 import TransactionForm from "./TransactionForm";
 import TransactionList from "./TransactionList";
-
+import SessionStatsDialog from "./SessionStatsDialog";
 interface TransactionInterfaceProps {
   user: string;
   sessionId: string;
@@ -87,6 +77,7 @@ export default function TransactionInterface({
   const [expandedTransactionId, setExpandedTransactionId] = useState<
     string | null
   >(null);
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
 
   // Pull the players array from the currently selected session
   const selectedSessionPlayers =
@@ -250,11 +241,16 @@ export default function TransactionInterface({
     <Card className="bg-white border border-gray-200 shadow-lg rounded-xl">
       <CardHeader className="bg-gray-50 rounded-t-xl px-6 py-4">
         <CardTitle className="text-2xl font-bold text-gray-800 mb-1">
-          Transaction Manager
+          Match Manager
         </CardTitle>
-        <p className="text-sm text-gray-600">
-          Quickly log and view your Match and Side Bet transactions.
-        </p>
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-600">
+            Quickly log and view your Match and Side Bet transactions.
+          </div>
+          <Button variant="outline" onClick={() => setIsStatsOpen(true)}>
+            View Stats
+          </Button>
+        </div>
       </CardHeader>
 
       <CardContent className="p-6 space-y-6">
@@ -281,7 +277,7 @@ export default function TransactionInterface({
 
           <Button onClick={openFormForAdd} className="flex-shrink-0">
             <PlusCircle className="mr-2 h-4 w-4" />
-            Add Transaction
+            Add Match
           </Button>
         </div>
 
@@ -322,7 +318,7 @@ export default function TransactionInterface({
         <DialogContent className="max-w-xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingTransaction ? "Edit Transaction" : "Add Transaction"}
+              {editingTransaction ? "Edit Match" : "Add Match"}
             </DialogTitle>
             <DialogDescription>
               {editingTransaction
@@ -418,6 +414,11 @@ export default function TransactionInterface({
           />
         </DialogContent>
       </Dialog>
+      <SessionStatsDialog
+        isOpen={isStatsOpen}
+        onClose={() => setIsStatsOpen(false)}
+        sessionId={sessionId}
+      />
     </Card>
   );
 }

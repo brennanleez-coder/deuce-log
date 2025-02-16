@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from "react"
-import { Transaction, Session, Settlement } from "@/types/types"
+import { Transaction, Session, Settlement, HeadToHeadStats } from "@/types/types"
 
 
 
@@ -132,7 +132,7 @@ export function useMatchTracker() {
     )
   }
 
-  const markTransactionUnpaid = (transactionId: string, paidBy: string) => {
+  const markTransactionUnpaid = (transactionId: string, paidBy: string): void => {
     setTransactions((prev) =>
       prev.map((t) =>
         t.id === transactionId
@@ -338,6 +338,106 @@ export function useMatchTracker() {
     return [...userSettlements, ...otherSettlements]
   }
 
+  const getHeadToHeadForSession = (sessionId: string, userName: string): HeadToHeadStats =>{
+    const stats: HeadToHeadStats = {};
+
+    if (!userName) {
+        console.warn("User name is undefined or empty. Ensure it's correctly set.");
+        return stats;
+    }
+
+    // Normalize userName for comparison
+    const normalizedUserName = userName.trim().toLowerCase();
+
+    // Filter transactions involving user
+    const sessionMatches = transactions.filter(
+        (t) =>
+            t.sessionId === sessionId &&
+            t.type === "Match" &&
+            t.players.some(p => p.trim().toLowerCase() === normalizedUserName)
+    );
+
+    sessionMatches.forEach((match) => {
+        const { amount, payerIndex, receiverIndex, players } = match;
+
+        // Normalize players
+        const validPlayers = players.filter((p) => p.trim() !== "").map(p => p.trim());
+        const normalizedPlayers = validPlayers.map(p => p.toLowerCase());
+
+        // Find user index
+        const userIndex = normalizedPlayers.indexOf(normalizedUserName);
+
+        if (userIndex !== payerIndex && userIndex !== receiverIndex) {
+            return;
+        }
+
+        // Determine opponent
+        const opponentIndex = userIndex === payerIndex ? receiverIndex : payerIndex;
+        const opponentName = validPlayers[opponentIndex]; // Keep original name format
+
+        if (!stats[opponentName]) {
+            stats[opponentName] = { matches: 0, wins: 0, losses: 0, net: 0 };
+        }
+
+        stats[opponentName].matches += 1;
+
+        if (userIndex === receiverIndex) {
+            stats[opponentName].wins += 1;
+            stats[opponentName].net += amount;
+        } else {
+            stats[opponentName].losses += 1;
+            stats[opponentName].net = 0; // Net remains 0 for those who received payment
+        }
+    });
+
+    console.log("Final head-to-head stats:", stats);
+    return stats;
+}
+
+
+
+  const getAllTimeHeadToHead = (userName: string): HeadToHeadStats => {
+    const stats: HeadToHeadStats = {};
+
+    // 1) Filter to all MATCH transactions that involve user
+    const userMatches = transactions.filter(
+      (t) => t.type === "Match" && t.players.includes(userName)
+    );
+
+    userMatches.forEach((match) => {
+      const { amount, payerIndex, receiverIndex, players } = match;
+
+      // Identify user indexes
+      const userIndexes = players
+        .map((p, idx) => (p === userName ? idx : -1))
+        .filter((idx) => idx !== -1);
+
+      const oppIndexes = [0, 1, 2, 3].filter((idx) => !userIndexes.includes(idx));
+
+      oppIndexes.forEach((oppIdx) => {
+        const opponentName = players[oppIdx];
+        if (!stats[opponentName]) {
+          stats[opponentName] = { matches: 0, wins: 0, losses: 0, net: 0 };
+        }
+        stats[opponentName].matches += 1;
+
+        const userIsWinner =
+          (receiverIndex < payerIndex && userIndexes.includes(receiverIndex)) ||
+          (receiverIndex > payerIndex && userIndexes.includes(payerIndex));
+
+        if (userIsWinner) {
+          stats[opponentName].wins += 1;
+          stats[opponentName].net += amount;
+        } else {
+          stats[opponentName].losses += 1;
+          stats[opponentName].net -= amount;
+        }
+      });
+    });
+
+    return stats;
+  }
+
   return {
     name,
     setName,
@@ -359,7 +459,8 @@ export function useMatchTracker() {
     calculateSettlement,
     markTransactionPaid,
     markTransactionUnpaid,
-    addPlayerToSession
-
+    addPlayerToSession,
+    getHeadToHeadForSession,
+    getAllTimeHeadToHead
   }
 }

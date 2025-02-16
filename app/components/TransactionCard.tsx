@@ -1,25 +1,22 @@
 "use client";
 
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-
 import { Edit } from "lucide-react";
-
 import { MatchLayout, SideBetLayout } from "@/app/components/TransactionLayout";
 
 type TransactionCardProps = {
   transaction: any;
-  user: any;
-  toggleExpanded: any;
+  user: string;
+  toggleExpanded: (id: string) => void;
   isExpanded: boolean;
-  formatCurrency: any;
-  handleEdit: any;
-  handleMarkPaidToggle: any;
+  formatCurrency: (amount: number) => string;
+  handleEdit: (transaction: any) => void;
+  handleMarkPaidToggle: (e: React.MouseEvent, transaction: any) => void;
   bookmakerName: string;
 };
 
-const TransactionCard = ({
+export default function TransactionCard({
   transaction,
   user,
   toggleExpanded,
@@ -28,7 +25,55 @@ const TransactionCard = ({
   handleEdit,
   handleMarkPaidToggle,
   bookmakerName,
-}: TransactionCardProps) => {
+}: TransactionCardProps) {
+  // Helper: short text for who owes whom in collapsed view
+  const getCollapsedSummary = () => {
+    const {
+      type,
+      players,
+      payerIndex,
+      receiverIndex,
+      amount,
+      bettorWon,
+      userSide,
+    } = transaction;
+
+    if (type === "Match") {
+      const payer = players[payerIndex];
+      const receiver = players[receiverIndex];
+
+      if (receiver === user) {
+        return `${payer} owes you ${formatCurrency(amount)}`;
+      }
+      if (payer === user) {
+        return `You owe ${receiver} ${formatCurrency(amount)}`;
+      }
+      return `${payer} pays ${receiver} ${formatCurrency(amount)}`;
+    } else {
+      // SideBet
+      // players[4] is the “other side”
+      // userSide = "Bettor" or "Bookmaker"
+      // bettorWon = bool
+      const otherSide = players[4] || "N/A";
+
+      // If user is Bettor
+      if (userSide === "Bettor") {
+        if (bettorWon) {
+          return `${otherSide} owes you ${formatCurrency(amount)}`;
+        } else {
+          return `You owe ${otherSide} ${formatCurrency(amount)}`;
+        }
+      } else {
+        // userSide = "Bookmaker"
+        if (bettorWon) {
+          return `You owe ${otherSide} ${formatCurrency(amount)}`;
+        } else {
+          return `${otherSide} owes you ${formatCurrency(amount)}`;
+        }
+      }
+    }
+  };
+
   return (
     <Card
       key={transaction.id}
@@ -37,8 +82,9 @@ const TransactionCard = ({
       {/* Collapsed row */}
       <div
         onClick={() => toggleExpanded(transaction.id)}
-        className="cursor-pointer p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2"
+        className="cursor-pointer p-4 flex flex-col gap-1 sm:flex-row sm:justify-between sm:items-center"
       >
+        {/* Teams */}
         <div className="flex items-center space-x-2 font-semibold text-gray-700">
           <span>
             {transaction.players[0]} &amp; {transaction.players[1]}
@@ -49,17 +95,34 @@ const TransactionCard = ({
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Match or Side Bet chip */}
-          {transaction.type === "Match" ? (
-            <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
-              Match
-            </span>
-          ) : (
-            <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800">
-              Side Bet vs. {bookmakerName}
-            </span>
-          )}
+        {/* Match or SideBet chip + Paid status */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2 text-right mt-2 sm:mt-0">
+          {/* Who owes who (short summary) */}
+          <div className="text-sm text-gray-600 font-normal">
+            {getCollapsedSummary()}
+          </div>
+
+          <div className="flex flex-wrap gap-1">
+            {transaction.type === "Match" ? (
+              <span className="shrink-0 whitespace-nowrap inline-flex items-center rounded-full bg-blue-100 px-3 py-0.5 text-xs font-medium text-blue-800 mt-1 sm:mt-0">
+                Match
+              </span>
+            ) : (
+              <span className="shrink-0 whitespace-nowrap inline-flex items-center rounded-full bg-purple-100 px-3 py-0.5 text-xs font-medium text-purple-800 mt-1 sm:mt-0">
+                Side Bet vs. {bookmakerName}
+              </span>
+            )}
+
+            {transaction.paid ? (
+              <span className="shrink-0 whitespace-nowrap inline-flex items-center rounded-full bg-green-100 text-green-800 text-xs font-medium px-3 py-0.5 mt-1 sm:mt-0">
+                Paid
+              </span>
+            ) : (
+              <span className="shrink-0 whitespace-nowrap inline-flex items-center rounded-full bg-red-100 text-red-800 text-xs font-medium px-3 py-0.5 mt-1 sm:mt-0">
+                Unpaid
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -74,14 +137,14 @@ const TransactionCard = ({
                 minute: "2-digit",
               })}
             </span>
-            <div className="text-lg font-semibold text-green-700">
+            <div className="text-lg font-semibold text-slate-500">
               {formatCurrency(transaction.amount)}
             </div>
           </div>
 
-          {/* Who owes who */}
+          {/* Who owes who (detailed) */}
           {transaction.type === "Match" && (
-            <div className="mb-2 p-2 ">
+            <div className="mb-2 p-2">
               {transaction.players[transaction.receiverIndex] === user ? (
                 <span className="text-sm font-medium text-green-600">
                   {transaction.players[transaction.payerIndex]} owes you{" "}
@@ -101,7 +164,7 @@ const TransactionCard = ({
             </div>
           )}
 
-          {/* 2v2 Layout */}
+          {/* Layouts for 2v2 / side bet */}
           {transaction.type === "Match" ? (
             <MatchLayout transaction={transaction} user={user} />
           ) : (
@@ -148,6 +211,4 @@ const TransactionCard = ({
       )}
     </Card>
   );
-};
-
-export default TransactionCard;
+}

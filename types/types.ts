@@ -27,3 +27,12 @@ export interface Settlement {
     to: string
     amount: number
   }
+
+export interface HeadToHeadStats {
+  [opponent: string]: {
+    matches: number;
+    wins: number;
+    losses: number;
+    net: number; // money net from that opponent
+  };
+}
