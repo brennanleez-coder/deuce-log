@@ -17,6 +17,7 @@ import { Transaction, Session } from "@/types/types";
 import TransactionForm from "./TransactionForm";
 import TransactionList from "./TransactionList";
 import SessionStatsDialog from "./SessionStatsDialog";
+
 interface TransactionInterfaceProps {
   user: string;
   sessionId: string;
