@@ -24,7 +24,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Transaction, Session } from "@/types/types";
-import FuzzyCreatableSelect from "@/components/FuzzyCreatableSelect";
+import TransactionForm from "./TransactionForm";
 import TransactionList from "./TransactionList";
 
 interface TransactionInterfaceProps {
@@ -331,274 +331,94 @@ export default function TransactionInterface({
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-6 mt-4">
-            {/* Transaction Type Selector */}
-            <RadioGroup
-              value={transactionType}
-              onValueChange={(value) =>
-                setTransactionType(value as "Match" | "SideBet")
-              }
-              className="grid grid-cols-2 gap-4"
-            >
-              <div>
-                <RadioGroupItem
-                  value="Match"
-                  id="match"
-                  className="peer sr-only"
-                />
-                <Label
-                  htmlFor="match"
-                  className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent peer-data-[state=checked]:border-primary 
-                  [&:has([data-state=checked])]:border-primary transition-colors"
-                >
-                  <Trophy className="mb-2 h-6 w-6 text-yellow-600" />
-                  <span className="font-semibold">Match</span>
-                </Label>
-              </div>
-              <div>
-                <RadioGroupItem
-                  value="SideBet"
-                  id="sideBet"
-                  className="peer sr-only"
-                />
-                <Label
-                  htmlFor="sideBet"
-                  className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent peer-data-[state=checked]:border-primary 
-                  [&:has([data-state=checked])]:border-primary transition-colors"
-                >
-                  <Coins className="mb-2 h-6 w-6 text-emerald-600" />
-                  <span className="font-semibold">Side Bet</span>
-                </Label>
-              </div>
-            </RadioGroup>
+          <TransactionForm
+      user={user}
+      selectedSessionPlayers={selectedSessionPlayers}
+      onAddPlayerToSession={handleAddPlayerToSession}
 
-            {/* Player fields */}
-            <div className="grid gap-6 md:grid-cols-2">
-              {/* YOUR PAIR */}
-              <fieldset className="space-y-3 rounded-lg border p-4">
-                <legend className="px-2 text-sm font-medium text-gray-700">
-                  Your Pair
-                </legend>
-                <div className="space-y-2">
-                  {/* Player 1 (You) */}
-                  <Input
-                    value={user}
-                    disabled
-                    className="bg-gray-100 cursor-not-allowed"
-                  />
+      // If editing, set initial values from the transaction we’re editing
+      initialTransactionType={editingTransaction?.type ?? "Match"}
+      initialPlayers={
+        editingTransaction
+          ? [user, ...editingTransaction.players.slice(1)]
+          : [user, "", "", "", "", ""]
+      }
+      initialAmount={editingTransaction ? editingTransaction.amount.toString() : ""}
+      initialPayerIndex={editingTransaction?.payerIndex ?? 2}
+      initialReceiverIndex={editingTransaction?.receiverIndex ?? 0}
+      initialBettorWon={editingTransaction?.bettorWon ?? false}
+      initialUserSide={editingTransaction?.userSide ?? "Bettor"}
+      isEditing={Boolean(editingTransaction)}
 
-                  {/* Player 2 (Select from session players, excluding you) */}
-                  <FuzzyCreatableSelect
-                    label="Player 2"
-                    value={players[1] || ""}
-                    onChange={(newVal) => {
-                      setPlayers([user, newVal, ...players.slice(2)]);
-                    }}
-                    sessionPlayers={selectedSessionPlayers}
-                    onAddPlayer={handleAddPlayerToSession}
-                    exclude={[user]}
-                    placeholder="Select or add Player 2"
-                  />
-                </div>
-              </fieldset>
+      // Called when user clicks “Add” or “Update”
+      onSubmit={({
+        transactionType,
+        players,
+        amount,
+        payerIndex,
+        receiverIndex,
+        bettorWon,
+        userSide,
+      }: {
+        transactionType: "Match" | "SideBet";
+        players: string[];
+        amount: string;
+        payerIndex: number;
+        receiverIndex: number;
+        bettorWon: boolean;
+        userSide: "Bettor" | "Bookmaker";
+      }
+    ) => {
+        const numericAmount = parseFloat(amount);
 
-              {/* OPPONENT PAIR */}
-              <fieldset className="space-y-3 rounded-lg border p-4">
-                <legend className="px-2 text-sm font-medium text-gray-700">
-                  Opponent Pair
-                </legend>
-                <div className="space-y-2">
-                  {/* Player 3 */}
-                  <FuzzyCreatableSelect
-                    label="Player 3"
-                    value={players[2] || ""}
-                    onChange={(newVal) => {
-                      const updated = [...players];
-                      updated[2] = newVal;
-                      setPlayers(updated);
-                    }}
-                    sessionPlayers={selectedSessionPlayers}
-                    onAddPlayer={handleAddPlayerToSession}
-                    exclude={[user, players[1] ?? ""]}
-                    placeholder="Select or add Player 3"
-                  />
+        // Basic validation checks
+        if (Number.isNaN(numericAmount) || numericAmount < 0) {
+          alert("Please enter a valid amount.");
+          return;
+        }
+        // For a Match, ensure payer != winner
+        if (transactionType === "Match" && payerIndex === receiverIndex) {
+          alert("Winner and Payer must be different people.");
+          return;
+        }
 
-                  {/* Player 4 */}
-                  <FuzzyCreatableSelect
-                    label="Player 4"
-                    value={players[3] || ""}
-                    onChange={(newVal) => {
-                      const updated = [...players];
-                      updated[3] = newVal;
-                      setPlayers(updated);
-                    }}
-                    sessionPlayers={selectedSessionPlayers}
-                    onAddPlayer={handleAddPlayerToSession}
-                    exclude={[user, players[1] ?? "", players[2] ?? ""]}
-                    placeholder="Select or add Player 4"
-                  />
-                </div>
-              </fieldset>
-            </div>
+        if (editingTransaction) {
+          // Update existing transaction
+          updateTransaction(
+            editingTransaction.id,
+            transactionType,
+            numericAmount,
+            players,
+            payerIndex,
+            receiverIndex,
+            transactionType === "SideBet" ? bettorWon : undefined,
+            transactionType === "SideBet" ? userSide : undefined
+          );
+          setEditingTransaction(null);
+        } else {
+          // Add new transaction
+          addTransaction(
+            sessionId,
+            transactionType,
+            numericAmount,
+            players,
+            payerIndex,
+            receiverIndex,
+            transactionType === "SideBet" ? bettorWon : undefined,
+            transactionType === "SideBet" ? userSide : undefined
+          );
+        }
 
-            {/* SideBet options */}
-            {transactionType === "SideBet" && (
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Your Role</Label>
-                  <Select
-                    value={userSide}
-                    onValueChange={(value) =>
-                      setUserSide(value as "Bettor" | "Bookmaker")
-                    }
-                  >
-                    <SelectTrigger className="bg-white">
-                      <SelectValue placeholder="Select your role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {/* In your original code, 'Bookmaker' is never enabled.
-                          Adjust as desired: */}
-                      <SelectItem
-                        value="Bettor"
-                        className="flex items-center gap-2"
-                      >
-                        <User className="h-4 w-4" />
-                        Bettor
-                      </SelectItem>
-                      <SelectItem
-                        value="Bookmaker"
-                        className="flex items-center gap-2"
-                      >
-                        <User className="h-4 w-4" />
-                        Bookmaker
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+        // Close the dialog after saving
+        setIsFormOpen(false);
+      }}
 
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">
-                    {userSide === "Bettor" ? "Bookmaker Name" : "Bettor Name"}
-                  </Label>
-                  <FuzzyCreatableSelect
-                    label="" // We already have a <Label> above
-                    value={players[4] || ""}
-                    onChange={(newVal) => {
-                      // Update players[4] with the selected or newly created name
-                      setPlayers([...players.slice(0, 4), newVal]);
-                    }}
-                    sessionPlayers={selectedSessionPlayers}
-                    onAddPlayer={handleAddPlayerToSession}
-                    // Optionally exclude existing players so they cannot be selected again:
-                    // exclude={[user, players[1], players[2], players[3]]}
-                    placeholder={
-                      userSide === "Bettor"
-                        ? "Enter Bookmaker name"
-                        : "Enter Bettor name"
-                    }
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Amount field */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Amount</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                  $
-                </span>
-                <Input
-                  type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="0.00"
-                  step="0.01"
-                  min="0"
-                  className="pl-8"
-                />
-              </div>
-            </div>
-
-            {/* Match-specific fields */}
-            {transactionType === "Match" && (
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Winning Person</Label>
-                  <Select
-                    value={receiverIndex.toString()}
-                    onValueChange={(value) => setReceiverIndex(Number(value))}
-                  >
-                    <SelectTrigger className="bg-white">
-                      <SelectValue placeholder="Select winner" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {players.slice(0, 4).map((p, idx) => {
-                        if (!p) return null;
-                        // EXCLUDE the currently-selected payer
-                        if (idx === payerIndex) return null;
-                        return (
-                          <SelectItem key={idx} value={idx.toString()}>
-                            {idx < 2 ? `Team 1: ${p}` : `Team 2: ${p}`}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Paying Person</Label>
-                  <Select
-                    value={payerIndex.toString()}
-                    onValueChange={(value) => setPayerIndex(Number(value))}
-                  >
-                    <SelectTrigger className="bg-white">
-                      <SelectValue placeholder="Select payer" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {players.slice(0, 4).map((p, idx) => {
-                        if (!p) return null;
-                        // EXCLUDE the currently-selected winner
-                        if (idx === receiverIndex) return null;
-                        return (
-                          <SelectItem key={idx} value={idx.toString()}>
-                            {idx < 2 ? `Team 1: ${p}` : `Team 2: ${p}`}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            )}
-
-            {/* SideBet-specific fields */}
-            {transactionType === "SideBet" && (
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="flex items-center space-x-3 p-4 rounded-lg border bg-white">
-                  <Checkbox
-                    id="bettorWon"
-                    checked={bettorWon}
-                    onCheckedChange={(checked) =>
-                      setBettorWon(checked as boolean)
-                    }
-                  />
-                  <Label htmlFor="bettorWon" className="text-sm font-medium">
-                    Bettor Won the Wager
-                  </Label>
-                </div>
-              </div>
-            )}
-
-            <DialogFooter className="mt-6 flex justify-end gap-2">
-              <Button type="submit">
-                {editingTransaction ? "Update Transaction" : "Add Transaction"}
-              </Button>
-              <Button variant="outline" onClick={handleCancelEdit}>
-                Cancel
-              </Button>
-            </DialogFooter>
-          </form>
+      // Called when user clicks “Cancel”
+      onCancel={() => {
+        setEditingTransaction(null);
+        setIsFormOpen(false);
+      }}
+    />
         </DialogContent>
       </Dialog>
     </Card>

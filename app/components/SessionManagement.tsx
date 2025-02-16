@@ -1,68 +1,29 @@
 "use client";
 
 import { useState } from "react";
-import { Session } from "@/types/types"
+import { Session } from "@/types/types";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { CheckCircle, Trash2, Plus } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
-
-
-const containerVariants = {
-  hidden: {
-    opacity: 0,
-    scale: 0.95,
-  },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    transition: {
-      when: "beforeChildren",      
-      staggerChildren: 0.08,      
-      delayChildren: 0.1,         
-    },
-  },
-  exit: {
-    opacity: 0,
-    scale: 0.95,
-    transition: { duration: 0.2 },
-  },
-};
-
-const itemVariants = {
-  hidden: {
-    opacity: 0,
-    y: 20,
-    scale: 0.95,
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      type: "spring",
-      stiffness: 180,
-      damping: 20,
-    },
-  },
-  exit: {
-    opacity: 0,
-    y: 20,
-    scale: 0.95,
-    transition: { duration: 0.2 },
-  },
-};
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { CheckCircle, Trash2, Plus, Search } from "lucide-react";
 
 interface SessionManagementProps {
   sessions: Session[];
@@ -87,16 +48,27 @@ export default function SessionManagement({
 }: SessionManagementProps) {
   const [newSessionName, setNewSessionName] = useState("");
   const [newCourtFee, setNewCourtFee] = useState("");
+  const [newPlayers, setNewPlayers] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newPlayers, setNewPlayers] = useState<string>("");
 
-  const [formErrors, setFormErrors] = useState<{ name?: string; fee?: string; userName?: string }>({});
+  const [searchTerm, setSearchTerm] = useState("");
   const [isEditingName, setIsEditingName] = useState(false);
 
-  // Determine if this is the first session
+  const [formErrors, setFormErrors] = useState<{
+    userName?: string;
+    name?: string;
+    fee?: string;
+  }>({});
+
+  // Determine if this is the very first session
   const isFirstSession = sessions.length === 0;
 
-  // Validate the user's name
+  // Filter sessions by search term (case-insensitive, partial match)
+  const filteredSessions = sessions.filter((session) =>
+    session.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Validate user's name
   const validateUserName = () => {
     if (!name.trim()) {
       setFormErrors((prev) => ({ ...prev, userName: "Name is required" }));
@@ -106,7 +78,7 @@ export default function SessionManagement({
     return true;
   };
 
-  // Handle name submission with validation
+  // Handle name submission
   const handleNameSubmit = () => {
     if (validateUserName()) {
       setName(name.trim());
@@ -114,39 +86,53 @@ export default function SessionManagement({
     }
   };
 
-  // Validate the form for creating a session
+  // Validate the "New Session" form
   const validateForm = () => {
-    const errors: { name?: string; fee?: string; userName?: string } = {};
-    if (!newSessionName.trim()) errors.name = "Session name is required";
+    const errors: { userName?: string; name?: string; fee?: string } = {};
     if (isFirstSession && !name.trim()) errors.userName = "Name is required";
+    if (!newSessionName.trim()) errors.name = "Session name is required";
+
     const feeValue = Number.parseFloat(newCourtFee);
     if (isNaN(feeValue) || feeValue < 0) {
       errors.fee = "Valid court fee is required";
     }
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-// Handle form submission for creating a session
+  // Submit the "New Session" form
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
-      if (isFirstSession) {
-        setName(name.trim());
-      }
-      const playersArray = newPlayers.split(',').map(player => player.trim()).filter(player => player);
-      createSession(newSessionName.trim(), Number.parseFloat(newCourtFee), playersArray);
-      setNewSessionName("");
-      setNewCourtFee("");
-      setNewPlayers(""); // Reset player names
-      setIsModalOpen(false);
-      setFormErrors({});
+    if (!validateForm()) return;
+
+    // If it's the first session, ensure the user name is set
+    if (isFirstSession) {
+      setName(name.trim());
     }
+
+    // Create the new session
+    const playersArray = newPlayers
+      .split(",")
+      .map((player) => player.trim())
+      .filter((player) => player);
+    createSession(
+      newSessionName.trim(),
+      Number.parseFloat(newCourtFee),
+      playersArray
+    );
+
+    // Clear form
+    setNewSessionName("");
+    setNewCourtFee("");
+    setNewPlayers("");
+    setFormErrors({});
+    setIsModalOpen(false);
   };
 
-  // Handle session deletion
+  // Confirm & delete a session
   const handleDeleteSession = (sessionId: string, e: React.MouseEvent) => {
-    e.stopPropagation(); 
+    e.stopPropagation();
     const confirmed = window.confirm(
       "Are you sure you want to delete this session?"
     );
@@ -155,9 +141,9 @@ export default function SessionManagement({
     }
   };
 
-  // Format date
-  const formatDate = (dateString: number) => {
-    const date = new Date(dateString);
+  // Format the session date
+  const formatDate = (dateNumber: number) => {
+    const date = new Date(dateNumber);
     return date.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
@@ -168,113 +154,119 @@ export default function SessionManagement({
 
   return (
     <Card className="bg-white border border-gray-200 shadow-lg rounded-xl">
-      {/* HEADER */}
-      <CardHeader className="flex flex-col gap-2 px-6 py-4 bg-gray-50 rounded-t-xl">
-        <CardTitle className="flex justify-between items-center w-full">
-          <span className="text-lg font-bold text-gray-800">Sessions</span>
-
-          {/* Normal "New Session" button - hidden on small screens */}
-          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-            <div className="hidden md:block">
+      {/* HEADER with "Sessions" title + "New Session" button (side by side) */}
+      <CardHeader className="bg-gray-50 rounded-t-xl px-6 py-4 flex items-center justify-between">
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <CardTitle className="w-full text-xl font-bold text-gray-800 flex items-center justify-between">
+              <div>Sessions</div>
               <DialogTrigger asChild>
-                <Button variant="default" className="gap-2">
+                <Button className="gap-2">
                   <Plus size={16} />
                   New Session
                 </Button>
               </DialogTrigger>
-            </div>
+          </CardTitle>
 
-            <DialogContent className="rounded-lg">
-              <DialogHeader>
-                <DialogTitle className="text-gray-800">
-                  Create New Session
-                </DialogTitle>
-                <DialogDescription className="text-gray-600">
-                  Start tracking your matches by creating a new session.
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {isFirstSession && (
-                  <div className="space-y-2">
-                    <Label htmlFor="userName" className="text-gray-700">
-                      Your Name
-                    </Label>
-                    <Input
-                      id="userName"
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Enter your name"
-                      className={formErrors.userName ? "border-red-500" : ""}
-                      autoFocus
-                    />
-                    {formErrors.userName && (
-                      <p className="text-sm text-red-500">{formErrors.userName}</p>
-                    )}
-                  </div>
+          {/* Button to open "New Session" dialog */}
+
+          {/* The "Create Session" Dialog */}
+          <DialogContent className="max-w-lg rounded-lg">
+            <DialogHeader>
+              <DialogTitle className="text-gray-800">
+                Create New Session
+              </DialogTitle>
+              <DialogDescription className="text-gray-600">
+                Start tracking your matches by creating a new session.
+              </DialogDescription>
+            </DialogHeader>
+
+            <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+              {/* Only show "Your Name" field if it's the first session */}
+              {isFirstSession && (
+                <div>
+                  <Label htmlFor="userNameModal" className="text-gray-700">
+                    Your Name
+                  </Label>
+                  <Input
+                    id="userNameModal"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter your name"
+                    className={formErrors.userName ? "border-red-500" : ""}
+                    autoFocus
+                  />
+                  {formErrors.userName && (
+                    <p className="text-sm text-red-500 mt-1">
+                      {formErrors.userName}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div>
+                <Label htmlFor="sessionName" className="text-gray-700">
+                  Session Name
+                </Label>
+                <Input
+                  id="sessionName"
+                  type="text"
+                  value={newSessionName}
+                  onChange={(e) => setNewSessionName(e.target.value)}
+                  placeholder="Friday Night Session"
+                  className={formErrors.name ? "border-red-500" : ""}
+                />
+                {formErrors.name && (
+                  <p className="text-sm text-red-500 mt-1">{formErrors.name}</p>
                 )}
-                <div className="space-y-2">
-                  <Label htmlFor="sessionName" className="text-gray-700">
-                    Session Name
-                  </Label>
-                  <Input
-                    id="sessionName"
-                    type="text"
-                    value={newSessionName}
-                    onChange={(e) => setNewSessionName(e.target.value)}
-                    placeholder="Friday Night Session"
-                    className={formErrors.name ? "border-red-500" : ""}
-                  />
-                  {formErrors.name && (
-                    <p className="text-sm text-red-500">{formErrors.name}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="courtFee" className="text-gray-700">
-                    Court Fee
-                  </Label>
-                  <Input
-                    id="courtFee"
-                    type="number"
-                    value={newCourtFee}
-                    onChange={(e) => setNewCourtFee(e.target.value)}
-                    placeholder="30.00"
-                    step="0.01"
-                    min="0"
-                    className={formErrors.fee ? "border-red-500" : ""}
-                  />
-                  {formErrors.fee && (
-                    <p className="text-sm text-red-500">{formErrors.fee}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="players" className="text-gray-700">
-                    Players (comma-separated)
-                  </Label>
-                  <Input
-                    id="players"
-                    type="text"
-                    value={newPlayers}
-                    onChange={(e) => setNewPlayers(e.target.value)}
-                    placeholder="Player1, Player2, Player3"
-                  />
-                </div>
-                <Button type="submit" className="w-full gap-2">
-                  <Plus size={16} />
-                  Create Session
-                </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </CardTitle>
+              </div>
+
+              <div>
+                <Label htmlFor="courtFee" className="text-gray-700">
+                  Court Fee
+                </Label>
+                <Input
+                  id="courtFee"
+                  type="number"
+                  value={newCourtFee}
+                  onChange={(e) => setNewCourtFee(e.target.value)}
+                  placeholder="30.00"
+                  step="0.01"
+                  min="0"
+                  className={formErrors.fee ? "border-red-500" : ""}
+                />
+                {formErrors.fee && (
+                  <p className="text-sm text-red-500 mt-1">{formErrors.fee}</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="playersInput" className="text-gray-700">
+                  Players (comma-separated)
+                </Label>
+                <Input
+                  id="playersInput"
+                  type="text"
+                  value={newPlayers}
+                  onChange={(e) => setNewPlayers(e.target.value)}
+                  placeholder="Player1, Player2, Player3"
+                />
+              </div>
+
+              <Button type="submit" className="w-full gap-2">
+                <Plus size={16} />
+                Create Session
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </CardHeader>
 
-      {/* CONTENT */}
-      <CardContent className="p-6">
-        {/* Name Edit Section */}
+      <CardContent className="p-6 space-y-6">
+        {/* Name Edit Section (only show if not the first session) */}
         {!isFirstSession && (
           <div className="mb-6 rounded-lg border border-gray-200 p-4 bg-gray-50">
-            <Label htmlFor="userName" className="text-gray-700 font-semibold">
+            <Label htmlFor="userName" className="font-semibold text-gray-700">
               Your Name
             </Label>
             <div className="mt-2">
@@ -285,7 +277,7 @@ export default function SessionManagement({
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className={formErrors.userName ? "border-red-500" : "bg-white"}
+                    className={formErrors.userName ? "border-red-500" : ""}
                     autoFocus
                   />
                   <Button variant="secondary" onClick={handleNameSubmit}>
@@ -301,19 +293,36 @@ export default function SessionManagement({
                     className="bg-gray-100"
                     disabled
                   />
-                  <Button variant="outline" onClick={() => setIsEditingName(true)}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsEditingName(true)}
+                  >
                     Edit
                   </Button>
                 </div>
               )}
               {formErrors.userName && (
-                <p className="text-sm text-red-500">{formErrors.userName}</p>
+                <p className="text-sm text-red-500 mt-1">
+                  {formErrors.userName}
+                </p>
               )}
             </div>
           </div>
         )}
 
-        {/* Sessions List */}
+        {/* Search field */}
+        <div className="relative max-w-sm w-full mb-4">
+          <Input
+            type="text"
+            placeholder="Search sessions..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pr-10"
+          />
+          <Search className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+        </div>
+
+        {/* Sessions */}
         {sessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-8 text-center rounded-lg bg-gray-100">
             <p className="text-gray-500">No sessions created yet</p>
@@ -322,102 +331,94 @@ export default function SessionManagement({
             </p>
           </div>
         ) : (
-          
-          <motion.div
-            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-          >
-            <AnimatePresence>
-              {sessions.map((session) => {
-                const netGain = calculateNetGain(session.id);
-                const isSelected = selectedSession === session.id;
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-1/3 min-w-[120px]">
+                    Session Name
+                  </TableHead>
+                  <TableHead className="w-1/4 min-w-[100px]">
+                    Created At
+                  </TableHead>
+                  <TableHead className="w-1/4 min-w-[100px]">
+                    Court Fee
+                  </TableHead>
+                  <TableHead className="w-1/4 min-w-[100px]">
+                    Net Gain
+                  </TableHead>
+                  <TableHead className="text-right min-w-[60px]" />
+                </TableRow>
+              </TableHeader>
 
-                return (
-                  
-                  <motion.div
-                    key={session.id}
-                    variants={itemVariants}
-                    layout
-                    exit="exit" 
-                  >
-                    <Card
+              <TableBody>
+                {filteredSessions.map((session) => {
+                  const netGain = calculateNetGain(session.id);
+                  const isSelected = selectedSession === session.id;
+
+                  return (
+                    <TableRow
+                      key={session.id}
                       onClick={() => setSelectedSession(session.id)}
-                      className={`relative cursor-pointer transition-all duration-200 group 
-                        ${
-                          isSelected
-                            ? "border-blue-500 ring-2 ring-blue-500/20"
-                            : "border-gray-200 hover:shadow-md hover:border-blue-200"
-                        }`}
+                      className={`cursor-pointer hover:bg-gray-50 ${
+                        isSelected ? "bg-blue-50" : ""
+                      }`}
                     >
-                      {/* SELECTED ICON */}
-                      {isSelected && (
-                        <CheckCircle className="absolute top-2 right-2 w-5 h-5 text-blue-500" />
-                      )}
-                      <CardContent className="p-4">
-                        <div className="space-y-3">
-                          <div className="flex items-start justify-between">
-                            <h3 className="font-semibold text-gray-800 truncate">
-                              {session.name}
-                            </h3>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => handleDeleteSession(session.id, e)}
-                              className="opacity-60 hover:opacity-100"
-                            >
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          </div>
-                          <p className="text-sm text-gray-500">
-                            {formatDate(session.createdAt)}
-                          </p>
-                          <div className="flex items-center justify-between">
-                            <div className="text-sm text-gray-600">
-                              <span className="font-medium">Court Fee:</span>{" "}
-                              {session.courtFee.toLocaleString("en-US", {
-                                style: "currency",
-                                currency: "USD",
-                              })}
-                            </div>
-                            {/* NET GAIN/LOSS BADGE */}
-                            <span
-                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium 
-                                ${
-                                  netGain >= 0
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-red-100 text-red-800"
-                                }`}
-                            >
-                              {netGain.toLocaleString("en-US", {
-                                style: "currency",
-                                currency: "USD",
-                              })}
-                            </span>
-                          </div>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {isSelected && (
+                            <CheckCircle className="w-4 h-4 text-blue-500" />
+                          )}
+                          <span className="truncate">{session.name}</span>
                         </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          </motion.div>
+                      </TableCell>
+                      <TableCell>{formatDate(session.createdAt)}</TableCell>
+                      <TableCell>
+                        {session.courtFee.toLocaleString("en-US", {
+                          style: "currency",
+                          currency: "USD",
+                        })}
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                            netGain >= 0
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {netGain.toLocaleString("en-US", {
+                            style: "currency",
+                            currency: "USD",
+                          })}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => handleDeleteSession(session.id, e)}
+                          className="hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+            {filteredSessions.length === 0 && (
+              <div className="p-4 text-center text-sm text-gray-500">
+                No sessions match your search.
+              </div>
+            )}
+          </div>
         )}
       </CardContent>
 
-      {/* Floating Action Button for small screens */}
-      <div className="md:hidden fixed bottom-16 right-4 z-50">
-        <Button
-          variant="outline"
-          className="h-14 w-14 rounded-full flex items-center justify-center shadow-lg"
-          onClick={() => setIsModalOpen(true)}
-        >
-          <Plus className="h-5 w-5" />
-        </Button>
-      </div>
+      {/* We have removed the floating action button for "New Session" entirely */}
+      {/* If you still need a floating button for "Add Transaction," you can place it below. */}
     </Card>
   );
 }
