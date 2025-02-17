@@ -1,3 +1,4 @@
+'use client'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, DollarSign, Banknote } from "lucide-react"; // Example icons
 

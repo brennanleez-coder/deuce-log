@@ -1,3 +1,4 @@
+'use client'
 import TransactionCard from "./TransactionCard";
 import { Transaction } from "@/types/types";
 type TransactionListProps = {

@@ -1,3 +1,4 @@
+'use client'
 import { Transaction, Session } from "@/types/types";
 
 type LayoutProps = {
