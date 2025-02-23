@@ -1,59 +1,109 @@
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL") // from your .env, e.g. postgresql://...
-}
-
 generator client {
   provider = "prisma-client-js"
 }
 
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
 model User {
-  id             String   @id @default(uuid())
-  name           String?
-  email          String?  @unique
-  emailVerified  DateTime?
-  image          String?
-  // Relation fields
-  accounts       Account[]
-  sessions       Session[]
+  id                String             @id @default(uuid())
+  name              String?
+  email             String?            @unique
+  emailVerified     DateTime?
+  image             String?
+  accounts          Account[]
+  sessions          Session[]
+  badmintonSessions BadmintonSession[]
+  transactions      Transaction[]
 }
 
 model Account {
-  id               String   @id @default(uuid())
-  userId           String
-  type             String
-  provider         String
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
   providerAccountId String
-  refresh_token    String?
-  access_token     String?
-  expires_at       Int?
-  token_type       String?
-  scope            String?
-  id_token         String?
-  session_state    String?
-
-  // Relation
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
 
 model Session {
-  id            String   @id @default(uuid())
-  sessionToken  String   @unique
-  userId        String
-  expires       DateTime
-
-  // Relation
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {
-  identifier  String
-  token       String   @unique
-  expires     DateTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@unique([identifier, token])
+}
+
+model BadmintonSession {
+  id           String        @id @default(uuid())
+  name         String
+  createdAt    DateTime      @default(now())
+  courtFee     Float
+  players      String[]      @default([])
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+}
+
+model Transaction {
+  id           String   @id @default(uuid())
+  sessionId    String
+  userId       String
+  type         TransactionType
+  amount       Float
+  team1        String[]
+  team2        String[]
+  timestamp    DateTime @default(now())
+  paid         Boolean @default(false)
+  paidBy       String?
+  session      BadmintonSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Match Transaction Fields
+  payer        String? // Someone from team1 or team2
+  receiver     String? // Someone from team1 or team2
+
+  // SideBet Transaction Fields
+  bettor       String? // Player who placed the bet
+  bookmaker    String? // Player who took the bet
+  bettorWon    Boolean?
+
+  settlement   Settlement? @relation("TransactionSettlement") // One-to-One Relation
+}
+
+model Settlement {
+  id        String   @id @default(uuid())
+  from      String // The player who owes money
+  to        String // The player who receives money
+  amount    Float // Amount settled
+  timestamp DateTime @default(now()) // Time of settlement
+
+  transactionId String      @unique
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade, name: "TransactionSettlement") // One-to-One Relation
+}
+
+enum TransactionType {
+  MATCH
+  SIDEBET
 }

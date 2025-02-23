@@ -1,214 +1,181 @@
 "use client";
-
-import { Card, CardContent } from "@/components/ui/card";
+import { useState } from "react";
+import {
+  CheckCircle,
+  XCircle,
+  Users,
+  DollarSign,
+  Pencil,
+  Check,
+} from "lucide-react";
+import { Transaction } from "@/types/types";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Edit } from "lucide-react";
-import { MatchLayout, SideBetLayout } from "@/app/components/TransactionLayout";
+import TransactionForm from "@/app/components/TransactionForm";
+import { useMatchTracker } from "@/hooks/useMatchTracker";
 
-type TransactionCardProps = {
-  transaction: any;
-  user: string;
-  toggleExpanded: (id: string) => void;
-  isExpanded: boolean;
-  formatCurrency: (amount: number) => string;
-  handleEdit: (transaction: any) => void;
-  handleMarkPaidToggle: (e: React.MouseEvent, transaction: any) => void;
-  bookmakerName: string;
-};
+interface TransactionCardProps {
+  transaction: Transaction;
+}
 
-export default function TransactionCard({
-  transaction,
-  user,
-  toggleExpanded,
-  isExpanded,
-  formatCurrency,
-  handleEdit,
-  handleMarkPaidToggle,
-  bookmakerName,
-}: TransactionCardProps) {
-  // Helper: short text for who owes whom in collapsed view
-  const getCollapsedSummary = () => {
-    const {
-      type,
-      players,
-      payerIndex,
-      receiverIndex,
-      amount,
-      bettorWon,
-      userSide,
-    } = transaction;
+export default function TransactionCard({ transaction }: TransactionCardProps) {
+  const { userId, name, editTransaction } = useMatchTracker();
+  const [isEditing, setIsEditing] = useState(false);
+  const [isMarkingPaid, setIsMarkingPaid] = useState(false);
 
-    if (type === "Match") {
-      const payer = players[payerIndex];
-      const receiver = players[receiverIndex];
+  const handleEdit = async (updatedTransaction: Transaction) => {
+    await editTransaction(updatedTransaction);
+    setIsEditing(false);
+  };
 
-      if (receiver === user) {
-        return `${payer} owes you ${formatCurrency(amount)}`;
-      }
-      if (payer === user) {
-        return `You owe ${receiver} ${formatCurrency(amount)}`;
-      }
-      return `${payer} pays ${receiver} ${formatCurrency(amount)}`;
-    } else {
-      // SideBet
-      // players[4] is the “other side”
-      // userSide = "Bettor" or "Bookmaker"
-      // bettorWon = bool
-      const otherSide = players[4] || "N/A";
-
-      // If user is Bettor
-      if (userSide === "Bettor") {
-        if (bettorWon) {
-          return `${otherSide} owes you ${formatCurrency(amount)}`;
-        } else {
-          return `You owe ${otherSide} ${formatCurrency(amount)}`;
-        }
-      } else {
-        // userSide = "Bookmaker"
-        if (bettorWon) {
-          return `You owe ${otherSide} ${formatCurrency(amount)}`;
-        } else {
-          return `${otherSide} owes you ${formatCurrency(amount)}`;
-        }
-      }
+  const handleMarkAsPaid = async () => {
+    setIsMarkingPaid(true);
+    try {
+      await editTransaction({
+        ...transaction,
+        paid: true,
+        paidBy: "", // Mark as paid by current user
+      });
+    } catch (error) {
+      console.error("Error marking as paid:", error);
+    } finally {
+      setIsMarkingPaid(false);
     }
   };
 
+  // Determine the winning team
+  const winningTeam = transaction.team1[0] === transaction.payer ? "team2" : "team1";
+
   return (
-    <Card
-      key={transaction.id}
-      className="border-gray-200 hover:shadow-sm transition group"
-    >
-      {/* Collapsed row */}
-      <div
-        onClick={() => toggleExpanded(transaction.id)}
-        className="cursor-pointer p-4 flex flex-col gap-1 sm:flex-row sm:justify-between sm:items-center"
-      >
-        {/* Teams */}
-        <div className="flex items-center space-x-2 font-semibold text-gray-700">
-          <span>
-            {transaction.players[0]} &amp; {transaction.players[1]}
-          </span>
-          <span className="text-sm text-gray-400">VS</span>
-          <span>
-            {transaction.players[2]} &amp; {transaction.players[3]}
-          </span>
+    <div className="bg-white shadow-md rounded-lg p-4 border border-gray-200 hover:shadow-lg transition">
+      <div className="flex justify-between items-center mb-2">
+        {/* Transaction Type */}
+        <div className="flex items-center gap-2">
+          <Users className="w-5 h-5 text-blue-600" />
+          <p className="font-semibold text-sm text-gray-800 capitalize">
+            {transaction.type.toLowerCase()}
+          </p>
         </div>
 
-        {/* Match or SideBet chip + Paid status */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2 text-right mt-2 sm:mt-0">
-          {/* Who owes who (short summary) */}
-          <div className="text-sm text-gray-600 font-normal">
-            {getCollapsedSummary()}
-          </div>
+        {/* Edit Button */}
+        <Dialog open={isEditing} onOpenChange={setIsEditing}>
+          <DialogTrigger asChild>
+            <button className="text-gray-500 hover:text-gray-700 transition">
+              <Pencil className="w-5 h-5" />
+            </button>
+          </DialogTrigger>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Edit Transaction</DialogTitle>
+            </DialogHeader>
+            <TransactionForm
+              userId={userId}
+              name={name}
+              sessionId={transaction.sessionId}
+              transaction={transaction}
+              onSubmit={handleEdit}
+              isEditing={true}
+            />
+          </DialogContent>
+        </Dialog>
+      </div>
 
-          <div className="flex flex-wrap gap-1">
-            {transaction.type === "Match" ? (
-              <span className="shrink-0 whitespace-nowrap inline-flex items-center rounded-full bg-blue-100 px-3 py-0.5 text-xs font-medium text-blue-800 mt-1 sm:mt-0">
-                Match
-              </span>
-            ) : (
-              <span className="shrink-0 whitespace-nowrap inline-flex items-center rounded-full bg-purple-100 px-3 py-0.5 text-xs font-medium text-purple-800 mt-1 sm:mt-0">
-                Side Bet vs. {bookmakerName}
-              </span>
-            )}
+      {/* Teams Section */}
+      <div className="grid grid-cols-2 gap-6 border-t pt-3">
+        {/* Team 1 */}
+        <div>
+          <p className="text-sm font-semibold text-gray-700">Team 1</p>
+          <ul className="mt-1 space-y-0.5">
+            {transaction.team1.map((player, index) => (
+              <li
+                key={`team1-${index}`}
+                className={`text-sm ${
+                  winningTeam === "team1" ? "text-green-700 font-bold" : "text-gray-600"
+                }`}
+              >
+                {player}
+              </li>
+            ))}
+          </ul>
+        </div>
 
-            {transaction.paid ? (
-              <span className="shrink-0 whitespace-nowrap inline-flex items-center rounded-full bg-green-100 text-green-800 text-xs font-medium px-3 py-0.5 mt-1 sm:mt-0">
-                Paid
-              </span>
-            ) : (
-              <span className="shrink-0 whitespace-nowrap inline-flex items-center rounded-full bg-red-100 text-red-800 text-xs font-medium px-3 py-0.5 mt-1 sm:mt-0">
-                Unpaid
-              </span>
-            )}
-          </div>
+        {/* Team 2 */}
+        <div>
+          <p className="text-sm font-semibold text-gray-700">Team 2</p>
+          <ul className="mt-1 space-y-0.5">
+            {transaction.team2.map((player, index) => (
+              <li
+                key={`team2-${index}`}
+                className={`text-sm ${
+                  winningTeam === "team2" ? "text-green-700 font-bold" : "text-gray-600"
+                }`}
+              >
+                {player}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
 
-      {/* Expanded details */}
-      {isExpanded && (
-        <CardContent className="p-4 border-t bg-gray-50">
-          {/* Timestamp + Amount */}
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-gray-500">
-              {new Date(transaction.timestamp).toLocaleTimeString("en-US", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </span>
-            <div className="text-lg font-semibold text-slate-500">
-              {formatCurrency(transaction.amount)}
-            </div>
-          </div>
+      {/* Payer → Receiver Sentence */}
+      <div className="border-t pt-3 mt-3 flex items-center gap-2 text-sm">
+        <p className="text-gray-700">💸</p>
+        <span className="text-red-600 font-semibold">{transaction.payer}</span>
+        <span className="text-gray-700">pays</span>
+        <span className="text-green-600 font-semibold">{transaction.receiver}</span>
+      </div>
 
-          {/* Who owes who (detailed) */}
-          {transaction.type === "Match" && (
-            <div className="mb-2 p-2">
-              {transaction.players[transaction.receiverIndex] === user ? (
-                <span className="text-sm font-medium text-green-600">
-                  {transaction.players[transaction.payerIndex]} owes you{" "}
-                  {formatCurrency(transaction.amount)}
-                </span>
-              ) : transaction.players[transaction.payerIndex] === user ? (
-                <span className="text-sm font-medium text-red-600">
-                  You owe {transaction.players[transaction.receiverIndex]}{" "}
-                  {formatCurrency(transaction.amount)}
-                </span>
-              ) : (
-                <span className="text-sm text-gray-600">
-                  {transaction.players[transaction.payerIndex]} pays{" "}
-                  {transaction.players[transaction.receiverIndex]}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Layouts for 2v2 / side bet */}
-          {transaction.type === "Match" ? (
-            <MatchLayout transaction={transaction} user={user} />
+      {/* Payment Status & Amount */}
+      <div className="flex justify-between items-center border-t pt-3 mt-3">
+        <div className="flex items-center gap-2">
+          {transaction.paid ? (
+            <p className="text-green-700 flex items-center gap-1 text-sm">
+              <CheckCircle className="w-5 h-5" />
+              <span>Paid by {transaction.paidBy}</span>
+            </p>
           ) : (
-            <SideBetLayout transaction={transaction} user={user} />
+            <p className="text-red-700 flex items-center gap-1 text-sm">
+              <XCircle className="w-5 h-5" />
+              <span>Not Paid</span>
+            </p>
           )}
+        </div>
 
-          {/* Actions */}
-          <div className="mt-4 flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-blue-600 hover:text-blue-800 px-0"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleEdit(transaction);
-              }}
-            >
-              <Edit className="h-4 w-4 mr-2" />
-              Edit
-            </Button>
+        <div className="flex items-center gap-2">
+          <DollarSign className="w-5 h-5 text-gray-700" />
+          <p
+            className={`text-sm font-semibold ${
+              transaction.payer === transaction.team1[0]
+                ? "text-red-700"
+                : transaction.receiver === transaction.team1[0]
+                ? "text-green-700"
+                : "text-gray-600"
+            }`}
+          >
+            {transaction.payer === transaction.team1[0] ? "-" : "+"}${transaction.amount}
+          </p>
+        </div>
+      </div>
 
-            {transaction.paid ? (
-              <>
-                <span className="text-sm text-green-600 font-medium">Paid</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={(e) => handleMarkPaidToggle(e, transaction)}
-                >
-                  Unmark as Paid
-                </Button>
-              </>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(e) => handleMarkPaidToggle(e, transaction)}
-              >
-                Mark as Paid
-              </Button>
-            )}
-          </div>
-        </CardContent>
+      {/* Mark as Paid Button */}
+      {!transaction.paid && (
+        <div className="mt-3 flex justify-end">
+          <Button
+            onClick={handleMarkAsPaid}
+            disabled={isMarkingPaid}
+            className="flex items-center gap-2 px-3 py-2 text-sm font-medium bg-green-600 hover:bg-green-700 text-white rounded-md transition"
+          >
+            {isMarkingPaid ? "Marking..." : "Mark as Paid"}
+            <Check className="w-4 h-4" />
+          </Button>
+        </div>
       )}
-    </Card>
+    </div>
   );
 }

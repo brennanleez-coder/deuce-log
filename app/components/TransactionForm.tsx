@@ -1,12 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -14,337 +12,390 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Coins, Trophy, User } from "lucide-react";
-import FuzzyCreatableSelect from "@/components/FuzzyCreatableSelect";
+import { DollarSign, Trophy, User, Users, Coins } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Transaction } from "@/types/types";
+
+// Create a type alias from the zod schema
+const transactionSchema = z.object({
+  sessionId: z.string().min(1, "Session ID is required"),
+  type: z.enum(["MATCH", "SIDEBET"]),
+  amount: z.number().min(1, "Amount must be greater than 0"),
+  team1Player1: z.string().min(1, "Team 1 must have at least one member"),
+  team1Player2: z.string().optional(),
+  team2Player1: z.string().min(1, "Team 2 must have at least one member"),
+  team2Player2: z.string().optional(),
+  payer: z.string().optional(),
+  receiver: z.string().optional(),
+  bettor: z.string().optional(),
+  bookmaker: z.string().optional(),
+  bettorWon: z.boolean().optional(),
+  // Allow empty string as default, but require non-empty on validation.
+  winningTeam: z
+    .union([z.enum(["team1", "team2"]), z.literal("")])
+    .refine((val) => val !== "", { message: "Please select a winning team" }),
+});
+
+type TransactionFormData = z.infer<typeof transactionSchema>;
 
 interface TransactionFormProps {
-  // Required data
-  user: string; // The current user’s name
-  selectedSessionPlayers: string[]; // Players in the current session
-  onAddPlayerToSession: (newPlayerName: string) => void;
-
-  // State & Handlers
-  initialTransactionType?: "Match" | "SideBet";
-  initialPlayers?: string[]; // e.g. [user, '', '', '', '']
-  initialAmount?: string;
-  initialPayerIndex?: number;
-  initialReceiverIndex?: number;
-  initialBettorWon?: boolean;
-  initialUserSide?: "Bettor" | "Bookmaker";
-
-  onSubmit: (formData: {
-    transactionType: "Match" | "SideBet";
-    players: string[];
-    amount: string;
-    payerIndex: number;
-    receiverIndex: number;
-    bettorWon: boolean;
-    userSide: "Bettor" | "Bookmaker";
-  }) => void;
-  onCancel: () => void;
-  isEditing?: boolean; // If true, the button text = "Update Transaction", else "Add Transaction"
+  userId: string;
+  name: string;
+  sessionId: string;
+  onSubmit: (transaction: Transaction) => void;
+  transaction?: Transaction | null;
+  isEditing?: boolean;
 }
 
-export default function TransactionForm({
-  user,
-  selectedSessionPlayers,
-  onAddPlayerToSession,
-  initialTransactionType = "Match",
-  initialPlayers = [],
-  initialAmount = "",
-  initialPayerIndex = 2,
-  initialReceiverIndex = 0,
-  initialBettorWon = false,
-  initialUserSide = "Bettor",
+const TransactionForm = ({
+  userId,
+  name,
+  sessionId,
   onSubmit,
-  onCancel,
+  transaction = null,
   isEditing = false,
-}: TransactionFormProps) {
-  // Local form state
-  const [transactionType, setTransactionType] = useState<"Match" | "SideBet">(
-    initialTransactionType
-  );
-  const [players, setPlayers] = useState<string[]>(initialPlayers);
-  const [amount, setAmount] = useState(initialAmount);
-  const [payerIndex, setPayerIndex] = useState(initialPayerIndex);
-  const [receiverIndex, setReceiverIndex] = useState(initialReceiverIndex);
-  const [bettorWon, setBettorWon] = useState(initialBettorWon);
-  const [userSide, setUserSide] = useState<"Bettor" | "Bookmaker">(
-    initialUserSide
-  );
+}: TransactionFormProps) => {
+  const {
+    register,
+    getValues,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<TransactionFormData>({
+    resolver: zodResolver(transactionSchema),
+    defaultValues: isEditing && transaction
+      ? {
+          sessionId,
+          type: transaction.type,
+          amount: transaction.amount,
+          team1Player1: transaction.team1[0] || "",
+          team1Player2: transaction.team1[1] || "",
+          team2Player1: transaction.team2[0] || "",
+          team2Player2: transaction.team2[1] || "",
+          payer: transaction.payer || "",
+          receiver: transaction.receiver || "",
+          bettor: transaction.bettor || name, // Default bettor to the logged-in user
+          bookmaker: transaction.bookmaker || "",
+          bettorWon: transaction.bettorWon ?? false, // Ensure boolean default
+          winningTeam: transaction.payer === transaction.team1[0] ? "team2" : "team1",
+        }
+      : {
+          sessionId,
+          type: "MATCH",
+          amount: 0,
+          team1Player1: name,
+          team1Player2: "",
+          team2Player1: "",
+          team2Player2: "",
+          payer: "",
+          receiver: "",
+          bettor: name,
+          bookmaker: "",
+          bettorWon: false,
+          winningTeam: undefined,
+        },
+  });
 
-  // Handle form submission
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit({
-      transactionType,
-      players,
-      amount,
-      payerIndex,
-      receiverIndex,
-      bettorWon,
-      userSide,
-    });
+  const [loading, setLoading] = useState(false);
+  const transactionType = watch("type");
+  const winningTeam = watch("winningTeam");
+
+  // Update payer/receiver when winningTeam changes.
+  React.useEffect(() => {
+    if (winningTeam) {
+      if (winningTeam === "team1") {
+        // If Team 1 wins, set payer as Team 2's player1 and receiver as Team 1's player1.
+        setValue("payer", getValues("team2Player1"), { shouldValidate: true });
+        setValue("receiver", getValues("team1Player1"), { shouldValidate: true });
+      } else {
+        // If Team 2 wins, set payer as Team 1's player1 and receiver as Team 2's player1.
+        setValue("payer", getValues("team1Player1"), { shouldValidate: true });
+        setValue("receiver", getValues("team2Player1"), { shouldValidate: true });
+      }
+    }
+  }, [winningTeam, setValue, getValues]);
+
+  const handleFormSubmit = async (data: TransactionFormData) => {
+    if (!userId) return console.error("User ID is required to add a transaction");
+    setLoading(true);
+    const payload = {
+      sessionId,
+      userId,
+      ...data,
+      // Combine match fields into arrays only if type is MATCH.
+      ...(data.type === "MATCH" && {
+        team1: [data.team1Player1, data.team1Player2].filter(Boolean),
+        team2: [data.team2Player1, data.team2Player2].filter(Boolean),
+      }),
+    };
+    try {
+      await onSubmit(payload);
+    } catch (error: any) {
+      console.error(
+        "Error creating transaction:",
+        error.response?.data || error.message
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <form onSubmit={handleFormSubmit} className="space-y-6 mt-4">
-      {/* Transaction Type Selector */}
-      <RadioGroup
-        value={transactionType}
-        onValueChange={(value) => setTransactionType(value as "Match" | "SideBet")}
-        className="grid grid-cols-2 gap-4"
-      >
-        <div>
-          <RadioGroupItem value="Match" id="match" className="peer sr-only" />
-          <Label
-            htmlFor="match"
-            className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 
-                       hover:bg-accent peer-data-[state=checked]:border-primary 
-                       [&:has([data-state=checked])]:border-primary transition-colors"
-          >
-            <Trophy className="mb-2 h-6 w-6 text-yellow-600" />
-            <span className="font-semibold">Match</span>
-          </Label>
-        </div>
-
-        <div>
-          <RadioGroupItem value="SideBet" id="sideBet" className="peer sr-only" />
-          <Label
-            htmlFor="sideBet"
-            className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 
-                       hover:bg-accent peer-data-[state=checked]:border-primary 
-                       [&:has([data-state=checked])]:border-primary transition-colors"
-          >
-            <Coins className="mb-2 h-6 w-6 text-emerald-600" />
-            <span className="font-semibold">Side Bet</span>
-          </Label>
-        </div>
-      </RadioGroup>
-
-      {/* Player fields */}
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* YOUR PAIR */}
-        <fieldset className="space-y-3 rounded-lg border p-4">
-          <legend className="px-2 text-sm font-medium text-gray-700">
-            Your Pair
-          </legend>
-
-          {/* Player 1 (You) */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Player 1 (You)</Label>
-            <Input
-              value={user}
-              disabled
-              className="bg-gray-100 cursor-not-allowed"
-            />
-          </div>
-
-          {/* Player 2 */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Player 2</Label>
-            <FuzzyCreatableSelect
-              label=""
-              value={players[1] || ""}
-              onChange={(newVal) => {
-                setPlayers([user, newVal, ...players.slice(2)]);
-              }}
-              sessionPlayers={selectedSessionPlayers}
-              onAddPlayer={onAddPlayerToSession}
-              exclude={[user]}
-              placeholder="Select or add Player 2"
-            />
-          </div>
-        </fieldset>
-
-        {/* OPPONENT PAIR */}
-        <fieldset className="space-y-3 rounded-lg border p-4">
-          <legend className="px-2 text-sm font-medium text-gray-700">
-            Opponent Pair
-          </legend>
-
-          {/* Player 3 */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Player 3</Label>
-            <FuzzyCreatableSelect
-              label=""
-              value={players[2] || ""}
-              onChange={(newVal) => {
-                const updated = [...players];
-                updated[2] = newVal;
-                setPlayers(updated);
-              }}
-              sessionPlayers={selectedSessionPlayers}
-              onAddPlayer={onAddPlayerToSession}
-              exclude={[user, players[1] ?? ""]}
-              placeholder="Select or add Player 3"
-            />
-          </div>
-
-          {/* Player 4 */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Player 4</Label>
-            <FuzzyCreatableSelect
-              label=""
-              value={players[3] || ""}
-              onChange={(newVal) => {
-                const updated = [...players];
-                updated[3] = newVal;
-                setPlayers(updated);
-              }}
-              sessionPlayers={selectedSessionPlayers}
-              onAddPlayer={onAddPlayerToSession}
-              exclude={[user, players[1] ?? "", players[2] ?? ""]}
-              placeholder="Select or add Player 4"
-            />
-          </div>
-        </fieldset>
-      </div>
-
-      {/* SideBet options */}
-      {transactionType === "SideBet" && (
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Your Role</Label>
-            <Select
-              value={userSide}
-              onValueChange={(value) => setUserSide(value as "Bettor" | "Bookmaker")}
-            >
-              <SelectTrigger className="bg-white">
-                <SelectValue placeholder="Select your role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Bettor" className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Bettor
-                </SelectItem>
-                <SelectItem value="Bookmaker" className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Bookmaker
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">
-              {userSide === "Bettor" ? "Bookmaker Name" : "Bettor Name"}
-            </Label>
-            <FuzzyCreatableSelect
-              label=""
-              value={players[4] || ""}
-              onChange={(newVal) => {
-                // Update players[4] with the selected or newly created name
-                setPlayers([...players.slice(0, 4), newVal]);
-              }}
-              sessionPlayers={selectedSessionPlayers}
-              onAddPlayer={onAddPlayerToSession}
-              placeholder={
-                userSide === "Bettor"
-                  ? "Enter Bookmaker name"
-                  : "Enter Bettor name"
-              }
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Amount field */}
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6 mt-4">
+      {/* Transaction Type */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium">Amount</Label>
-        <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-            $
-          </span>
-          <Input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="0.00"
-            step="0.01"
-            min="0"
-            className="pl-8"
-          />
-        </div>
-      </div>
-
-      {/* Match-specific fields */}
-      {transactionType === "Match" && (
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Winning Person</Label>
-            <Select
-              value={receiverIndex.toString()}
-              onValueChange={(value) => setReceiverIndex(Number(value))}
+        <RadioGroup
+          value={transactionType}
+          onValueChange={(value) =>
+            setValue("type", value, { shouldValidate: true })
+          }
+          className="grid grid-cols-2 gap-4"
+        >
+          <div>
+            <RadioGroupItem value="MATCH" id="match" className="peer sr-only" />
+            <Label
+              htmlFor="match"
+              className="flex flex-col items-center justify-center rounded-md border-2 border-muted p-4 hover:bg-accent peer-data-[state=checked]:border-primary transition-colors"
             >
-              <SelectTrigger className="bg-white">
-                <SelectValue placeholder="Select winner" />
-              </SelectTrigger>
-              <SelectContent>
-                {players.slice(0, 4).map((p, idx) => {
-                  if (!p) return null;
-                  // Exclude the currently-selected payer
-                  if (idx === payerIndex) return null;
-                  return (
-                    <SelectItem key={idx} value={idx.toString()}>
-                      {idx < 2 ? `Team 1: ${p}` : `Team 2: ${p}`}
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Paying Person</Label>
-            <Select
-              value={payerIndex.toString()}
-              onValueChange={(value) => setPayerIndex(Number(value))}
-            >
-              <SelectTrigger className="bg-white">
-                <SelectValue placeholder="Select payer" />
-              </SelectTrigger>
-              <SelectContent>
-                {players.slice(0, 4).map((p, idx) => {
-                  if (!p) return null;
-                  // Exclude the currently-selected winner
-                  if (idx === receiverIndex) return null;
-                  return (
-                    <SelectItem key={idx} value={idx.toString()}>
-                      {idx < 2 ? `Team 1: ${p}` : `Team 2: ${p}`}
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      )}
-
-      {/* SideBet-specific fields */}
-      {transactionType === "SideBet" && (
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="flex items-center space-x-3 p-4 rounded-lg border bg-white">
-            <Checkbox
-              id="bettorWon"
-              checked={bettorWon}
-              onCheckedChange={(checked) => setBettorWon(checked as boolean)}
-            />
-            <Label htmlFor="bettorWon" className="text-sm font-medium">
-              Bettor Won the Wager
+              <Trophy className="w-6 h-6 text-primary mb-1" />
+              Match
             </Label>
           </div>
-        </div>
+          <div>
+            <RadioGroupItem value="SIDEBET" id="sidebet" className="peer sr-only" />
+            <Label
+              htmlFor="sidebet"
+              className="flex flex-col items-center justify-center rounded-md border-2 border-muted p-4 hover:bg-accent peer-data-[state=checked]:border-primary transition-colors"
+            >
+              <Coins className="w-6 h-6 text-primary mb-1" />
+              Side Bet
+            </Label>
+          </div>
+        </RadioGroup>
+      </div>
+
+      {/* Amount Field */}
+      <div className="space-y-2">
+        <Label className="text-sm font-medium flex items-center gap-2">
+          <DollarSign className="w-5 h-5 text-primary" /> Amount ($)
+        </Label>
+        <Input
+          type="number"
+          {...register("amount", { valueAsNumber: true })}
+          placeholder="Enter amount"
+        />
+        {errors.amount && (
+          <p className="text-red-500">{errors.amount.message}</p>
+        )}
+      </div>
+
+      {transactionType === "MATCH" && (
+        <>
+          {/* Team Fields in 2v2 Format with VS */}
+          <fieldset className="border p-4 rounded-lg">
+            <legend className="text-lg font-medium flex items-center gap-2">
+              <Users className="w-6 h-6 text-primary" /> Match Details
+            </legend>
+            <div className="grid grid-cols-[2fr_1fr_2fr] items-center w-full">
+              {/* Team 1 */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Team 1</Label>
+                <Input
+                  {...register("team1Player1")}
+                  value={name}
+                  disabled
+                  className="bg-gray-100 cursor-not-allowed"
+                />
+                <Input
+                  {...register("team1Player2")}
+                  placeholder="Teammate's name"
+                />
+              </div>
+              {/* VS Column */}
+              <div className="text-center">
+                <p className="text-xl font-bold">VS</p>
+              </div>
+              {/* Team 2 */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Team 2</Label>
+                <Input
+                  {...register("team2Player1")}
+                  placeholder="Opponent's name"
+                />
+                <Input
+                  {...register("team2Player2")}
+                  placeholder="Opponent's name"
+                />
+              </div>
+            </div>
+          </fieldset>
+
+          {/* Winning Team Radio Group */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Select Winning Team</Label>
+            <RadioGroup
+              value={winningTeam || ""}
+              onValueChange={(value) =>
+                setValue("winningTeam", value, { shouldValidate: true })
+              }
+              className="grid grid-cols-2 gap-4"
+            >
+              <div>
+                <RadioGroupItem
+                  value="team1"
+                  id="winTeam1"
+                  className="peer sr-only"
+                />
+                <Label
+                  htmlFor="winTeam1"
+                  className="flex flex-col items-center justify-center rounded-md border-2 border-muted p-4 hover:bg-accent peer-data-[state=checked]:border-primary transition-colors"
+                >
+                  <span className="text-sm font-medium">Team 1 Wins</span>
+                </Label>
+              </div>
+              <div>
+                <RadioGroupItem
+                  value="team2"
+                  id="winTeam2"
+                  className="peer sr-only"
+                />
+                <Label
+                  htmlFor="winTeam2"
+                  className="flex flex-col items-center justify-center rounded-md border-2 border-muted p-4 hover:bg-accent peer-data-[state=checked]:border-primary transition-colors"
+                >
+                  <span className="text-sm font-medium">Team 2 Wins</span>
+                </Label>
+              </div>
+            </RadioGroup>
+            {errors.winningTeam && (
+              <p className="text-red-500 text-xs">{errors.winningTeam.message}</p>
+            )}
+          </div>
+
+          {/* Payer & Receiver Fields */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <User className="w-5 h-5 text-primary" /> Payer (Loser)
+              </Label>
+              <Select
+                value={watch("payer") || "unassigned"}
+                onValueChange={(value) => setValue("payer", value)}
+              >
+                <SelectTrigger className="bg-red-100 border border-red-500">
+                  <SelectValue placeholder="Select payer" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[
+                    winningTeam === "team1"
+                      ? getValues("team2Player1")
+                      : getValues("team1Player1"),
+                  ]
+                    .filter(Boolean)
+                    .map((player) => (
+                      <SelectItem key={player} value={player}>
+                        {player}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <User className="w-5 h-5 text-primary" /> Receiver (Winner)
+              </Label>
+              <Select
+                value={watch("receiver") || "unassigned"}
+                onValueChange={(value) => setValue("receiver", value)}
+              >
+                <SelectTrigger className="bg-green-100 border border-green-500">
+                  <SelectValue placeholder="Select receiver" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[
+                    winningTeam === "team1"
+                      ? getValues("team1Player1")
+                      : getValues("team2Player1"),
+                  ]
+                    .filter(
+                      (player) => Boolean(player) && player !== watch("payer")
+                    )
+                    .map((player) => (
+                      <SelectItem key={player} value={player}>
+                        {player}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </>  
       )}
 
-      <DialogFooter className="mt-6 flex justify-end gap-2">
-        <Button type="submit">
-          {isEditing ? "Update Transaction" : "Add Match"}
+      {transactionType === "SIDEBET" && (
+        <>
+          {/* Sidebet Details */}
+          <fieldset className="border p-4 rounded-lg">
+            <legend className="text-lg font-medium flex items-center gap-2">
+              Sidebet Details
+            </legend>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Bettor</Label>
+              <Input
+                {...register("bettor")}
+                value={name}
+                disabled
+                className="bg-gray-100 cursor-not-allowed"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Bookmaker</Label>
+              <Input {...register("bookmaker")} placeholder="Enter bookmaker's name" />
+              {errors.bookmaker && <p className="text-red-500">{errors.bookmaker.message}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Did the Bettor Win?</Label>
+              <RadioGroup
+                value={watch("bettorWon") ? "yes" : "no"}
+                onValueChange={(value) =>
+                  setValue("bettorWon", value === "yes", { shouldValidate: true })
+                }
+                className="grid grid-cols-2 gap-4"
+              >
+                <div>
+                  <RadioGroupItem value="yes" id="bettorWonYes" className="peer sr-only" />
+                  <Label
+                    htmlFor="bettorWonYes"
+                    className="flex flex-col items-center justify-center rounded-md border-2 border-muted p-4 hover:bg-accent peer-data-[state=checked]:border-primary transition-colors"
+                  >
+                    <span className="text-sm font-medium">Yes</span>
+                  </Label>
+                </div>
+                <div>
+                  <RadioGroupItem value="no" id="bettorWonNo" className="peer sr-only" />
+                  <Label
+                    htmlFor="bettorWonNo"
+                    className="flex flex-col items-center justify-center rounded-md border-2 border-muted p-4 hover:bg-accent peer-data-[state=checked]:border-primary transition-colors"
+                  >
+                    <span className="text-sm font-medium">No</span>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+          </fieldset>
+        </>
+      )}
+
+      <div className="flex justify-end">
+        <Button type="submit" variant="outline" disabled={loading}>
+          {isEditing ? "Update Match" : "Add Match"}
         </Button>
-        <Button variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-      </DialogFooter>
+      </div>
     </form>
   );
-}
+};
+
+export default TransactionForm;
