@@ -20,7 +20,7 @@ import { Transaction } from "@/types/types";
 import axios from "axios";
 import FuzzyCreatableSelect from "@/components/FuzzyCreatableSelect";
 import { BadmintonSession } from "@prisma/client";
-import FullScreenLoader from "@/components/FullScreenLoader";
+import Loader from "@/components/FullScreenLoader";
 // Create a type alias from the zod schema
 const transactionSchema = z.object({
   sessionId: z.string().min(1, "Session ID is required"),
@@ -208,7 +208,7 @@ const TransactionForm = ({
     }
   };
 
-  if (playersLoading) return <FullScreenLoader/>;
+  if (playersLoading) return <Loader />;
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6 mt-4">
       {/* Transaction Type */}

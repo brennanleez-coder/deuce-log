@@ -18,7 +18,7 @@ import TransactionCard from "@/app/components/TransactionCard";
 import SessionMetrics from "@/app/components/SessionMetrics";
 import EditSessionModal from "@/app/components/EditSessionModal";
 import HeadToHeadStats from "@/app/components/HeadToHeadStats";
-import FullScreenLoader from "@/components/FullScreenLoader";
+import Loader from "@/components/FullScreenLoader";
 export default function SessionPage({ params }: { params: { id: string } }) {
   const {
     userId,
@@ -50,7 +50,7 @@ export default function SessionPage({ params }: { params: { id: string } }) {
     fetchTransactions();
   }, [sessionId]);
 
-  if (!currentSession) return <FullScreenLoader/>;
+  if (!currentSession) return <Loader fullScreen/>;
 
   // Calculate session metrics
   const matchesPlayed = sessionTransactions.length;

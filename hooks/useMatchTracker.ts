@@ -27,12 +27,14 @@ export function useMatchTracker() {
   const [name, setName] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
-
+  const [loading, setLoading] = useState<boolean>(false);
   useEffect(() => {
+
     if (session?.user?.id) {
       setUserId(session.user.id);
       setName(session.user.name ?? null);
     }
+
   }, [session]);
 
   useEffect(() => {
@@ -40,12 +42,15 @@ export function useMatchTracker() {
 
     const fetchSessions = async () => {
       try {
+        setLoading(true);
         const { data } = await axios.get("/api/badminton-sessions", {
           params: { userId },
         });
         setSessions(data);
       } catch (error) {
         console.error("Error fetching sessions:", error);
+      } finally{
+        setLoading(false);
       }
     };
 

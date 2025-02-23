@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { useSession, signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import FullScreenLoader from '@/components/FullScreenLoader'
+import Loader from '@/components/FullScreenLoader'
 
 export default function withAuth<T extends JSX.IntrinsicAttributes>(WrappedComponent: React.ComponentType<T>) {
   const AuthenticatedComponent: React.FC<T> = (props) => {
@@ -17,7 +17,7 @@ export default function withAuth<T extends JSX.IntrinsicAttributes>(WrappedCompo
 
     // While checking authentication, display a loading indicator (or skeleton, etc.)
     if (status === 'loading') {
-      return <FullScreenLoader/>
+      return <Loader fullScreen/>
     }
 
     // If authenticated, render the wrapped component
