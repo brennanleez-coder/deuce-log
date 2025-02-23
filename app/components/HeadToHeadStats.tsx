@@ -53,24 +53,26 @@ export default function HeadToHeadStats({
       }
 
       if (userIsWinner) {
-        // user won => from opponent perspective, that's a Loss => "L"
-        opponentStats[opponent].totalLosses += 1;
-        opponentStats[opponent].encounters.push("L");
-      } else {
-        // user lost => from opponent perspective, that's a Win => "W"
+        // user won => from the user's perspective: Win => "W"
         opponentStats[opponent].totalWins += 1;
         opponentStats[opponent].encounters.push("W");
+      } else {
+        // user lost => from the user's perspective: Loss => "L"
+        opponentStats[opponent].totalLosses += 1;
+        opponentStats[opponent].encounters.push("L");
       }
     });
   });
 
   // Convert to array
-  const statsArray = Object.entries(opponentStats).map(([opponent, record]) => ({
-    opponent,
-    totalWins: record.totalWins,
-    totalLosses: record.totalLosses,
-    encounters: record.encounters,
-  }));
+  const statsArray = Object.entries(opponentStats).map(
+    ([opponent, record]) => ({
+      opponent,
+      totalWins: record.totalWins,
+      totalLosses: record.totalLosses,
+      encounters: record.encounters,
+    })
+  );
 
   statsArray.sort((a, b) => a.opponent.localeCompare(b.opponent));
 
@@ -93,7 +95,11 @@ export default function HeadToHeadStats({
           onClick={() => setIsOpen(!isOpen)}
         >
           {isOpen ? "Hide" : "Show"}
-          {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          {isOpen ? (
+            <ChevronUp className="w-4 h-4" />
+          ) : (
+            <ChevronDown className="w-4 h-4" />
+          )}
         </Button>
       </div>
       {/* Collapsible content */}
@@ -110,45 +116,51 @@ export default function HeadToHeadStats({
             <table className="w-full border-collapse mt-4 text-sm">
               <thead>
                 <tr className="border-b">
-                  <th className="p-2 text-left text-gray-600">Opponent</th>
-                  <th className="p-2 text-left text-gray-600">W / L</th>
+                  <th className="p-2 text-left text-gray-600">Against</th>
+                  <th className="p-2 text-left text-gray-600">My W / L</th>
                   <th className="p-2 text-left text-gray-600">Last 5</th>
                 </tr>
               </thead>
               <tbody>
-                {statsArray.map(({ opponent, totalWins, totalLosses, encounters }) => {
-                  // last 5 results from chronological array
-                  const last5 = encounters.slice(-5);
+                {statsArray.map(
+                  ({ opponent, totalWins, totalLosses, encounters }) => {
+                    // last 5 results from chronological array
+                    const last5 = encounters.slice(-5);
 
-                  return (
-                    <tr
-                      key={opponent}
-                      className="border-b hover:bg-gray-50 transition-colors"
-                    >
-                      <td className="p-2 font-medium text-gray-800">{opponent}</td>
-                      <td className="p-2 text-gray-700">{`${totalWins} / ${totalLosses}`}</td>
-                      <td className="p-2 text-gray-700">
-                        <div className="flex gap-1">
-                          {last5.map((result, i) => {
-                            // 'W' => Opponent's Win, 'L' => Opponent's Loss
-                            const isWin = result === "W"; 
-                            return (
-                              <span
-                                key={i}
-                                className={`px-2 py-1 rounded border text-xs font-bold 
-                                ${isWin ? "border-green-600 text-green-600" 
-                                        : "border-red-600 text-red-600"}`
-                                }
-                              >
-                                {result}
-                              </span>
-                            );
-                          })}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
+                    return (
+                      <tr
+                        key={opponent}
+                        className="border-b hover:bg-gray-50 transition-colors"
+                      >
+                        <td className="p-2 font-medium text-gray-800">
+                          {opponent}
+                        </td>
+                        <td className="p-2 text-gray-700">{`${totalWins} / ${totalLosses}`}</td>
+                        <td className="p-2 text-gray-700">
+                          <div className="flex gap-1">
+                            {last5.map((result, i) => {
+                              // 'W' => Opponent's Win, 'L' => Opponent's Loss
+                              const isWin = result === "W";
+                              return (
+                                <span
+                                  key={i}
+                                  className={`px-2 py-1 rounded border text-xs font-bold 
+                                ${
+                                  isWin
+                                    ? "border-green-600 text-green-600"
+                                    : "border-red-600 text-red-600"
+                                }`}
+                                >
+                                  {result}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  }
+                )}
               </tbody>
             </table>
           </motion.div>
