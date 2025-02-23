@@ -1,38 +1,30 @@
 "use client";
 
 import { signOut } from "next-auth/react";
-import { useRouter } from "next/navigation"; // Import router
+import { useRouter } from "next/navigation";
 import { useMatchTracker } from "../../hooks/useMatchTracker";
 import SessionManagement from "../components/SessionManagement";
-
 import withAuth from "@/hooks/hoc/withAuth";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, PlusCircle } from "lucide-react";
+import { ArrowLeft } from "lucide-react"; // we might not need PlusCircle if unused
 
 function Home() {
-  const {
-    name,
-    setName,
-    sessions,
-    createSession,
-    deleteSession,
-  } = useMatchTracker();
-
-  const router = useRouter(); // Initialize router
+  const { name, sessions, createSession, deleteSession } = useMatchTracker();
+  const router = useRouter();
 
   const handleSessionSelect = (sessionId: string) => {
-    router.push(`/session/${sessionId}`); // Navigate to session page
+    router.push(`/session/${sessionId}`);
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 text-gray-900 p-4 font-sans">
+    <main className="min-h-screen bg-gray-50 text-gray-900 p-6 font-sans">
       <div className="max-w-7xl mx-auto">
         {/* Global Header */}
-        <header className="flex items-center justify-between mb-4">
-          <h1 className="text-xl font-bold">Deuce Log</h1>
+        <header className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-gray-800">Deuce Log</h1>
           <Button
             onClick={() => signOut({ callbackUrl: "/" })}
-            className="px-2 py-1 bg-gray-800 text-white rounded"
+            className="bg-gray-800 text-white hover:bg-gray-900 transition-colors px-3 py-1 rounded-md"
           >
             Logout
           </Button>
@@ -46,7 +38,7 @@ function Home() {
               sessions={sessions}
               createSession={createSession}
               deleteSession={deleteSession}
-              onSessionSelect={handleSessionSelect} // Pass navigation function
+              onSessionSelect={handleSessionSelect}
             />
           </aside>
         </div>

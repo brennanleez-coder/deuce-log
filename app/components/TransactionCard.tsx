@@ -30,16 +30,14 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
   const [isMarkingPaid, setIsMarkingPaid] = useState(false);
 
   const handleEdit = async (formData: Partial<Transaction>) => {
-    // 1. Merge the old transaction fields with the new fields from the form
     const merged = {
-      ...transaction,        // existing transaction data
-      ...formData,           // new fields user edited
-      id: transaction.id,    // ensure we keep the correct ID
+      ...transaction,
+      ...formData,
+      id: transaction.id,
     };
-  
-    // 2. Now map the merged transaction to the arguments `editTransaction` needs
+
     await editTransaction({
-      transactionId: merged.id, // Pass the actual ID from merged
+      transactionId: merged.id,
       type: merged.type,
       amount: merged.amount,
       team1: merged.team1,
@@ -52,10 +50,9 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
       paid: merged.paid,
       paidBy: merged.paidBy,
     });
-  
+
     setIsEditing(false);
   };
-  
 
   const handleMarkAsPaid = async () => {
     setIsMarkingPaid(true);
@@ -160,32 +157,32 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
         </div>
       </div>
 
-      {/* Payer → Receiver Sentence */}
-      <div className="border-t pt-3 mt-3 flex items-center gap-2 text-sm">
-        <p className="text-gray-700">💸</p>
-        <span className="text-red-600 font-semibold">{transaction.payer}</span>
-        <span className="text-gray-700">pays</span>
-        <span className="text-green-600 font-semibold">
-          {transaction.receiver}
-        </span>
-      </div>
-
-      {/* Payment Status & Amount */}
       <div className="flex justify-between items-center border-t pt-3 mt-3">
-        <div className="flex items-center gap-2">
+        {/* Payment Status & Button Container */}
+        <div className="flex items-center justify-center gap-2 w-[130px] h-9">
           {transaction.paid ? (
+            // Show the "Paid" text in the same container
             <p className="text-green-700 flex items-center gap-1 text-sm">
               <CheckCircle className="w-5 h-5" />
-              {/* <span>Paid by {transaction.paidBy}</span> */}
+              <span>Paid</span>
             </p>
           ) : (
-            <p className="text-red-700 flex items-center gap-1 text-sm">
-              <XCircle className="w-5 h-5" />
-              <span>Not Paid</span>
-            </p>
+            // Reserve the same space with the "Mark as Paid" button
+            <Button
+              onClick={handleMarkAsPaid}
+              disabled={isMarkingPaid}
+              variant="outline"
+              className="flex items-center gap-2 px-2 py-1 text-sm font-medium
+                   border-green-600 text-green-600 hover:bg-green-50
+                   transition-colors h-8"
+            >
+              {isMarkingPaid ? "Marking..." : "Mark as Paid"}
+              <Check className="w-4 h-4" />
+            </Button>
           )}
         </div>
 
+        {/* Amount Section */}
         <div className="flex items-center gap-2">
           <DollarSign className="w-5 h-5 text-gray-700" />
           <p
@@ -202,20 +199,6 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
           </p>
         </div>
       </div>
-
-      {/* Mark as Paid Button */}
-      {!transaction.paid && (
-        <div className="mt-3 flex justify-end">
-          <Button
-            onClick={handleMarkAsPaid}
-            disabled={isMarkingPaid}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium bg-green-600 hover:bg-green-700 text-white rounded-md transition"
-          >
-            {isMarkingPaid ? "Marking..." : "Mark as Paid"}
-            <Check className="w-4 h-4" />
-          </Button>
-        </div>
-      )}
     </div>
   );
 }

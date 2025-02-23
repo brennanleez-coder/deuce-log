@@ -1,20 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useMatchTracker } from "@/hooks/useMatchTracker";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Trash2, Plus, Search } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
-import { Form, FormField, FormItem, FormControl, FormMessage } from "@/components/ui/form";
-import { ClipLoader } from "react-spinners"; // 🔄 Loader
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import { ClipLoader } from "react-spinners";
 
-// ✅ Define form validation schema
 const sessionSchema = z.object({
   name: z.string().min(1, "Session name is required"),
   courtFee: z.string().min(1, "Court fee is required"),
@@ -25,18 +43,23 @@ export default function SessionManagement({
   sessions,
   createSession,
   deleteSession,
-  onSessionSelect
+  onSessionSelect,
+}: {
+  sessions: any[];
+  createSession: (name: string, courtFee: number, players: string[]) => void;
+  deleteSession: (sessionId: string) => void;
+  onSessionSelect: (sessionId: string) => void;
 }) {
-  const {
-    userId
-  } = useMatchTracker();
+  const { userId } = useMatchTracker();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isLoading, setIsLoading] = useState(false); // ✅ Loader state
-  const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null); // 🔄 Tracks which session is being deleted
+  const [isLoading, setIsLoading] = useState(false);
+  const [deletingSessionId, setDeletingSessionId] = useState<string | null>(
+    null
+  );
 
-  // Initialize `react-hook-form`
+  // Initialize react-hook-form
   const form = useForm({
     resolver: zodResolver(sessionSchema),
     defaultValues: {
@@ -46,45 +69,50 @@ export default function SessionManagement({
     },
   });
 
-  // Submit handler for creating a session
+  // Handle create session
   const handleSubmit = async (values: any) => {
     if (!userId) return console.error("User ID is required to create a session");
 
     try {
-      setIsLoading(true); // 🔄 Start loading
+      setIsLoading(true);
       const playersArray = values.players
-        ? values.players.split(",").map((player: string) => player.trim()).filter(Boolean)
+        ? values.players
+            .split(",")
+            .map((p: string) => p.trim())
+            .filter(Boolean)
         : [];
 
       await createSession(values.name, Number.parseFloat(values.courtFee), playersArray);
 
-      // Reset form and close modal
       form.reset();
       setIsModalOpen(false);
     } catch (error) {
       console.error("Error creating session:", error);
     } finally {
-      setIsLoading(false); // ✅ Stop loading
+      setIsLoading(false);
     }
   };
 
-  // Handle session deletion
-  const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {
+  // Handle delete session
+  const handleDeleteSession = async (
+    sessionId: string,
+    e: React.MouseEvent
+  ) => {
     e.stopPropagation();
     const confirmed = window.confirm("Are you sure you want to delete this session?");
     if (!confirmed) return;
 
     try {
-      setDeletingSessionId(sessionId); // 🔄 Start tracking which session is being deleted
+      setDeletingSessionId(sessionId);
       await deleteSession(sessionId);
     } catch (error) {
       console.error("Error deleting session:", error);
     } finally {
-      setDeletingSessionId(null); // ✅ Reset deleting state
+      setDeletingSessionId(null);
     }
   };
 
-  // Format session creation date
+  // Format date
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString("en-US", {
       month: "short",
@@ -94,82 +122,108 @@ export default function SessionManagement({
     });
   };
 
-  // Filter sessions based on search term
-  const filteredSessions = sessions.filter((session) =>
-    session.name.toLowerCase().includes(searchTerm.toLowerCase())
+  // Filter sessions by search
+  const filteredSessions = sessions.filter((s) =>
+    s.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <Card className="bg-white border border-gray-200 shadow-lg rounded-xl">
+    <Card className="bg-white border border-gray-200 shadow-md rounded-xl">
       <CardHeader className="bg-gray-50 rounded-t-xl px-6 py-4 flex items-center justify-between">
-        <CardTitle className="w-full text-xl font-bold text-gray-800 flex items-center justify-between">
-          <div>Sessions</div>
-          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2" disabled={isLoading}>
-                {isLoading ? <ClipLoader size={16} color="#ffffff" /> : <Plus size={16} />}
-                {isLoading ? "Creating..." : "New Session"}
-              </Button>
-            </DialogTrigger>
+        {/* <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-800">
+          Sessions
+        </CardTitle> */}
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogTrigger asChild>
+            <Button className="flex items-center gap-2" disabled={isLoading}>
+              {isLoading ? (
+                <ClipLoader size={16} color="#ffffff" />
+              ) : (
+                <Plus size={16} />
+              )}
+              {isLoading ? "Creating..." : "New Session"}
+            </Button>
+          </DialogTrigger>
 
-            {/* New Session Dialog */}
-            <DialogContent className="max-w-lg rounded-lg">
-              <DialogHeader>
-                <DialogTitle className="text-gray-800">Create New Session</DialogTitle>
-              </DialogHeader>
+          {/* New Session Dialog */}
+          <DialogContent className="max-w-lg rounded-lg">
+            <DialogHeader>
+              <DialogTitle className="text-gray-800">Create New Session</DialogTitle>
+            </DialogHeader>
 
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 mt-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <label className="text-gray-700">Session Name</label>
-                        <FormControl>
-                          <Input {...field} placeholder="Friday Night Session" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(handleSubmit)}
+                className="space-y-4 mt-4"
+              >
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <label className="text-sm font-medium text-gray-700">
+                        Session Name
+                      </label>
+                      <FormControl>
+                        <Input {...field} placeholder="Friday Night Session" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                  <FormField
-                    control={form.control}
-                    name="courtFee"
-                    render={({ field }) => (
-                      <FormItem>
-                        <label className="text-gray-700">Court Fee</label>
-                        <FormControl>
-                          <Input type="number" {...field} placeholder="30.00" step="0.01" min="0" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <FormField
+                  control={form.control}
+                  name="courtFee"
+                  render={({ field }) => (
+                    <FormItem>
+                      <label className="text-sm font-medium text-gray-700">
+                        Court Fee
+                      </label>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          {...field}
+                          placeholder="30.00"
+                          step="0.01"
+                          min="0"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                  <FormField
-                    control={form.control}
-                    name="players"
-                    render={({ field }) => (
-                      <FormItem>
-                        <label className="text-gray-700">Players (comma-separated)</label>
-                        <FormControl>
-                          <Input {...field} placeholder="Player1, Player2, Player3" />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
+                <FormField
+                  control={form.control}
+                  name="players"
+                  render={({ field }) => (
+                    <FormItem>
+                      <label className="text-sm font-medium text-gray-700">
+                        Players (comma-separated)
+                      </label>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Player1, Player2, Player3"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
 
-                  <Button type="submit" className="w-full gap-2" disabled={isLoading}>
-                    {isLoading ? <ClipLoader size={16} color="#ffffff" /> : <Plus size={16} />}
-                    {isLoading ? "Creating..." : "Create Session"}
-                  </Button>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
-        </CardTitle>
+                <Button
+                  type="submit"
+                  className="w-full gap-2"
+                  disabled={isLoading}
+                >
+                  {isLoading ? <ClipLoader size={16} color="#ffffff" /> : <Plus size={16} />}
+                  {isLoading ? "Creating..." : "Create Session"}
+                </Button>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </CardHeader>
 
       <CardContent className="p-6 space-y-6">
@@ -187,7 +241,9 @@ export default function SessionManagement({
 
         {/* Sessions List */}
         {sessions.length === 0 ? (
-          <div className="text-gray-500 text-center py-6">No sessions created yet.</div>
+          <div className="text-gray-500 text-center py-6">
+            No sessions created yet.
+          </div>
         ) : (
           <Table>
             <TableHeader>
@@ -200,13 +256,28 @@ export default function SessionManagement({
             </TableHeader>
             <TableBody>
               {filteredSessions.map((session) => (
-                <TableRow key={session.id} onClick={() => onSessionSelect(session.id)} className="cursor-pointer hover:bg-gray-50">
+                <TableRow
+                  key={session.id}
+                  onClick={() => onSessionSelect(session.id)}
+                  className="cursor-pointer hover:bg-gray-50"
+                >
                   <TableCell>{session.name}</TableCell>
-                  <TableCell>{formatDate(session.createdAt.toString())}</TableCell>
+                  <TableCell>
+                    {formatDate(session.createdAt.toString())}
+                  </TableCell>
                   <TableCell>${session.courtFee}</TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={(e) => handleDeleteSession(session.id, e)} disabled={deletingSessionId === session.id}>
-                      {deletingSessionId === session.id ? <ClipLoader size={16} color="red" /> : <Trash2 className="h-4 w-4 text-red-500" />}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => handleDeleteSession(session.id, e)}
+                      disabled={deletingSessionId === session.id}
+                    >
+                      {deletingSessionId === session.id ? (
+                        <ClipLoader size={16} color="red" />
+                      ) : (
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      )}
                     </Button>
                   </TableCell>
                 </TableRow>
