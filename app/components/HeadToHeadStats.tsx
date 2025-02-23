@@ -5,16 +5,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Transaction } from "@/types/types";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { getHeadToHeadStats } from "@/lib/utils"; // adjust import path
 
 interface HeadToHeadStatsProps {
   transactions: Transaction[];
   userName: string;
-}
-
-interface OpponentRecord {
-  totalWins: number;
-  totalLosses: number;
-  encounters: ("W" | "L")[];
 }
 
 export default function HeadToHeadStats({
@@ -23,58 +18,8 @@ export default function HeadToHeadStats({
 }: HeadToHeadStatsProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Create a map of opponentName -> { totalWins, totalLosses, encounters[] }
-  const opponentStats: Record<string, OpponentRecord> = {};
-
-  transactions.forEach((t) => {
-    const userInTeam1 = t.team1.includes(userName);
-    const userInTeam2 = t.team2.includes(userName);
-
-    if (!userInTeam1 && !userInTeam2) return;
-
-    // Determine the winning team
-    // If t.team1[0] === t.payer => "team2" is winner, else "team1"
-    const winningTeam = t.team1[0] === t.payer ? "team2" : "team1";
-
-    const userIsWinner =
-      (userInTeam1 && winningTeam === "team1") ||
-      (userInTeam2 && winningTeam === "team2");
-
-    // Opponents array
-    const opponents = userInTeam1 ? t.team2 : t.team1;
-
-    opponents.forEach((opponent) => {
-      if (!opponentStats[opponent]) {
-        opponentStats[opponent] = {
-          totalWins: 0,
-          totalLosses: 0,
-          encounters: [],
-        };
-      }
-
-      if (userIsWinner) {
-        // user won => from the user's perspective: Win => "W"
-        opponentStats[opponent].totalWins += 1;
-        opponentStats[opponent].encounters.push("W");
-      } else {
-        // user lost => from the user's perspective: Loss => "L"
-        opponentStats[opponent].totalLosses += 1;
-        opponentStats[opponent].encounters.push("L");
-      }
-    });
-  });
-
-  // Convert to array
-  const statsArray = Object.entries(opponentStats).map(
-    ([opponent, record]) => ({
-      opponent,
-      totalWins: record.totalWins,
-      totalLosses: record.totalLosses,
-      encounters: record.encounters,
-    })
-  );
-
-  statsArray.sort((a, b) => a.opponent.localeCompare(b.opponent));
+  // --- Use the reusable function here ---
+  const statsArray = getHeadToHeadStats(transactions, userName);
 
   if (statsArray.length === 0) {
     return (
@@ -102,7 +47,6 @@ export default function HeadToHeadStats({
           )}
         </Button>
       </div>
-      {/* Collapsible content */}
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
@@ -113,6 +57,13 @@ export default function HeadToHeadStats({
             transition={{ duration: 0.3 }}
             className="overflow-hidden"
           >
+            <Button
+              variant="outline"
+              className="flex items-center gap-1 text-sm"
+              onClick={() => window.location.reload()}
+            >
+              Refresh Stats
+            </Button>
             <table className="w-full border-collapse mt-4 text-sm">
               <thead>
                 <tr className="border-b">
@@ -124,7 +75,7 @@ export default function HeadToHeadStats({
               <tbody>
                 {statsArray.map(
                   ({ opponent, totalWins, totalLosses, encounters }) => {
-                    // last 5 results from chronological array
+                    // last 5 results
                     const last5 = encounters.slice(-5);
 
                     return (
@@ -135,21 +86,22 @@ export default function HeadToHeadStats({
                         <td className="p-2 font-medium text-gray-800">
                           {opponent}
                         </td>
-                        <td className="p-2 text-gray-700">{`${totalWins} / ${totalLosses}`}</td>
+                        <td className="p-2 text-gray-700">
+                          {`${totalWins} / ${totalLosses}`}
+                        </td>
                         <td className="p-2 text-gray-700">
                           <div className="flex gap-1">
                             {last5.map((result, i) => {
-                              // 'W' => Opponent's Win, 'L' => Opponent's Loss
                               const isWin = result === "W";
                               return (
                                 <span
                                   key={i}
                                   className={`px-2 py-1 rounded border text-xs font-bold 
-                                ${
-                                  isWin
-                                    ? "border-green-600 text-green-600"
-                                    : "border-red-600 text-red-600"
-                                }`}
+                                  ${
+                                    isWin
+                                      ? "border-green-600 text-green-600"
+                                      : "border-red-600 text-red-600"
+                                  }`}
                                 >
                                   {result}
                                 </span>

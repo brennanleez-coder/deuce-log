@@ -1,12 +1,8 @@
 import React, { useEffect } from 'react'
 import { useSession, signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import FullScreenLoader from '@/components/FullScreenLoader'
 
-/**
- * A Higher-Order Component that wraps a given component
- * to protect it behind authentication. If a user is not authenticated,
- * this HOC redirects them to the sign-in page.
- */
 export default function withAuth<T extends JSX.IntrinsicAttributes>(WrappedComponent: React.ComponentType<T>) {
   const AuthenticatedComponent: React.FC<T> = (props) => {
     const { data: session, status } = useSession()
@@ -21,7 +17,7 @@ export default function withAuth<T extends JSX.IntrinsicAttributes>(WrappedCompo
 
     // While checking authentication, display a loading indicator (or skeleton, etc.)
     if (status === 'loading') {
-      return <div>Loading...</div>
+      return <FullScreenLoader/>
     }
 
     // If authenticated, render the wrapped component

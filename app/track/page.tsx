@@ -7,14 +7,23 @@ import SessionManagement from "../components/SessionManagement";
 import withAuth from "@/hooks/hoc/withAuth";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react"; // we might not need PlusCircle if unused
-
+import { useState,useEffect } from "react";
+import { Transaction } from "@/types/types";
 function Home() {
-  const { name, sessions, createSession, deleteSession } = useMatchTracker();
+  const { userId, sessions, createSession, deleteSession, fetchTransactionsByUserId } = useMatchTracker();
   const router = useRouter();
-
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const handleSessionSelect = (sessionId: string) => {
     router.push(`/session/${sessionId}`);
   };
+  
+  useEffect(() => {
+    if (!userId) return;
+    var fetchedTransactions = fetchTransactionsByUserId(userId);
+    setTransactions(fetchedTransactions);
+    
+  }, [sessions]);
+
 
   return (
     <main className="min-h-screen bg-gray-50 text-gray-900 p-6 font-sans">
@@ -36,6 +45,7 @@ function Home() {
           <aside className="flex-1">
             <SessionManagement
               sessions={sessions}
+              transactions={transactions}
               createSession={createSession}
               deleteSession={deleteSession}
               onSessionSelect={handleSessionSelect}

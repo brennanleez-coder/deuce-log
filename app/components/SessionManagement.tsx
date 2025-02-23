@@ -32,6 +32,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { ClipLoader } from "react-spinners";
+import { Transaction } from "@/types/types";
+import SessionForm from "./SessionForm";
 
 const sessionSchema = z.object({
   name: z.string().min(1, "Session name is required"),
@@ -44,11 +46,13 @@ export default function SessionManagement({
   createSession,
   deleteSession,
   onSessionSelect,
+  transactions,
 }: {
   sessions: any[];
   createSession: (name: string, courtFee: number, players: string[]) => void;
   deleteSession: (sessionId: string) => void;
   onSessionSelect: (sessionId: string) => void;
+  transactions: Transaction[];
 }) {
   const { userId } = useMatchTracker();
 
@@ -151,77 +155,7 @@ export default function SessionManagement({
               <DialogTitle className="text-gray-800">Create New Session</DialogTitle>
             </DialogHeader>
 
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(handleSubmit)}
-                className="space-y-4 mt-4"
-              >
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <label className="text-sm font-medium text-gray-700">
-                        Session Name
-                      </label>
-                      <FormControl>
-                        <Input {...field} placeholder="Friday Night Session" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="courtFee"
-                  render={({ field }) => (
-                    <FormItem>
-                      <label className="text-sm font-medium text-gray-700">
-                        Court Fee
-                      </label>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          {...field}
-                          placeholder="30.00"
-                          step="0.01"
-                          min="0"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="players"
-                  render={({ field }) => (
-                    <FormItem>
-                      <label className="text-sm font-medium text-gray-700">
-                        Players (comma-separated)
-                      </label>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="Player1, Player2, Player3"
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                <Button
-                  type="submit"
-                  className="w-full gap-2"
-                  disabled={isLoading}
-                >
-                  {isLoading ? <ClipLoader size={16} color="#ffffff" /> : <Plus size={16} />}
-                  {isLoading ? "Creating..." : "Create Session"}
-                </Button>
-              </form>
-            </Form>
+            <SessionForm onSubmit={handleSubmit} isLoading={isLoading} />
           </DialogContent>
         </Dialog>
       </CardHeader>

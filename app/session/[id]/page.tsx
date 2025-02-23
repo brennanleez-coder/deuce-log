@@ -18,6 +18,7 @@ import TransactionCard from "@/app/components/TransactionCard";
 import SessionMetrics from "@/app/components/SessionMetrics";
 import EditSessionModal from "@/app/components/EditSessionModal";
 import HeadToHeadStats from "@/app/components/HeadToHeadStats";
+import FullScreenLoader from "@/components/FullScreenLoader";
 export default function SessionPage({ params }: { params: { id: string } }) {
   const {
     userId,
@@ -49,26 +50,10 @@ export default function SessionPage({ params }: { params: { id: string } }) {
     fetchTransactions();
   }, [sessionId]);
 
-  if (!currentSession) return <p>Loading session details...</p>;
+  if (!currentSession) return <FullScreenLoader/>;
 
   // Calculate session metrics
   const matchesPlayed = sessionTransactions.length;
-
-  const winCount = sessionTransactions.filter((t) => {
-    // Determine winning team: if team1's first player equals payer, winning team is team2; otherwise team1.
-    const winningTeam = t.team1[0] === t.payer ? "team2" : "team1";
-    return winningTeam === "team1"
-      ? t.team1.includes(name)
-      : t.team2.includes(name);
-  }).length;
-
-  const lossCount = sessionTransactions.filter((t) => {
-    const winningTeam = t.team1[0] === t.payer ? "team2" : "team1";
-    return winningTeam === "team1"
-      ? t.team2.includes(name)
-      : t.team1.includes(name);
-  }).length;
-
   // Revised net gain calculation: if logged in user wins, add t.amount; if they lose, subtract t.amount.
   const netAmount = sessionTransactions.reduce((acc, t) => {
     const winningTeam = t.team1[0] === t.payer ? "team2" : "team1";
@@ -96,11 +81,17 @@ export default function SessionPage({ params }: { params: { id: string } }) {
       : t.team1.includes(name);
   });
 
+  const winCount = wins.length;
+
+  const lossCount = losses.length;
   const totalWinsAmount = wins.reduce((acc, t) => acc + t.amount, 0);
   const totalLossesAmount = losses.reduce((acc, t) => acc + t.amount, 0);
 
   const handleSubmit = async (transaction: any) => {
-    await addTransaction(transaction);
+    const newTransaction = await addTransaction(transaction);
+    setSessionTransactions((prev) => [...prev, newTransaction
+    ]);
+
     setIsOpen(false);
   };
 
@@ -189,6 +180,7 @@ export default function SessionPage({ params }: { params: { id: string } }) {
                     <TransactionCard
                       key={transaction.id}
                       transaction={transaction}
+                      setSessionTransactions={setSessionTransactions}
                     />
                   ))}
                 </ul>
@@ -210,6 +202,7 @@ export default function SessionPage({ params }: { params: { id: string } }) {
                     <TransactionCard
                       key={transaction.id}
                       transaction={transaction}
+                      setSessionTransactions={setSessionTransactions}
                     />
                   ))}
                 </ul>

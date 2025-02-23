@@ -2,7 +2,6 @@
 import { useState } from "react";
 import {
   CheckCircle,
-  XCircle,
   Users,
   DollarSign,
   Pencil,
@@ -22,9 +21,10 @@ import { useMatchTracker } from "@/hooks/useMatchTracker";
 
 interface TransactionCardProps {
   transaction: Transaction;
+  setSessionTransactions: any;
 }
 
-export default function TransactionCard({ transaction }: TransactionCardProps) {
+export default function TransactionCard({ transaction, setSessionTransactions }: TransactionCardProps) {
   const { userId, name, editTransaction } = useMatchTracker();
   const [isEditing, setIsEditing] = useState(false);
   const [isMarkingPaid, setIsMarkingPaid] = useState(false);
@@ -36,7 +36,7 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
       id: transaction.id,
     };
 
-    await editTransaction({
+    const updatedTransaction = await editTransaction({
       transactionId: merged.id,
       type: merged.type,
       amount: merged.amount,
@@ -50,14 +50,16 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
       paid: merged.paid,
       paidBy: merged.paidBy,
     });
-
+    setSessionTransactions((prev: Transaction[]) =>
+      prev.map((t) => (t.id === updatedTransaction.id ? updatedTransaction : t))
+    );
     setIsEditing(false);
   };
 
   const handleMarkAsPaid = async () => {
     setIsMarkingPaid(true);
     try {
-      await editTransaction({
+      const updatedTransaction = await editTransaction({
         transactionId: transaction.id,
         type: transaction.type,
         amount: transaction.amount,
@@ -71,6 +73,9 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
         paid: true,
         paidBy: "", // or userId
       });
+      setSessionTransactions((prev: Transaction[]) =>
+        prev.map((t) => (t.id === updatedTransaction.id ? updatedTransaction : t))
+      );
     } catch (error) {
       console.error("Error marking as paid:", error);
     } finally {
@@ -78,22 +83,41 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
     }
   };
 
-  // Determine the winning team
-  const winningTeam =
-    transaction.team1[0] === transaction.payer ? "team2" : "team1";
+  // For each player, decide which color to apply:
+  // red if this player is the payer, green if receiver, else gray.
+  function getPlayerColorClass(playerName: string) {
+    if (playerName === transaction.payer) {
+      return "text-red-700 font-bold";
+    }
+    if (playerName === transaction.receiver) {
+      return "text-green-700 font-bold";
+    }
+    return "text-gray-600";
+  }
+
+  // Safely format the timestamp. Adjust according to your data shape (Date vs string).
+  // If you stored createdAt as a string, parse it, etc.
+  const formattedTimestamp = transaction.timestamp
+    ? new Date(transaction.timestamp).toLocaleString()
+    : "";
 
   return (
     <div className="bg-white shadow-md rounded-lg p-4 border border-gray-200 hover:shadow-lg transition">
       <div className="flex justify-between items-center mb-2">
-        {/* Transaction Type */}
-        <div className="flex items-center gap-2">
-          <Users className="w-5 h-5 text-blue-600" />
-          <p className="font-semibold text-sm text-gray-800 capitalize">
-            {transaction.type.toLowerCase()}
-          </p>
+        {/* Left: Type + Timestamp */}
+        <div>
+          <div className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-blue-600" />
+            <p className="font-semibold text-sm text-gray-800 capitalize">
+              {transaction.type.toLowerCase()}
+            </p>
+          </div>
+          {formattedTimestamp && (
+            <p className="text-xs text-gray-500 mt-1">{formattedTimestamp}</p>
+          )}
         </div>
 
-        {/* Edit Button */}
+        {/* Right: Edit Button */}
         <Dialog open={isEditing} onOpenChange={setIsEditing}>
           <DialogTrigger asChild>
             <button className="text-gray-500 hover:text-gray-700 transition">
@@ -120,16 +144,11 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
       <div className="grid grid-cols-2 gap-6 border-t pt-3">
         {/* Team 1 */}
         <div>
-          <p className="text-sm font-semibold text-gray-700">Team 1</p>
           <ul className="mt-1 space-y-0.5">
             {transaction.team1.map((player, index) => (
               <li
                 key={`team1-${index}`}
-                className={`text-sm ${
-                  winningTeam === "team1"
-                    ? "text-green-700 font-bold"
-                    : "text-gray-600"
-                }`}
+                className={`text-sm ${getPlayerColorClass(player)}`}
               >
                 {player}
               </li>
@@ -139,16 +158,11 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
 
         {/* Team 2 */}
         <div>
-          <p className="text-sm font-semibold text-gray-700">Team 2</p>
           <ul className="mt-1 space-y-0.5">
             {transaction.team2.map((player, index) => (
               <li
                 key={`team2-${index}`}
-                className={`text-sm ${
-                  winningTeam === "team2"
-                    ? "text-green-700 font-bold"
-                    : "text-gray-600"
-                }`}
+                className={`text-sm ${getPlayerColorClass(player)}`}
               >
                 {player}
               </li>
@@ -157,17 +171,16 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
         </div>
       </div>
 
+      {/* Footer: Payment + Amount */}
       <div className="flex justify-between items-center border-t pt-3 mt-3">
-        {/* Payment Status & Button Container */}
+        {/* Payment Status & Button */}
         <div className="flex items-center justify-center gap-2 w-[130px] h-9">
           {transaction.paid ? (
-            // Show the "Paid" text in the same container
             <p className="text-green-700 flex items-center gap-1 text-sm">
               <CheckCircle className="w-5 h-5" />
               <span>Paid</span>
             </p>
           ) : (
-            // Reserve the same space with the "Mark as Paid" button
             <Button
               onClick={handleMarkAsPaid}
               disabled={isMarkingPaid}
@@ -182,7 +195,7 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
           )}
         </div>
 
-        {/* Amount Section */}
+        {/* Amount */}
         <div className="flex items-center gap-2">
           <DollarSign className="w-5 h-5 text-gray-700" />
           <p

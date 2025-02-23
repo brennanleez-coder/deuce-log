@@ -189,7 +189,7 @@ export function useMatchTracker() {
         },
       });
       console.log("New transaction created successfully:", newTransaction);
-      setTransactions((prev) => [...prev, newTransaction]);
+      return newTransaction;
     } catch (error: any) {
       console.error("Error creating transaction:", error.response?.data || error.message);
     }
@@ -270,6 +270,19 @@ export function useMatchTracker() {
     }
   };
 
+  const fetchTransactionsByUserId = async (userId: string) => {
+    if (!userId) return console.error("User ID is required to fetch transactions");
+  
+    try {
+      const { data } = await axios.get("/api/transactions", {
+        params: { userId },
+      });
+      console.log("Transactions fetched:", data);
+      return data;
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+    }
+  };
 
   return {
     userId,
@@ -284,6 +297,6 @@ export function useMatchTracker() {
     transactions, // Return transactions here
     selectedSession,
     fetchTransactionsBySessionId,
-
+    fetchTransactionsByUserId,
   };
 }
