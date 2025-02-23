@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button";
 import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
-
 export default function LoginPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-blue-50 via-white to-white p-4">
@@ -23,7 +22,9 @@ export default function LoginPage() {
           <Button
             size="lg"
             className="w-full bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-200"
-            onClick={() => signIn("google", { callbackUrl: "/track" })}
+            onClick={() => {
+              signIn("google", { callbackUrl: "/track" });
+            }}
           >
             Sign in with Google
           </Button>

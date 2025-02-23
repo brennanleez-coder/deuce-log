@@ -6,6 +6,7 @@ import { useMatchTracker } from "@/hooks/useMatchTracker";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus } from "lucide-react";
 import TransactionForm from "@/app/components/TransactionForm";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -44,6 +45,8 @@ export default function SessionPage({ params }: { params: { id: string } }) {
         setSessionTransactions(data || []);
       } catch (error) {
         console.error("Error fetching transactions:", error);
+        toast.error("Error fetching matches.");
+
         setSessionTransactions([]);
       }
     };
