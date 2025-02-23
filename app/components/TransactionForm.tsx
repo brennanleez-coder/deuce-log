@@ -164,7 +164,7 @@ const TransactionForm = ({
               Match
             </Label>
           </div>
-          <div>
+          {/* <div>
             <RadioGroupItem value="SIDEBET" id="sidebet" className="peer sr-only" />
             <Label
               htmlFor="sidebet"
@@ -173,7 +173,7 @@ const TransactionForm = ({
               <Coins className="w-6 h-6 text-primary mb-1" />
               Side Bet
             </Label>
-          </div>
+          </div> */}
         </RadioGroup>
       </div>
 

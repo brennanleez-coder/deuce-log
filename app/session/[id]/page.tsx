@@ -17,6 +17,7 @@ import { Transaction } from "@/types/types";
 import TransactionCard from "@/app/components/TransactionCard";
 import SessionMetrics from "@/app/components/SessionMetrics";
 import EditSessionModal from "@/app/components/EditSessionModal";
+import HeadToHeadStats from "@/app/components/HeadToHeadStats";
 export default function SessionPage({ params }: { params: { id: string } }) {
   const {
     userId,
@@ -108,28 +109,28 @@ export default function SessionPage({ params }: { params: { id: string } }) {
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <header className="flex items-center justify-between mb-6">
-            <Button
-              variant="ghost"
-              onClick={() => router.push("/track")}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span className="text-sm">Back</span>
-            </Button>
-            <h1 className="text-2xl font-bold text-gray-900">
-              {currentSession.name}
-            </h1>
-            <EditSessionModal
-              sessionId={currentSession.id}
-              currentName={currentSession.name}
-              currentCourtFee={currentSession.courtFee}
-              currentPlayers={currentSession.players}
-            />
-            
+          <Button
+            variant="ghost"
+            onClick={() => router.push("/track")}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span className="text-sm">Back</span>
+          </Button>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {currentSession.name}
+          </h1>
+          <EditSessionModal
+            sessionId={currentSession.id}
+            currentName={currentSession.name}
+            currentCourtFee={currentSession.courtFee}
+            currentPlayers={currentSession.players}
+          />
         </header>
 
         {/* Session Metrics Section */}
-        <section className="mb-6">
+        
+        <div className="flex flex-col space-y-6 mb-6">
           <SessionMetrics
             matchesPlayed={matchesPlayed}
             winCount={winCount}
@@ -138,7 +139,9 @@ export default function SessionPage({ params }: { params: { id: string } }) {
             totalWinsAmount={totalWinsAmount}
             totalLossesAmount={totalLossesAmount}
           />
-        </section>
+
+          <HeadToHeadStats transactions={sessionTransactions} userName={name} />
+        </div>
 
         {/* Transactions Section */}
         <section className="bg-white p-6 rounded-lg shadow-md">
