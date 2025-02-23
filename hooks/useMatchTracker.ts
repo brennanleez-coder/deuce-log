@@ -4,6 +4,21 @@ import { Transaction, BadmintonSession } from "@/types/types";
 import { signIn, signOut, useSession } from "next-auth/react";
 import axios from "axios";
 
+interface EditTransactionParams {
+  transactionId: string;
+  type: "MATCH" | "SIDEBET";
+  amount: number;
+  team1: string[];
+  team2: string[];
+  payer?: string;
+  receiver?: string;
+  bettor?: string;
+  bookmaker?: string;
+  bettorWon?: boolean;
+  paid?: boolean;
+  paidBy?: string;
+}
+
 export function useMatchTracker() {
   const { data: session, status } = useSession(); // Fetch user session from NextAuth
   const [userId, setUserId] = useState<string | null>(null);
@@ -193,23 +208,13 @@ export function useMatchTracker() {
     bettorWon,
     paid,
     paidBy,
-  }: {
-    transactionId: string;
-    type: "MATCH" | "SIDEBET";
-    amount: number;
-    team1: string[];
-    team2: string[];
-    payer?: string;
-    receiver?: string;
-    bettor?: string;
-    bookmaker?: string;
-    bettorWon?: boolean;
-    paid?: boolean;
-    paidBy?: string;
-  }) => {
+  }: EditTransactionParams) => {
     try {
-      if (!transactionId) throw new Error("Transaction ID is required");
-
+      if (!transactionId) {
+        throw new Error("Transaction ID is required");
+      }
+  
+      // Build the payload required by your PUT route
       const payload = {
         type,
         amount,
@@ -223,9 +228,10 @@ export function useMatchTracker() {
         paid,
         paidBy,
       };
-
-      console.log("Sending editTransaction API Call:", transactionId, payload); // 🔍 Debugging Log
-
+  
+      console.log("Sending editTransaction API Call:", transactionId, payload);
+  
+      // Call the Next.js API route, passing transactionId in the URL
       const { data: updatedTransaction } = await axios.put(
         `/api/transactions/${transactionId}`,
         payload,
@@ -235,11 +241,12 @@ export function useMatchTracker() {
           },
         }
       );
-
+  
+      // Update local transaction list with the new data
       setTransactions((prev) =>
         prev.map((t) => (t.id === transactionId ? updatedTransaction : t))
       );
-
+  
       console.log("Transaction updated successfully:", updatedTransaction);
       return updatedTransaction;
     } catch (error: any) {

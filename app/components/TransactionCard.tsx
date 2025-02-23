@@ -29,18 +29,50 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isMarkingPaid, setIsMarkingPaid] = useState(false);
 
-  const handleEdit = async (updatedTransaction: Transaction) => {
-    await editTransaction(updatedTransaction);
+  const handleEdit = async (formData: Partial<Transaction>) => {
+    // 1. Merge the old transaction fields with the new fields from the form
+    const merged = {
+      ...transaction,        // existing transaction data
+      ...formData,           // new fields user edited
+      id: transaction.id,    // ensure we keep the correct ID
+    };
+  
+    // 2. Now map the merged transaction to the arguments `editTransaction` needs
+    await editTransaction({
+      transactionId: merged.id, // Pass the actual ID from merged
+      type: merged.type,
+      amount: merged.amount,
+      team1: merged.team1,
+      team2: merged.team2,
+      payer: merged.payer,
+      receiver: merged.receiver,
+      bettor: merged.bettor,
+      bookmaker: merged.bookmaker,
+      bettorWon: merged.bettorWon,
+      paid: merged.paid,
+      paidBy: merged.paidBy,
+    });
+  
     setIsEditing(false);
   };
+  
 
   const handleMarkAsPaid = async () => {
     setIsMarkingPaid(true);
     try {
       await editTransaction({
-        ...transaction,
+        transactionId: transaction.id,
+        type: transaction.type,
+        amount: transaction.amount,
+        team1: transaction.team1,
+        team2: transaction.team2,
+        payer: transaction.payer,
+        receiver: transaction.receiver,
+        bettor: transaction.bettor,
+        bookmaker: transaction.bookmaker,
+        bettorWon: transaction.bettorWon,
         paid: true,
-        paidBy: "", // Mark as paid by current user
+        paidBy: "", // or userId
       });
     } catch (error) {
       console.error("Error marking as paid:", error);
@@ -50,7 +82,8 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
   };
 
   // Determine the winning team
-  const winningTeam = transaction.team1[0] === transaction.payer ? "team2" : "team1";
+  const winningTeam =
+    transaction.team1[0] === transaction.payer ? "team2" : "team1";
 
   return (
     <div className="bg-white shadow-md rounded-lg p-4 border border-gray-200 hover:shadow-lg transition">
@@ -96,7 +129,9 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
               <li
                 key={`team1-${index}`}
                 className={`text-sm ${
-                  winningTeam === "team1" ? "text-green-700 font-bold" : "text-gray-600"
+                  winningTeam === "team1"
+                    ? "text-green-700 font-bold"
+                    : "text-gray-600"
                 }`}
               >
                 {player}
@@ -113,7 +148,9 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
               <li
                 key={`team2-${index}`}
                 className={`text-sm ${
-                  winningTeam === "team2" ? "text-green-700 font-bold" : "text-gray-600"
+                  winningTeam === "team2"
+                    ? "text-green-700 font-bold"
+                    : "text-gray-600"
                 }`}
               >
                 {player}
@@ -128,7 +165,9 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
         <p className="text-gray-700">💸</p>
         <span className="text-red-600 font-semibold">{transaction.payer}</span>
         <span className="text-gray-700">pays</span>
-        <span className="text-green-600 font-semibold">{transaction.receiver}</span>
+        <span className="text-green-600 font-semibold">
+          {transaction.receiver}
+        </span>
       </div>
 
       {/* Payment Status & Amount */}
@@ -137,7 +176,7 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
           {transaction.paid ? (
             <p className="text-green-700 flex items-center gap-1 text-sm">
               <CheckCircle className="w-5 h-5" />
-              <span>Paid by {transaction.paidBy}</span>
+              {/* <span>Paid by {transaction.paidBy}</span> */}
             </p>
           ) : (
             <p className="text-red-700 flex items-center gap-1 text-sm">
@@ -158,7 +197,8 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
                 : "text-gray-600"
             }`}
           >
-            {transaction.payer === transaction.team1[0] ? "-" : "+"}${transaction.amount}
+            {transaction.payer === transaction.team1[0] ? "-" : "+"}$
+            {transaction.amount}
           </p>
         </div>
       </div>
