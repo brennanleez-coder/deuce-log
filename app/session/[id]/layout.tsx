@@ -1,17 +1,17 @@
-"use client"
-
-import React from "react"
-import { SessionProvider } from "next-auth/react"
-
+'use client'
+import React, { useState, useEffect, useRef } from "react";
+import { SessionProvider, useSession,  } from "next-auth/react";
+import AuthHeader from "@/app/components/AuthHeader";
 
 export default function TrackLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <SessionProvider>
-      {children}
+      {/* <AuthHeader /> */}
+      <main>{children}</main>
     </SessionProvider>
-  )
+  );
 }

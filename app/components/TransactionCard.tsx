@@ -56,7 +56,7 @@ export default function TransactionCard({ transaction, setSessionTransactions }:
     setIsEditing(false);
   };
 
-  const handleMarkAsPaid = async () => {
+  const handleTogglePaid = async () => {
     setIsMarkingPaid(true);
     try {
       const updatedTransaction = await editTransaction({
@@ -70,14 +70,15 @@ export default function TransactionCard({ transaction, setSessionTransactions }:
         bettor: transaction.bettor,
         bookmaker: transaction.bookmaker,
         bettorWon: transaction.bettorWon,
-        paid: true,
-        paidBy: "", // or userId
+        // Toggle the paid status
+        paid: !transaction.paid,
+        paidBy: !transaction.paid ? userId : "", // assign userId when marking as paid, remove when marking unpaid
       });
       setSessionTransactions((prev: Transaction[]) =>
         prev.map((t) => (t.id === updatedTransaction.id ? updatedTransaction : t))
       );
     } catch (error) {
-      console.error("Error marking as paid:", error);
+      console.error("Error toggling paid status:", error);
     } finally {
       setIsMarkingPaid(false);
     }
@@ -96,7 +97,6 @@ export default function TransactionCard({ transaction, setSessionTransactions }:
   }
 
   // Safely format the timestamp. Adjust according to your data shape (Date vs string).
-  // If you stored createdAt as a string, parse it, etc.
   const formattedTimestamp = transaction.timestamp
     ? new Date(transaction.timestamp).toLocaleString()
     : "";
@@ -173,26 +173,29 @@ export default function TransactionCard({ transaction, setSessionTransactions }:
 
       {/* Footer: Payment + Amount */}
       <div className="flex justify-between items-center border-t pt-3 mt-3">
-        {/* Payment Status & Button */}
-        <div className="flex items-center justify-center gap-2 w-[130px] h-9">
-          {transaction.paid ? (
-            <p className="text-green-700 flex items-center gap-1 text-sm">
+        {/* Payment Toggle Button */}
+        <div className="flex items-center justify-center gap-2 w-[150px] h-9">
+          <Button
+            onClick={handleTogglePaid}
+            disabled={isMarkingPaid}
+            variant="outline"
+            className={`flex items-center gap-2 px-2 py-1 text-sm font-medium transition-colors h-8 ${
+              transaction.paid
+                ? "border-green-600 text-green-600 hover:bg-green-50"
+                : "border-red-600 text-red-600 hover:bg-red-50"
+            }`}
+          >
+            {isMarkingPaid
+              ? "Updating..."
+              : transaction.paid
+              ? "Mark as Unpaid"
+              : "Mark as Paid"}
+            {transaction.paid ? (
               <CheckCircle className="w-5 h-5" />
-              <span>Paid</span>
-            </p>
-          ) : (
-            <Button
-              onClick={handleMarkAsPaid}
-              disabled={isMarkingPaid}
-              variant="outline"
-              className="flex items-center gap-2 px-2 py-1 text-sm font-medium
-                   border-green-600 text-green-600 hover:bg-green-50
-                   transition-colors h-8"
-            >
-              {isMarkingPaid ? "Marking..." : "Mark as Paid"}
+            ) : (
               <Check className="w-4 h-4" />
-            </Button>
-          )}
+            )}
+          </Button>
         </div>
 
         {/* Amount */}

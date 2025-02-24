@@ -99,7 +99,7 @@ export default function SessionPage({ params }: { params: { id: string } }) {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 p-6 font-sans">
+    <main className="min-h-screen bg-gradient-to-b from-white to-gray-100 p-6 font-sans">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <header className="flex items-center justify-between mb-6">

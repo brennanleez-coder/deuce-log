@@ -75,7 +75,8 @@ export default function SessionManagement({
 
   // Handle create session
   const handleSubmit = async (values: any) => {
-    if (!userId) return console.error("User ID is required to create a session");
+    if (!userId)
+      return console.error("User ID is required to create a session");
 
     try {
       setIsLoading(true);
@@ -86,7 +87,11 @@ export default function SessionManagement({
             .filter(Boolean)
         : [];
 
-      await createSession(values.name, Number.parseFloat(values.courtFee), playersArray);
+      await createSession(
+        values.name,
+        Number.parseFloat(values.courtFee),
+        playersArray
+      );
 
       form.reset();
       setIsModalOpen(false);
@@ -103,7 +108,9 @@ export default function SessionManagement({
     e: React.MouseEvent
   ) => {
     e.stopPropagation();
-    const confirmed = window.confirm("Are you sure you want to delete this session?");
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this session?"
+    );
     if (!confirmed) return;
 
     try {
@@ -134,30 +141,32 @@ export default function SessionManagement({
   return (
     <Card className="bg-white border border-gray-200 shadow-md rounded-xl">
       <CardHeader className="bg-gray-50 rounded-t-xl px-6 py-4 flex items-center justify-between">
-        {/* <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-800">
+        <CardTitle className="flex w-full items-center gap-3 justify-between text-xl font-bold text-gray-800">
           Sessions
-        </CardTitle> */}
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2" disabled={isLoading}>
-              {isLoading ? (
-                <ClipLoader size={16} color="#ffffff" />
-              ) : (
-                <Plus size={16} />
-              )}
-              {isLoading ? "Creating..." : "New Session"}
-            </Button>
-          </DialogTrigger>
+          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2" disabled={isLoading}>
+                {isLoading ? (
+                  <ClipLoader size={16} color="#ffffff" />
+                ) : (
+                  <Plus size={16} />
+                )}
+                {isLoading ? "Creating..." : "New Session"}
+              </Button>
+            </DialogTrigger>
 
-          {/* New Session Dialog */}
-          <DialogContent className="max-w-lg rounded-lg">
-            <DialogHeader>
-              <DialogTitle className="text-gray-800">Create New Session</DialogTitle>
-            </DialogHeader>
+            {/* New Session Dialog */}
+            <DialogContent className="max-w-lg rounded-lg">
+              <DialogHeader>
+                <DialogTitle className="text-gray-800">
+                  Create New Session
+                </DialogTitle>
+              </DialogHeader>
 
-            <SessionForm onSubmit={handleSubmit} isLoading={isLoading} />
-          </DialogContent>
-        </Dialog>
+              <SessionForm onSubmit={handleSubmit} isLoading={isLoading} />
+            </DialogContent>
+          </Dialog>
+        </CardTitle>
       </CardHeader>
 
       <CardContent className="p-6 space-y-6">
