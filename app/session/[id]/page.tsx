@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useTransactions } from "@/hooks/useTransactions";
 import { useRouter } from "next/navigation";
-import { useMatchTracker } from "@/hooks/useMatchTracker";
+import { useUser } from "@/hooks/useUser";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, Users } from "lucide-react";
 import TransactionForm from "@/app/components/TransactionForm";
-import { toast } from "sonner";
+import { Transaction } from "@/types/types";
+import { useBadmintonSessionStats } from "@/hooks/useBadmintonSessionStats";
 import {
   Dialog,
   DialogContent,
@@ -14,94 +16,46 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Transaction } from "@/types/types";
 import TransactionCard from "@/app/components/TransactionCard";
 import SessionMetrics from "@/app/components/SessionMetrics";
 import EditSessionModal from "@/app/components/EditSessionModal";
 import HeadToHeadStats from "@/app/components/HeadToHeadStats";
 import Loader from "@/components/FullScreenLoader";
+import { useBadmintonSessions } from "@/hooks/useBadmintonSessions";
+
 export default function SessionPage({ params }: { params: { id: string } }) {
-  const {
-    userId,
-    name,
-    sessions,
-    addTransaction,
-    fetchTransactionsBySessionId,
-  } = useMatchTracker();
+  const { userId, name } = useUser();
+  const { sessions } = useBadmintonSessions();
+  const { transactions, addTransaction } = useTransactions(params.id);
   const router = useRouter();
   const sessionId = params.id;
-
-  const currentSession = sessions.find((s) => s.id === sessionId);
   const [isOpen, setIsOpen] = useState(false);
-  const [sessionTransactions, setSessionTransactions] = useState<Transaction[]>(
-    []
-  );
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
+  const currentSession = sessions.find((s) => s.id === sessionId);
 
-  useEffect(() => {
-    if (!sessionId) return;
-    const fetchTransactions = async () => {
-      try {
-        const data = await fetchTransactionsBySessionId(sessionId);
-        setSessionTransactions(data || []);
-      } catch (error) {
-        console.error("Error fetching transactions:", error);
-        toast.error("Error fetching matches.");
+  const {
+    matchesPlayed,
+    winCount,
+    lossCount,
+    netAmount,
+    wins,
+    losses,
+    totalWinsAmount,
+    totalLossesAmount,
+    bestPartners,
+    worstPartners,
+  } = useBadmintonSessionStats(transactions, name);
 
-        setSessionTransactions([]);
-      }
-    };
-    fetchTransactions();
-  }, [sessionId]);
+  if (!currentSession) return <Loader fullScreen />;
 
-  if (!currentSession) return <Loader fullScreen/>;
-
-  // Calculate session metrics
-  const matchesPlayed = sessionTransactions.length;
-  // Revised net gain calculation: if logged in user wins, add t.amount; if they lose, subtract t.amount.
-  const netAmount = sessionTransactions.reduce((acc, t) => {
-    const winningTeam = t.team1[0] === t.payer ? "team2" : "team1";
-    if (winningTeam === "team1") {
-      if (t.team1.includes(name)) return acc + t.amount;
-      else if (t.team2.includes(name)) return acc - t.amount;
-    } else {
-      if (t.team2.includes(name)) return acc + t.amount;
-      else if (t.team1.includes(name)) return acc - t.amount;
-    }
-    return acc;
-  }, 0);
-
-  // Aggregate total wins and losses amounts separately.
-  const wins = sessionTransactions.filter((t) => {
-    const winningTeam = t.team1[0] === t.payer ? "team2" : "team1";
-    return winningTeam === "team1"
-      ? t.team1.includes(name)
-      : t.team2.includes(name);
-  });
-  const losses = sessionTransactions.filter((t) => {
-    const winningTeam = t.team1[0] === t.payer ? "team2" : "team1";
-    return winningTeam === "team1"
-      ? t.team2.includes(name)
-      : t.team1.includes(name);
-  });
-
-  const winCount = wins.length;
-
-  const lossCount = losses.length;
-  const totalWinsAmount = wins.reduce((acc, t) => acc + t.amount, 0);
-  const totalLossesAmount = losses.reduce((acc, t) => acc + t.amount, 0);
-
-  const handleSubmit = async (transaction: any) => {
-    const newTransaction = await addTransaction(transaction);
-    setSessionTransactions((prev) => [...prev, newTransaction
-    ]);
-
+  const handleSubmit = async (transaction: Transaction) => {
+    await addTransaction(transaction);
     setIsOpen(false);
   };
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-white to-gray-100 p-6 font-sans">
       <div className="max-w-5xl mx-auto">
-        {/* Header */}
         <header className="flex items-center justify-between mb-6">
           <Button
             variant="ghost"
@@ -112,7 +66,7 @@ export default function SessionPage({ params }: { params: { id: string } }) {
             <span className="text-sm">Back</span>
           </Button>
           <h1 className="text-2xl font-bold text-gray-900">
-            {currentSession.name}
+            {currentSession?.name}
           </h1>
           <EditSessionModal
             sessionId={currentSession.id}
@@ -123,18 +77,40 @@ export default function SessionPage({ params }: { params: { id: string } }) {
         </header>
 
         {/* Session Metrics Section */}
-        
         <div className="flex flex-col space-y-6 mb-6">
           <SessionMetrics
             matchesPlayed={matchesPlayed}
             winCount={winCount}
             lossCount={lossCount}
             netAmount={netAmount}
-            totalWinsAmount={totalWinsAmount}
-            totalLossesAmount={totalLossesAmount}
           />
 
-          <HeadToHeadStats transactions={sessionTransactions} userName={name} />
+          {/* Head-to-Head Preview with Dialog */}
+          <Dialog open={isStatsOpen} onOpenChange={setIsStatsOpen}>
+            <DialogTrigger asChild>
+              <div className="cursor-pointer bg-white p-4 rounded-lg shadow-md flex justify-between items-center">
+                <div className="text-center">
+                  <p className="text-sm text-green-600">Best Partners</p>
+                  {bestPartners.length > 0 ? bestPartners[0].name : "N/A"}
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-red-600">Worst Partners</p>
+                  {worstPartners.length > 0 ? worstPartners[0].name : "N/A"}
+                </div>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  View Stats
+                </Button>
+              </div>
+            </DialogTrigger>
+
+            <DialogContent className="max-w-3xl">
+              <DialogHeader>
+                <DialogTitle>Head-to-Head Stats</DialogTitle>
+              </DialogHeader>
+              <HeadToHeadStats transactions={transactions} userName={name} />
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Transactions Section */}
@@ -169,7 +145,7 @@ export default function SessionPage({ params }: { params: { id: string } }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Wins Column */}
             <div>
-              <div className="flex justify-between items-center mb-2  text-green-600">
+              <div className="flex justify-between items-center mb-2 text-green-600">
                 <h3 className="text-lg font-semibold">Wins ({winCount})</h3>
                 <h3 className="text-lg font-semibold">${totalWinsAmount}</h3>
               </div>
@@ -183,7 +159,6 @@ export default function SessionPage({ params }: { params: { id: string } }) {
                     <TransactionCard
                       key={transaction.id}
                       transaction={transaction}
-                      setSessionTransactions={setSessionTransactions}
                     />
                   ))}
                 </ul>
@@ -191,7 +166,7 @@ export default function SessionPage({ params }: { params: { id: string } }) {
             </div>
             {/* Losses Column */}
             <div>
-              <div className="flex justify-between items-center mb-2  text-red-600">
+              <div className="flex justify-between items-center mb-2 text-red-600">
                 <h3 className="text-lg font-semibold">Losses ({lossCount})</h3>
                 <h3 className="text-lg font-semibold">${totalLossesAmount}</h3>
               </div>
@@ -205,7 +180,6 @@ export default function SessionPage({ params }: { params: { id: string } }) {
                     <TransactionCard
                       key={transaction.id}
                       transaction={transaction}
-                      setSessionTransactions={setSessionTransactions}
                     />
                   ))}
                 </ul>

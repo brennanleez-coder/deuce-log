@@ -17,49 +17,56 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import TransactionForm from "@/app/components/TransactionForm";
-import { useMatchTracker } from "@/hooks/useMatchTracker";
+import { useUser } from "@/hooks/useUser";
+import { useTransactions } from "@/hooks/useTransactions";
 
 interface TransactionCardProps {
   transaction: Transaction;
-  setSessionTransactions: any;
 }
 
-export default function TransactionCard({ transaction, setSessionTransactions }: TransactionCardProps) {
-  const { userId, name, editTransaction } = useMatchTracker();
+export default function TransactionCard({ transaction }: TransactionCardProps) {
+  if (!transaction) return null;
+
+  const { userId, name } = useUser();
+  const { editTransaction } = useTransactions(transaction.sessionId);
   const [isEditing, setIsEditing] = useState(false);
   const [isMarkingPaid, setIsMarkingPaid] = useState(false);
+  const [currentTransaction, setCurrentTransaction] = useState<Transaction>(transaction);
 
   const handleEdit = async (formData: Partial<Transaction>) => {
-    const merged = {
-      ...transaction,
-      ...formData,
-      id: transaction.id,
-    };
-
-    const updatedTransaction = await editTransaction({
-      transactionId: merged.id,
-      type: merged.type,
-      amount: merged.amount,
-      team1: merged.team1,
-      team2: merged.team2,
-      payer: merged.payer,
-      receiver: merged.receiver,
-      bettor: merged.bettor,
-      bookmaker: merged.bookmaker,
-      bettorWon: merged.bettorWon,
-      paid: merged.paid,
-      paidBy: merged.paidBy,
-    });
-    setSessionTransactions((prev: Transaction[]) =>
-      prev.map((t) => (t.id === updatedTransaction.id ? updatedTransaction : t))
-    );
     setIsEditing(false);
+    const updatedTransaction = { ...currentTransaction, ...formData };
+
+    // **Optimistically update transaction**
+    setCurrentTransaction(updatedTransaction);
+
+    try {
+      await editTransaction({
+        transactionId: currentTransaction.id,
+        ...formData,
+      });
+    } catch (error) {
+      console.error("Error updating transaction:", error);
+      // **Rollback on failure**
+      setCurrentTransaction(transaction);
+    }
   };
 
   const handleTogglePaid = async () => {
+    if (!currentTransaction) return;
     setIsMarkingPaid(true);
+
+    // **Optimistic Update**
+    const previousTransaction = { ...currentTransaction };
+    const updatedTransaction = {
+      ...currentTransaction,
+      paid: !currentTransaction.paid,
+      paidBy: !currentTransaction.paid ? userId : null,
+    };
+    setCurrentTransaction(updatedTransaction);
+
     try {
-      const updatedTransaction = await editTransaction({
+      const reconciliatedUpdatedTransaction = await editTransaction({
         transactionId: transaction.id,
         type: transaction.type,
         amount: transaction.amount,
@@ -74,42 +81,46 @@ export default function TransactionCard({ transaction, setSessionTransactions }:
         paid: !transaction.paid,
         paidBy: !transaction.paid ? userId : "", // assign userId when marking as paid, remove when marking unpaid
       });
-      setSessionTransactions((prev: Transaction[]) =>
-        prev.map((t) => (t.id === updatedTransaction.id ? updatedTransaction : t))
-      );
+
+      // **Ensure UI reflects API response**
+      setCurrentTransaction(reconciliatedUpdatedTransaction);
     } catch (error) {
       console.error("Error toggling paid status:", error);
+      // **Rollback UI on failure**
+      setCurrentTransaction(previousTransaction);
     } finally {
       setIsMarkingPaid(false);
     }
   };
 
-  // For each player, decide which color to apply:
-  // red if this player is the payer, green if receiver, else gray.
   function getPlayerColorClass(playerName: string) {
-    if (playerName === transaction.payer) {
+    if (playerName === currentTransaction.payer) {
       return "text-red-700 font-bold";
     }
-    if (playerName === transaction.receiver) {
+    if (playerName === currentTransaction.receiver) {
       return "text-green-700 font-bold";
     }
     return "text-gray-600";
   }
 
-  // Safely format the timestamp. Adjust according to your data shape (Date vs string).
-  const formattedTimestamp = transaction.timestamp
-    ? new Date(transaction.timestamp).toLocaleString()
+  const formattedTimestamp = currentTransaction?.timestamp
+    ? new Date(currentTransaction?.timestamp).toLocaleString()
     : "";
 
   return (
-    <div className="bg-white shadow-md rounded-lg p-4 border border-gray-200 hover:shadow-lg transition">
+    <div
+      className={`shadow-md rounded-lg p-4 border hover:shadow-lg transition ${
+        currentTransaction?.paid
+          ? "bg-green-50 border-green-500"
+          : "bg-gray-100 border-gray-300"
+      }`}
+    >
       <div className="flex justify-between items-center mb-2">
-        {/* Left: Type + Timestamp */}
         <div>
           <div className="flex items-center gap-2">
             <Users className="w-5 h-5 text-blue-600" />
             <p className="font-semibold text-sm text-gray-800 capitalize">
-              {transaction.type.toLowerCase()}
+              {currentTransaction?.type.toLowerCase()}
             </p>
           </div>
           {formattedTimestamp && (
@@ -117,7 +128,7 @@ export default function TransactionCard({ transaction, setSessionTransactions }:
           )}
         </div>
 
-        {/* Right: Edit Button */}
+        {/* Edit Button */}
         <Dialog open={isEditing} onOpenChange={setIsEditing}>
           <DialogTrigger asChild>
             <button className="text-gray-500 hover:text-gray-700 transition">
@@ -131,8 +142,8 @@ export default function TransactionCard({ transaction, setSessionTransactions }:
             <TransactionForm
               userId={userId}
               name={name}
-              sessionId={transaction.sessionId}
-              transaction={transaction}
+              sessionId={currentTransaction?.sessionId}
+              transaction={currentTransaction}
               onSubmit={handleEdit}
               isEditing={true}
             />
@@ -142,28 +153,19 @@ export default function TransactionCard({ transaction, setSessionTransactions }:
 
       {/* Teams Section */}
       <div className="grid grid-cols-2 gap-6 border-t pt-3">
-        {/* Team 1 */}
         <div>
           <ul className="mt-1 space-y-0.5">
-            {transaction.team1.map((player, index) => (
-              <li
-                key={`team1-${index}`}
-                className={`text-sm ${getPlayerColorClass(player)}`}
-              >
+            {currentTransaction?.team1.map((player, index) => (
+              <li key={`team1-${index}`} className={`text-sm ${getPlayerColorClass(player)}`}>
                 {player}
               </li>
             ))}
           </ul>
         </div>
-
-        {/* Team 2 */}
         <div>
           <ul className="mt-1 space-y-0.5">
-            {transaction.team2.map((player, index) => (
-              <li
-                key={`team2-${index}`}
-                className={`text-sm ${getPlayerColorClass(player)}`}
-              >
+            {currentTransaction?.team2.map((player, index) => (
+              <li key={`team2-${index}`} className={`text-sm ${getPlayerColorClass(player)}`}>
                 {player}
               </li>
             ))}
@@ -173,45 +175,28 @@ export default function TransactionCard({ transaction, setSessionTransactions }:
 
       {/* Footer: Payment + Amount */}
       <div className="flex justify-between items-center border-t pt-3 mt-3">
-        {/* Payment Toggle Button */}
         <div className="flex items-center justify-center gap-2 w-[150px] h-9">
           <Button
             onClick={handleTogglePaid}
             disabled={isMarkingPaid}
             variant="outline"
             className={`flex items-center gap-2 px-2 py-1 text-sm font-medium transition-colors h-8 ${
-              transaction.paid
-                ? "border-green-600 text-green-600 hover:bg-green-50"
-                : "border-red-600 text-red-600 hover:bg-red-50"
+              currentTransaction?.paid
+                ? "border-green-600 text-green-600 hover:bg-green-100"
+                : "border-gray-600 text-gray-600 hover:bg-gray-200"
             }`}
           >
-            {isMarkingPaid
-              ? "Updating..."
-              : transaction.paid
-              ? "Mark as Unpaid"
-              : "Mark as Paid"}
-            {transaction.paid ? (
-              <CheckCircle className="w-5 h-5" />
-            ) : (
-              <Check className="w-4 h-4" />
-            )}
+            {isMarkingPaid ? "Updating..." : currentTransaction?.paid ? "Paid" : "Mark as Paid"}
+            {currentTransaction?.paid ? <CheckCircle className="w-5 h-5" /> : <Check className="w-4 h-4" />}
           </Button>
         </div>
 
         {/* Amount */}
         <div className="flex items-center gap-2">
           <DollarSign className="w-5 h-5 text-gray-700" />
-          <p
-            className={`text-sm font-semibold ${
-              transaction.payer === transaction.team1[0]
-                ? "text-red-700"
-                : transaction.receiver === transaction.team1[0]
-                ? "text-green-700"
-                : "text-gray-600"
-            }`}
-          >
-            {transaction.payer === transaction.team1[0] ? "-" : "+"}$
-            {transaction.amount}
+          <p className={`text-sm font-semibold ${currentTransaction?.paid ? "text-green-700" : "text-gray-700"}`}>
+            {currentTransaction?.payer === currentTransaction?.team1[0] ? "-" : "+"}$
+            {currentTransaction?.amount}
           </p>
         </div>
       </div>

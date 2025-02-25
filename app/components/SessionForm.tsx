@@ -45,7 +45,7 @@ export default function SessionForm({ onSubmit, isLoading }: SessionFormProps) {
                 Session Name
               </label>
               <FormControl>
-                <Input {...field} placeholder="Friday Night Session" />
+                <Input {...field} placeholder="Weekly lose to Brennan Session" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -72,23 +72,7 @@ export default function SessionForm({ onSubmit, isLoading }: SessionFormProps) {
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="players"
-          render={({ field }) => (
-            <FormItem>
-              <label className="text-sm font-medium text-gray-700">
-                Players (comma-separated)
-              </label>
-              <FormControl>
-                <Input
-                  {...field}
-                  placeholder="Player1, Player2, Player3"
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
+       
         <Button type="submit" className="w-full gap-2" disabled={isLoading}>
           {isLoading ? "Creating..." : "Create Session"}
         </Button>

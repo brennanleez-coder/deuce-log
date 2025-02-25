@@ -10,7 +10,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { useMatchTracker } from "@/hooks/useMatchTracker";
+import { useBadmintonSessions } from "@/hooks/useBadmintonSessions";
+import { ClipLoader } from "react-spinners";
 
 interface EditSessionProps {
   sessionId: string;
@@ -25,30 +26,45 @@ export default function EditSessionModal({
   currentCourtFee,
   currentPlayers,
 }: EditSessionProps) {
-  const { editSession } = useMatchTracker();
+  const { editSession, sessions } = useBadmintonSessions();
   const [name, setName] = useState(currentName);
   const [courtFee, setCourtFee] = useState(currentCourtFee);
   const [players, setPlayers] = useState(currentPlayers.join(", "));
   const [isLoading, setIsLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   const handleSave = async () => {
     setIsLoading(true);
+
+    // Store previous state in case of rollback
+    const prevSessions = [...sessions];
+
+    // Optimistically update UI
+    const updatedSession = {
+      sessionId,
+      name,
+      courtFee,
+      players: players.split(",").map((p) => p.trim()),
+    };
+
+    // Update UI before API call
+    editSession(updatedSession);
+
     try {
-      await editSession({
-        sessionId,
-        name,
-        courtFee,
-        players: players.split(",").map((p) => p.trim()),
-      });
+      await editSession(updatedSession);
+      setIsOpen(false);
     } catch (error: any) {
       console.error("Error saving session:", error.message);
+      
+      // Rollback UI if API fails
+      editSession(prevSessions.find((s) => s.id === sessionId)!);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="outline">Edit Session</Button>
       </DialogTrigger>
@@ -73,18 +89,18 @@ export default function EditSessionModal({
               onChange={(e) => setCourtFee(parseFloat(e.target.value) || 0)}
             />
           </div>
-          <div>
+          {/* <div>
             <Label>Players (comma-separated)</Label>
             <Input
               value={players}
               onChange={(e) => setPlayers(e.target.value)}
               placeholder="Enter player names"
             />
-          </div>
+          </div> */}
           <div className="flex justify-end gap-2">
-            <Button variant="ghost">Cancel</Button>
+            <Button variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
             <Button onClick={handleSave} disabled={isLoading}>
-              {isLoading ? "Saving..." : "Save Changes"}
+              {isLoading ? <ClipLoader size={16} color="white" /> : "Save Changes"}
             </Button>
           </div>
         </div>

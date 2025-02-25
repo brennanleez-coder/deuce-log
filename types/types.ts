@@ -6,7 +6,7 @@ export interface Transaction {
   amount: number;
   team1: string[]; // Players in team 1
   team2: string[]; // Players in team 2
-  timestamp: number;
+  timestamp: number | string;
   paid?: boolean;
   paidBy?: string;
 
@@ -25,7 +25,7 @@ export interface Transaction {
 export interface BadmintonSession {
     id: string
     name: string
-    createdAt: number
+    createdAt: number | string
     courtFee: number
     players?: string[];
   

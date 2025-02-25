@@ -21,7 +21,8 @@ import axios from "axios";
 import FuzzyCreatableSelect from "@/components/FuzzyCreatableSelect";
 import { BadmintonSession } from "@prisma/client";
 import Loader from "@/components/FullScreenLoader";
-// Create a type alias from the zod schema
+import { useBadmintonSessions } from "@/hooks/useBadmintonSessions";
+
 const transactionSchema = z.object({
   sessionId: z.string().min(1, "Session ID is required"),
   type: z.enum(["MATCH", "SIDEBET"]),
@@ -105,31 +106,30 @@ const TransactionForm = ({
   });
 
   const [loading, setLoading] = useState(false);
-  const [session,setSession] = useState<any>(null);
+  const [session, setSession] = useState<any>(null);
   const [sessionPlayers, setSessionPlayers] = useState<string[]>([]);
   const [playersLoading, setPlayersLoading] = useState(false);
   const transactionType = watch("type");
   const winningTeam = watch("winningTeam");
 
-  // Update payer/receiver when winningTeam changes.
+  // Watch the team player fields
+  const team1Player1 = watch("team1Player1");
+  const team2Player1 = watch("team2Player1");
+
   React.useEffect(() => {
     if (winningTeam) {
       if (winningTeam === "team1") {
         // If Team 1 wins, set payer as Team 2's player1 and receiver as Team 1's player1.
-        setValue("payer", getValues("team2Player1"), { shouldValidate: true });
-        setValue("receiver", getValues("team1Player1"), {
-          shouldValidate: true,
-        });
+        setValue("payer", team2Player1, { shouldValidate: true });
+        setValue("receiver", team1Player1, { shouldValidate: true });
       } else {
         // If Team 2 wins, set payer as Team 1's player1 and receiver as Team 2's player1.
-        setValue("payer", getValues("team1Player1"), { shouldValidate: true });
-        setValue("receiver", getValues("team2Player1"), {
-          shouldValidate: true,
-        });
+        setValue("payer", team1Player1, { shouldValidate: true });
+        setValue("receiver", team2Player1, { shouldValidate: true });
       }
     }
-  }, [winningTeam, setValue, getValues]);
-
+  }, [winningTeam, team1Player1, team2Player1, setValue]);
+  const { sessions } = useBadmintonSessions();
   React.useEffect(() => {
     if (!userId || !sessionId) return;
 
@@ -137,23 +137,29 @@ const TransactionForm = ({
       try {
         setPlayersLoading(true); // start loading
         // Example: fetch all sessions for the user
-        const { data: allSessions } = await axios.get("/api/badminton-sessions", {
-          params: { userId },
-        });
+        const { data: allSessions } = await axios.get(
+          "/api/badminton-sessions",
+          {
+            params: { userId },
+          }
+        );
         // Find the relevant session
-        const requiredSession = allSessions.find((s: any) => s.id === sessionId);
+        const requiredSession = allSessions.find(
+          (s: any) => s.id === sessionId
+        );
         if (!requiredSession) {
           console.warn("Session not found for this userId and sessionId.");
           setPlayersLoading(false);
           return;
         }
         setSession(requiredSession);
-        
-        const allTimeSessionPlayers = allSessions.flatMap((s: BadmintonSession) => s.players);
+
+        const allTimeSessionPlayers = allSessions.flatMap(
+          (s: BadmintonSession) => s.players
+        );
         const dedupePlayers = Array.from(new Set(allTimeSessionPlayers));
         setSessionPlayers(dedupePlayers);
         // We'll use the array of players from that session
-   
       } catch (error) {
         console.error("Error fetching sessions:", error);
       } finally {
@@ -163,7 +169,6 @@ const TransactionForm = ({
 
     fetchAllPlayers();
   }, [userId, sessionId]);
-
 
   const addPlayerToSession = async (newPlayerName: string) => {
     try {
@@ -212,15 +217,20 @@ const TransactionForm = ({
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6 mt-4">
       {/* Transaction Type */}
-      <div className="space-y-2">
+      <div className="w-full">
         <RadioGroup
           value={transactionType}
           onValueChange={(value) =>
-            setValue("type", value, { shouldValidate: true })
+            setValue("type", value as "MATCH" | "SIDEBET", {
+              shouldValidate: true,
+            })
           }
-          className="grid grid-cols-2 gap-4"
+          className="grid gap-4 w-full"
+          style={{
+            gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))",
+          }}
         >
-          <div className="flex-1">
+          <div className="w-full">
             <RadioGroupItem value="MATCH" id="match" className="peer sr-only" />
             <Label
               htmlFor="match"
@@ -230,12 +240,16 @@ const TransactionForm = ({
               Match
             </Label>
           </div>
-          {/* <div>
-            <RadioGroupItem value="SIDEBET" id="sidebet" className="peer sr-only" />
-            <Label
-              htmlFor="sidebet"
-              className="flex flex-col items-center justify-center rounded-md border-2 border-muted p-4 hover:bg-accent peer-data-[state=checked]:border-primary transition-colors"
-            >
+
+          {/* Uncomment this block if SIDEBET is available again */}
+
+          {/* <div className="w-full">
+            <RadioGroupItem
+              value="SIDEBET"
+              id="sidebet"
+              className="peer sr-only"
+            />
+            <Label htmlFor="sidebet" className="flex flex-col items-center">
               <Coins className="w-6 h-6 text-primary mb-1" />
               Side Bet
             </Label>
@@ -244,19 +258,6 @@ const TransactionForm = ({
       </div>
 
       {/* Amount Field */}
-      <div className="space-y-2">
-        <Label className="text-sm font-medium flex items-center gap-2">
-          <DollarSign className="w-5 h-5 text-primary" /> Amount ($)
-        </Label>
-        <Input
-          type="number"
-          {...register("amount", { valueAsNumber: true })}
-          placeholder="Enter amount"
-        />
-        {errors.amount && (
-          <p className="text-red-500">{errors.amount.message}</p>
-        )}
-      </div>
 
       {transactionType === "MATCH" && (
         <>
@@ -303,7 +304,6 @@ const TransactionForm = ({
                   sessionPlayers={sessionPlayers}
                   onAddPlayer={addPlayerToSession}
                   exclude={[name]}
-
                 />
                 <FuzzyCreatableSelect
                   placeholder="Opponent's name"
@@ -314,7 +314,6 @@ const TransactionForm = ({
                   sessionPlayers={sessionPlayers}
                   onAddPlayer={addPlayerToSession}
                   exclude={[name]}
-
                 />
               </div>
             </div>
@@ -326,7 +325,7 @@ const TransactionForm = ({
             <RadioGroup
               value={winningTeam || ""}
               onValueChange={(value) =>
-                setValue("winningTeam", value, { shouldValidate: true })
+                setValue("winningTeam", value as "team1" | "team2", { shouldValidate: true })
               }
               className="grid grid-cols-2 gap-4"
             >
@@ -492,7 +491,19 @@ const TransactionForm = ({
           </fieldset>
         </>
       )}
-
+      <div className="space-y-2">
+        <Label className="text-sm font-medium flex items-center gap-2">
+          <DollarSign className="w-5 h-5 text-primary" /> Amount ($)
+        </Label>
+        <Input
+          type="number"
+          {...register("amount", { valueAsNumber: true })}
+          placeholder="Enter amount"
+        />
+        {errors.amount && (
+          <p className="text-red-500">{errors.amount.message}</p>
+        )}
+      </div>
       <div className="flex justify-end">
         <Button type="submit" variant="outline" disabled={loading}>
           {isEditing ? "Update Match" : "Add Match"}

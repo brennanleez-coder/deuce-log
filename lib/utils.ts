@@ -83,54 +83,49 @@ export function getHeadToHeadStats(
 }
 
 
-export const calculateSessionMetrics = (sessionTransactions: Transaction[], name:string) => {
-  if (!sessionTransactions || sessionTransactions.length === 0 || !name) return
-  // Total matches in the session
-  const matchesPlayed = sessionTransactions.length;
+export const getBestAndWorstPartners = (transactions: Transaction[], userName: string) => {
+  const partnerStats: Record<string, { wins: number; losses: number }> = {};
 
-  // Calculate net gain: add amount if user wins, subtract if user loses.
-  const netAmount = sessionTransactions.reduce((acc, t) => {
-    const winningTeam = t.team1[0] === t.payer ? "team2" : "team1";
-    if (winningTeam === "team1") {
-      if (t.team1.includes(name)) return acc + t.amount;
-      else if (t.team2.includes(name)) return acc - t.amount;
-    } else {
-      if (t.team2.includes(name)) return acc + t.amount;
-      else if (t.team1.includes(name)) return acc - t.amount;
-    }
-    return acc;
-  }, 0);
+  transactions.forEach((t) => {
+    const userInTeam1 = t.team1.includes(userName);
+    const userInTeam2 = t.team2.includes(userName);
 
-  // Filter transactions for wins and losses
-  const wins = sessionTransactions.filter((t) => {
+    if (!userInTeam1 && !userInTeam2) return;
+
+    // Determine winning team
     const winningTeam = t.team1[0] === t.payer ? "team2" : "team1";
-    return winningTeam === "team1"
-      ? t.team1.includes(name)
-      : t.team2.includes(name);
+
+    // User's team
+    const userTeam = userInTeam1 ? "team1" : "team2";
+
+    // Determine if the user's team won
+    const isWin = userTeam === winningTeam;
+
+    // Get the user's partners (excluding themselves)
+    const partners = t[userTeam].filter((player) => player !== userName);
+
+    partners.forEach((partner) => {
+      if (!partnerStats[partner]) {
+        partnerStats[partner] = { wins: 0, losses: 0 };
+      }
+
+      if (isWin) {
+        partnerStats[partner].wins += 1;
+      } else {
+        partnerStats[partner].losses += 1;
+      }
+    });
   });
-  const losses = sessionTransactions.filter((t) => {
-    const winningTeam = t.team1[0] === t.payer ? "team2" : "team1";
-    return winningTeam === "team1"
-      ? t.team2.includes(name)
-      : t.team1.includes(name);
-  });
 
-  // Count wins and losses
-  const winCount = wins.length;
-  const lossCount = losses.length;
-
-  // Sum of amounts for wins and losses separately
-  const totalWinsAmount = wins.reduce((acc, t) => acc + t.amount, 0);
-  const totalLossesAmount = losses.reduce((acc, t) => acc + t.amount, 0);
+  // Convert stats to an array
+  const sortedPartners = Object.entries(partnerStats).map(([partner, stats]) => ({
+    name: partner,
+    wins: stats.wins,
+    losses: stats.losses,
+  }));
 
   return {
-    matchesPlayed,
-    wins,
-    losses,
-    netAmount,
-    winCount,
-    lossCount,
-    totalWinsAmount,
-    totalLossesAmount,
+    bestPartners: sortedPartners.sort((a, b) => b.wins - a.wins).slice(0, 2),
+    worstPartners: sortedPartners.sort((a, b) => b.losses - a.losses).slice(0, 2),
   };
 };

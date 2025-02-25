@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useMatchTracker } from "@/hooks/useMatchTracker";
+import { useUser } from "@/hooks/useUser";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,16 +24,10 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormControl,
-  FormMessage,
-} from "@/components/ui/form";
+
 import { ClipLoader } from "react-spinners";
-import { Transaction } from "@/types/types";
 import SessionForm from "./SessionForm";
+import { useBadmintonSessions} from "@/hooks/useBadmintonSessions";
 
 const sessionSchema = z.object({
   name: z.string().min(1, "Session name is required"),
@@ -42,20 +36,12 @@ const sessionSchema = z.object({
 });
 
 export default function SessionManagement({
-  sessions,
-  createSession,
-  deleteSession,
   onSessionSelect,
-  transactions,
 }: {
-  sessions: any[];
-  createSession: (name: string, courtFee: number, players: string[]) => void;
-  deleteSession: (sessionId: string) => void;
   onSessionSelect: (sessionId: string) => void;
-  transactions: Transaction[];
 }) {
-  const { userId } = useMatchTracker();
-
+  const { userId } = useUser();
+  const { sessions, createSession, deleteSession } = useBadmintonSessions();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -102,24 +88,14 @@ export default function SessionManagement({
     }
   };
 
-  // Handle delete session
-  const handleDeleteSession = async (
-    sessionId: string,
-    e: React.MouseEvent
-  ) => {
+  const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this session?"
-    );
-    if (!confirmed) return;
+    if (!window.confirm("Are you sure you want to delete this session?")) return;
 
     try {
-      setDeletingSessionId(sessionId);
       await deleteSession(sessionId);
     } catch (error) {
       console.error("Error deleting session:", error);
-    } finally {
-      setDeletingSessionId(null);
     }
   };
 

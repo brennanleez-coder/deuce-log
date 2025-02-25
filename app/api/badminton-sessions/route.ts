@@ -15,7 +15,10 @@ export async function GET(req: Request) {
 
     const sessions = await prisma.badmintonSession.findMany({
       where: { userId },
-      include: { user: false }, // Fetch the user along with sessions
+      include: {
+        user: false,
+        transactions: false,
+      }, // Fetch the user along with sessions
     });
 
     return NextResponse.json(sessions, { status: 200 });
@@ -26,6 +29,8 @@ export async function GET(req: Request) {
     );
   }
 }
+
+
 
 export async function POST(req: Request) {
   try {

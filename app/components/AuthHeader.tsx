@@ -23,7 +23,7 @@ function AuthHeader() {
   }, []);
 
   return (
-    <header className="flex items-center justify-between px-16 py-4 bg-gradient-to-b from-white to-gray-100 shadow-md">
+    <header className="flex items-center justify-between px-16 py-4">
       <Link href="/">
         <h1 className="text-2xl font-bold text-gray-800">Deuce Log</h1>
       </Link>
