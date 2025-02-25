@@ -57,7 +57,7 @@ export default function HeadToHeadStats({
                 {/* Best Partners Section */}
                 <div className="flex flex-col items-center">
                   <p className="text-sm text-green-600 font-medium mb-2">
-                    Best Partners
+                    Best Partner
                   </p>
 
                   {[bestPartners[0]].map((p, index) => (
@@ -89,7 +89,7 @@ export default function HeadToHeadStats({
                 {/* Worst Partners Section */}
                 <div className="flex flex-col items-center">
                   <p className="text-sm text-red-600 font-medium mb-2">
-                    Worst Partners
+                    Worst Partner
                   </p>
 
                   {[worstPartners[0]].map((p, index) => (
@@ -126,14 +126,14 @@ export default function HeadToHeadStats({
                 <tr className="border-b">
                   <th className="p-2 text-left text-gray-600">Against</th>
                   <th className="p-2 text-left text-gray-600">My W / L</th>
-                  <th className="p-2 text-left text-gray-600">Last 5</th>
+                  <th className="p-2 text-left text-gray-600">Last 3</th>
                 </tr>
               </thead>
               <tbody>
                 {statsArray.map(
                   ({ opponent, totalWins, totalLosses, encounters }) => {
                     // last 5 results
-                    const last5 = encounters.slice(-5);
+                    const last5 = encounters.slice(-3);
 
                     return (
                       <tr
