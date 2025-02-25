@@ -60,7 +60,7 @@ export default function HeadToHeadStats({
                     Best Partners
                   </p>
 
-                  {bestPartners.map((p, index) => (
+                  {[bestPartners[0]].map((p, index) => (
                     <div
                       key={p.name}
                       className={`w-48 p-4 border rounded-lg shadow-sm text-green-700 flex flex-col items-center ${
@@ -92,7 +92,7 @@ export default function HeadToHeadStats({
                     Worst Partners
                   </p>
 
-                  {worstPartners.map((p, index) => (
+                  {[worstPartners[0]].map((p, index) => (
                     <div
                       key={p.name}
                       className={`w-48 p-4 border rounded-lg shadow-sm text-red-700 flex flex-col items-center ${
