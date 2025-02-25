@@ -87,8 +87,11 @@ export const getBestAndWorstPartners = (transactions: Transaction[], userName: s
   const partnerStats: Record<string, { wins: number; losses: number }> = {};
 
   transactions.forEach((t) => {
-    const userInTeam1 = t.team1.includes(userName);
-    const userInTeam2 = t.team2.includes(userName);
+    // Ensure teams exist before accessing them
+    if (!t.team1 || !t.team2) return;
+
+    const userInTeam1 = Array.isArray(t.team1) && t.team1.includes(userName);
+    const userInTeam2 = Array.isArray(t.team2) && t.team2.includes(userName);
 
     if (!userInTeam1 && !userInTeam2) return;
 
@@ -101,8 +104,8 @@ export const getBestAndWorstPartners = (transactions: Transaction[], userName: s
     // Determine if the user's team won
     const isWin = userTeam === winningTeam;
 
-    // Get the user's partners (excluding themselves)
-    const partners = t[userTeam].filter((player) => player !== userName);
+    // Get the user's partners (excluding themselves), ensuring it's an array
+    const partners = (t[userTeam] || []).filter((player) => player !== userName);
 
     partners.forEach((partner) => {
       if (!partnerStats[partner]) {

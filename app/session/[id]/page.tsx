@@ -91,11 +91,11 @@ export default function SessionPage({ params }: { params: { id: string } }) {
               <div className="cursor-pointer bg-white p-4 rounded-lg shadow-md flex justify-between items-center">
                 <div className="text-center">
                   <p className="text-sm text-green-600">Best Partners</p>
-                  {bestPartners.length > 0 ? bestPartners[0].name : "N/A"}
+                  {bestPartners && (bestPartners.length > 0 ? bestPartners[0].name : "N/A")}
                 </div>
                 <div className="text-center">
                   <p className="text-sm text-red-600">Worst Partners</p>
-                  {worstPartners.length > 0 ? worstPartners[0].name : "N/A"}
+                  {worstPartners && (worstPartners.length > 0 ? worstPartners[0].name : "N/A")}
                 </div>
                 <Button variant="outline" className="flex items-center gap-2">
                   <Users className="w-5 h-5" />
