@@ -53,62 +53,62 @@ export default function AllTimeStats({ userName }: { userName: string | null }) 
           <Loader />
         </div>
       ) : (
-        <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 justify-center">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
           {/* Matches Played */}
-          <div className="flex flex-col items-center text-center">
+          <Card className="flex flex-col items-center text-center p-4 shadow-sm border rounded-lg">
             <Gamepad2 className="w-8 h-8 text-blue-600" />
-            <p className="text-lg font-semibold">{matchesPlayed}</p>
+            <p className="text-lg font-semibold mt-2">{matchesPlayed}</p>
             <p className="text-sm text-gray-500">Matches Played</p>
-          </div>
+          </Card>
 
-          {/* Net Amount - Dynamic Icon */}
-          <div className="flex flex-col items-center text-center">
+          {/* Net Amount */}
+          <Card className="flex flex-col items-center text-center p-4 shadow-sm border rounded-lg">
             {netAmount >= 0 ? (
               <TrendingUp className="w-8 h-8 text-green-500" />
             ) : (
               <TrendingDown className="w-8 h-8 text-red-500" />
             )}
             <p
-              className={`text-lg font-semibold ${
+              className={`text-lg font-semibold mt-2 ${
                 netAmount >= 0 ? "text-green-600" : "text-red-600"
               }`}
             >
               ${netAmount.toFixed(2)}
             </p>
             <p className="text-sm text-gray-500">Net Amount</p>
-          </div>
+          </Card>
 
           {/* Win / Loss Count */}
-          <div className="flex flex-col items-center text-center">
+          <Card className="flex flex-col items-center text-center p-4 shadow-sm border rounded-lg">
             <BarChart2 className="w-8 h-8 text-gray-600" />
-            <p className="text-lg font-semibold">
+            <p className="text-lg font-semibold mt-2">
               {winCount}W / {lossCount}L
             </p>
             <p className="text-sm text-gray-500">Win / Loss</p>
-          </div>
+          </Card>
 
-          {/* Best Partner - Minimalistic UI */}
+          {/* Best Partner */}
           {bestPartners?.length > 0 && (
-            <div className="flex flex-col items-center text-center border rounded-lg p-4 shadow-sm">
+            <Card className="flex flex-col items-center text-center p-4 shadow-sm border rounded-lg">
               <UserCheck className="w-8 h-8 text-gray-700" />
               <p className="text-lg font-semibold mt-2">{bestPartners[0]?.name || "N/A"}</p>
               <p className="text-sm text-gray-500">Best Partner</p>
               <p className="text-md font-medium text-gray-700">
                 {bestPartners[0]?.wins}W / {bestPartners[0]?.losses}L
               </p>
-            </div>
+            </Card>
           )}
 
-          {/* Worst Partner - Minimalistic UI */}
+          {/* Worst Partner */}
           {worstPartners?.length > 0 && (
-            <div className="flex flex-col items-center text-center border rounded-lg p-4 shadow-sm">
+            <Card className="flex flex-col items-center text-center p-4 shadow-sm border rounded-lg">
               <UserX className="w-8 h-8 text-gray-700" />
               <p className="text-lg font-semibold mt-2">{worstPartners[0]?.name || "N/A"}</p>
               <p className="text-sm text-gray-500">Worst Partner</p>
               <p className="text-md font-medium text-gray-700">
                 {worstPartners[0]?.wins}W / {worstPartners[0]?.losses}L
               </p>
-            </div>
+            </Card>
           )}
         </CardContent>
       )}
