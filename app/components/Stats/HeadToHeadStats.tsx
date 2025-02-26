@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Transaction } from "@/types/types";
 import {  Medal } from "lucide-react";
 import { getHeadToHeadStats, getBestAndWorstPartners } from "@/lib/utils";
+import HeadToHeadTable from "./HeadToHeadTable";
 
 interface HeadToHeadStatsProps {
   transactions: Transaction[];
@@ -120,57 +121,7 @@ export default function HeadToHeadStats({
             </div>
 
             {/* Head-to-Head Table */}
-            <table className="w-full border-collapse mt-4 text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="p-2 text-left text-gray-600">Against</th>
-                  <th className="p-2 text-left text-gray-600">My W / L</th>
-                  <th className="p-2 text-left text-gray-600">Last 3</th>
-                </tr>
-              </thead>
-              <tbody>
-                {statsArray.map(
-                  ({ opponent, totalWins, totalLosses, encounters }) => {
-                    // last 5 results
-                    const last5 = encounters.slice(-3);
-
-                    return (
-                      <tr
-                        key={opponent}
-                        className="border-b hover:bg-gray-50 transition-colors"
-                      >
-                        <td className="p-2 font-medium text-gray-800">
-                          {opponent}
-                        </td>
-                        <td className="p-2 text-gray-700">
-                          {`${totalWins} / ${totalLosses}`}
-                        </td>
-                        <td className="p-2 text-gray-700">
-                          <div className="flex gap-1">
-                            {last5.map((result, i) => {
-                              const isWin = result === "W";
-                              return (
-                                <span
-                                  key={i}
-                                  className={`px-2 py-1 rounded border text-xs font-bold 
-                                  ${
-                                    isWin
-                                      ? "border-green-600 text-green-600"
-                                      : "border-red-600 text-red-600"
-                                  }`}
-                                >
-                                  {result}
-                                </span>
-                              );
-                            })}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  }
-                )}
-              </tbody>
-            </table>
+            <HeadToHeadTable statsArray={statsArray} />
           </motion.div>
         )}
       </AnimatePresence>

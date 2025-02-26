@@ -8,6 +8,10 @@ import { Trophy, TrendingUp, TrendingDown, Users } from "lucide-react";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useUser } from "@/hooks/useUser";
 import Loader from "@/components/FullScreenLoader"; // Import Loader component
+import { getHeadToHeadStats } from "@/lib/utils";
+import HeadToHeadTable from "./HeadToHeadTable";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 export default function AllTimeStats({ userName }: { userName: string | null }) {
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
@@ -33,6 +37,8 @@ export default function AllTimeStats({ userName }: { userName: string | null }) 
     bestPartners,
     worstPartners,
   } = useBadmintonSessionStats(allTransactions, userName);
+
+  const statsArray = getHeadToHeadStats(allTransactions, userName as string);
 
   return (
     <Card className="bg-white border border-gray-200 shadow-md rounded-xl p-6">
@@ -100,6 +106,25 @@ export default function AllTimeStats({ userName }: { userName: string | null }) 
           )}
         </CardContent>
       )}
+
+      {/* Head-to-Head Stats Button */}
+      <div className="flex justify-center mt-6">
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="px-4 py-2">
+              View Head-to-Head Stats
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold">Head-to-Head Stats</DialogTitle>
+            </DialogHeader>
+            <div className="max-h-[500px] overflow-y-auto p-4">
+              <HeadToHeadTable statsArray={statsArray} />
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
     </Card>
   );
 }
