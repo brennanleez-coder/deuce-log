@@ -191,6 +191,10 @@ const TransactionForm = ({
     if (!userId)
       return console.error("User ID is required to add a transaction");
     setLoading(true);
+    // trim all data
+    Object.keys(data).forEach((key) => {
+      if (typeof data[key] === "string") data[key] = data[key].trim();
+    });
     const payload = {
       sessionId,
       userId,

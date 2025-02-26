@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
@@ -22,6 +22,9 @@ import EditSessionModal from "@/app/components/Sessions/EditSessionModal";
 import HeadToHeadStats from "@/app/components/Stats/HeadToHeadStats";
 import Loader from "@/components/FullScreenLoader";
 import { useBadmintonSessions } from "@/hooks/useBadmintonSessions";
+import Fuse from "fuse.js";
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 export default function SessionPage({ params }: { params: { id: string } }) {
   const { userId, name } = useUser();
@@ -32,6 +35,7 @@ export default function SessionPage({ params }: { params: { id: string } }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const currentSession = sessions.find((s) => s.id === sessionId);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const {
     matchesPlayed,
@@ -45,6 +49,21 @@ export default function SessionPage({ params }: { params: { id: string } }) {
     bestPartners,
     worstPartners,
   } = useBadmintonSessionStats(transactions, name);
+
+  // Get filtered transactions for both wins and losses
+  const filteredTransactions = useMemo(() => {
+    const fuse = new Fuse(transactions, {
+      keys: ["team1", "team2"], // Searching across all players
+      threshold: 0.0, // Allows slight typos
+    });
+
+    if (!searchQuery) return { wins, losses };
+    const results = fuse.search(searchQuery).map((result) => result.item);
+    return {
+      wins: results.filter((t) => wins.includes(t)) || [],
+      losses: results.filter((t) => losses.includes(t)) || [],
+    };
+  }, [searchQuery, transactions, wins, losses]);
 
   if (!currentSession) return <Loader fullScreen />;
 
@@ -90,12 +109,14 @@ export default function SessionPage({ params }: { params: { id: string } }) {
             <DialogTrigger asChild>
               <div className="cursor-pointer bg-white p-4 rounded-lg shadow-md flex justify-between items-center">
                 <div className="text-center">
-                  <p className="text-sm text-green-600">Best Partners</p>
-                  {bestPartners && (bestPartners.length > 0 ? bestPartners[0].name : "N/A")}
+                  <p className="text-sm text-green-600">Best Partner</p>
+                  {bestPartners &&
+                    (bestPartners.length > 0 ? bestPartners[0].name : "N/A")}
                 </div>
                 <div className="text-center">
-                  <p className="text-sm text-red-600">Worst Partners</p>
-                  {worstPartners && (worstPartners.length > 0 ? worstPartners[0].name : "N/A")}
+                  <p className="text-sm text-red-600">Worst Partner</p>
+                  {worstPartners &&
+                    (worstPartners.length > 0 ? worstPartners[0].name : "N/A")}
                 </div>
                 <Button variant="outline" className="flex items-center gap-2">
                   <Users className="w-5 h-5" />
@@ -142,6 +163,16 @@ export default function SessionPage({ params }: { params: { id: string } }) {
               </DialogContent>
             </Dialog>
           </div>
+          <div className="mb-4 flex justify-center items-center gap-2">
+            <Search className="w-5 h-5 text-gray-500" />
+            <Input
+              type="text"
+              placeholder="Search by player, partner, or opponent..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full max-w-md border border-gray-300 px-4 py-2 rounded-md focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Wins Column */}
             <div>
@@ -149,13 +180,13 @@ export default function SessionPage({ params }: { params: { id: string } }) {
                 <h3 className="text-lg font-semibold">Wins ({winCount})</h3>
                 <h3 className="text-lg font-semibold">${totalWinsAmount}</h3>
               </div>
-              {wins.length === 0 ? (
+              {filteredTransactions.wins.length === 0 ? (
                 <p className="text-center text-gray-500 text-sm">
                   No wins found.
                 </p>
               ) : (
                 <ul className="space-y-4">
-                  {wins.map((transaction) => (
+                  {filteredTransactions.wins.map((transaction) => (
                     <TransactionCard
                       key={transaction.id}
                       transaction={transaction}
@@ -170,13 +201,13 @@ export default function SessionPage({ params }: { params: { id: string } }) {
                 <h3 className="text-lg font-semibold">Losses ({lossCount})</h3>
                 <h3 className="text-lg font-semibold">${totalLossesAmount}</h3>
               </div>
-              {losses.length === 0 ? (
+              {filteredTransactions.losses.length === 0 ? (
                 <p className="text-center text-gray-500 text-sm">
                   No losses found.
                 </p>
               ) : (
                 <ul className="space-y-4">
-                  {losses.map((transaction) => (
+                  {filteredTransactions.losses.map((transaction) => (
                     <TransactionCard
                       key={transaction.id}
                       transaction={transaction}
