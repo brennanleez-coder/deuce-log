@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useBadmintonSessionStats } from "@/hooks/useBadmintonSessionStats";
 import { Transaction } from "@/types/types";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Trophy, TrendingUp, TrendingDown, Users } from "lucide-react";
+import { Gamepad2, TrendingUp, TrendingDown, BarChart2, UserCheck, UserX } from "lucide-react";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useUser } from "@/hooks/useUser";
 import Loader from "@/components/FullScreenLoader"; // Import Loader component
@@ -56,12 +56,12 @@ export default function AllTimeStats({ userName }: { userName: string | null }) 
         <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 justify-center">
           {/* Matches Played */}
           <div className="flex flex-col items-center text-center">
-            <Trophy className="w-8 h-8 text-blue-600" />
+            <Gamepad2 className="w-8 h-8 text-blue-600" />
             <p className="text-lg font-semibold">{matchesPlayed}</p>
             <p className="text-sm text-gray-500">Matches Played</p>
           </div>
 
-          {/* Net Amount */}
+          {/* Net Amount - Dynamic Icon */}
           <div className="flex flex-col items-center text-center">
             {netAmount >= 0 ? (
               <TrendingUp className="w-8 h-8 text-green-500" />
@@ -80,7 +80,7 @@ export default function AllTimeStats({ userName }: { userName: string | null }) 
 
           {/* Win / Loss Count */}
           <div className="flex flex-col items-center text-center">
-            <Users className="w-8 h-8 text-gray-600" />
+            <BarChart2 className="w-8 h-8 text-gray-600" />
             <p className="text-lg font-semibold">
               {winCount}W / {lossCount}L
             </p>
@@ -90,7 +90,7 @@ export default function AllTimeStats({ userName }: { userName: string | null }) 
           {/* Best Partner */}
           {bestPartners?.length > 0 && (
             <div className="flex flex-col items-center text-center">
-              <Users className="w-8 h-8 text-green-600" />
+              <UserCheck className="w-8 h-8 text-green-600" />
               <p className="text-lg font-semibold">{bestPartners[0]?.name || "N/A"}</p>
               <p className="text-sm text-gray-500">Best Partner</p>
             </div>
@@ -99,7 +99,7 @@ export default function AllTimeStats({ userName }: { userName: string | null }) 
           {/* Worst Partner */}
           {worstPartners?.length > 0 && (
             <div className="flex flex-col items-center text-center">
-              <Users className="w-8 h-8 text-red-600" />
+              <UserX className="w-8 h-8 text-red-600" />
               <p className="text-lg font-semibold">{worstPartners[0]?.name || "N/A"}</p>
               <p className="text-sm text-gray-500">Worst Partner</p>
             </div>
@@ -120,7 +120,7 @@ export default function AllTimeStats({ userName }: { userName: string | null }) 
               <DialogTitle className="text-xl font-bold">Head-to-Head Stats</DialogTitle>
             </DialogHeader>
             <div className="max-h-[500px] overflow-y-auto p-4">
-              <HeadToHeadTable statsArray={statsArray} />
+              <HeadToHeadTable statsArray={statsArray} showLastX={5}/>
             </div>
           </DialogContent>
         </Dialog>

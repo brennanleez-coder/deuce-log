@@ -10,9 +10,10 @@ interface HeadToHeadTableProps {
     totalLosses: number;
     encounters: string[];
   }[];
+    showLastX?: number;
 }
 
-export default function HeadToHeadTable({ statsArray }: HeadToHeadTableProps) {
+export default function HeadToHeadTable({ statsArray, showLastX = 3 }: HeadToHeadTableProps) {
   if (statsArray.length === 0) return null;
 
   return (
@@ -26,7 +27,7 @@ export default function HeadToHeadTable({ statsArray }: HeadToHeadTableProps) {
       </thead>
       <tbody>
         {statsArray.map(({ opponent, totalWins, totalLosses, encounters }) => {
-          const last3 = encounters.slice(-3); // Last 3 match results
+          const last3 = encounters.slice(showLastX); // Last 3 match results
 
           return (
             <tr

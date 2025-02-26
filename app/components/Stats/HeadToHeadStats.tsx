@@ -121,7 +121,7 @@ export default function HeadToHeadStats({
             </div>
 
             {/* Head-to-Head Table */}
-            <HeadToHeadTable statsArray={statsArray} />
+            <HeadToHeadTable statsArray={statsArray}/>
           </motion.div>
         )}
       </AnimatePresence>
