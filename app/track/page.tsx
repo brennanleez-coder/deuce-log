@@ -2,11 +2,11 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import SessionManagement from "../components/SessionManagement";
+import SessionManagement from "../components/Sessions/SessionManagement";
 import withAuth from "@/hooks/hoc/withAuth";
 import { useState, useEffect, useRef } from "react";
 import { Transaction } from "@/types/types";
-
+import AllTimeStats from "@/app/components/Stats/AllTimeStats";
 function Home() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -14,14 +14,13 @@ function Home() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const handleSessionSelect = (sessionId: string) => {
-    router.push(`/session/${sessionId}`);
-  };
-
   // Close the dropdown when clicking outside of it
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setDropdownOpen(false);
       }
     }
@@ -34,16 +33,12 @@ function Home() {
   return (
     <main className="min-h-screen text-gray-900 p-6 font-sans">
       <div className="max-w-7xl mx-auto">
-
-        {/* Responsive Container */}
         <div className="flex flex-col md:flex-row gap-6">
-          {/* Sidebar: Session Management */}
-          <aside className="flex-1">
-            <SessionManagement
-              transactions={transactions}
-              onSessionSelect={handleSessionSelect}
-            />
-          </aside>
+          <div className="flex flex-col flex-1 gap-y-6">
+            <AllTimeStats userName={session?.user?.name} />
+
+            <SessionManagement />
+          </div>
         </div>
       </div>
     </main>

@@ -11,8 +11,8 @@ interface SessionStats {
   totalLossesAmount: number;
   wins: Transaction[];
   losses: Transaction[];
-  bestPartner: string | null;
-  worstPartner: string | null;
+  bestPartners: string | null;
+  worstPartners: string | null;
 }
 
 /**

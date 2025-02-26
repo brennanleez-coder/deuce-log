@@ -16,7 +16,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import TransactionForm from "@/app/components/TransactionForm";
+import TransactionForm from "@/app/components/Transactions/TransactionForm";
 import { useUser } from "@/hooks/useUser";
 import { useTransactions } from "@/hooks/useTransactions";
 

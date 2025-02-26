@@ -19,7 +19,7 @@ interface EditTransactionParams {
 }
 
 // Hook to manage transactions state independently
-export const useTransactions = (selectedSession: string | null) => {
+export const useTransactions = (selectedSession: string | null = null) => {
   const { data: session } = useSession();
   const [userId, setUserId] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -146,17 +146,22 @@ export const useTransactions = (selectedSession: string | null) => {
   );
   
 
-  // Fetch transactions by user
-  const fetchTransactionsByUserId = async (userId: string) => {
-    if (!userId) return console.error("User ID is required to fetch transactions");
+  const fetchTransactionsByUserId = useCallback(async (userId: string) => {
+    if (!userId) {
+      console.error("User ID is required to fetch transactions");
+      return;
+    }
+  
     try {
       const { data } = await axios.get("/api/transactions", { params: { userId } });
       console.log("Transactions fetched:", data);
       return data;
     } catch (error) {
       console.error("Error fetching transactions:", error);
+      return [];
     }
-  };
+  }, []);
+  
 
   return {
     transactions,

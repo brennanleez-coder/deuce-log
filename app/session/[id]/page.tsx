@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus, Users } from "lucide-react";
-import TransactionForm from "@/app/components/TransactionForm";
+import TransactionForm from "@/app/components/Transactions/TransactionForm";
 import { Transaction } from "@/types/types";
 import { useBadmintonSessionStats } from "@/hooks/useBadmintonSessionStats";
 import {
@@ -16,10 +16,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import TransactionCard from "@/app/components/TransactionCard";
-import SessionMetrics from "@/app/components/SessionMetrics";
-import EditSessionModal from "@/app/components/EditSessionModal";
-import HeadToHeadStats from "@/app/components/HeadToHeadStats";
+import TransactionCard from "@/app/components/Transactions/TransactionCard";
+import SessionMetrics from "@/app/components/Stats/SessionMetrics";
+import EditSessionModal from "@/app/components/Sessions/EditSessionModal";
+import HeadToHeadStats from "@/app/components/Stats/HeadToHeadStats";
 import Loader from "@/components/FullScreenLoader";
 import { useBadmintonSessions } from "@/hooks/useBadmintonSessions";
 

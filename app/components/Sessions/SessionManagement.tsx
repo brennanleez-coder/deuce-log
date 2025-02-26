@@ -36,27 +36,26 @@ import { Input } from "@/components/ui/input";
 import { ClipLoader } from "react-spinners";
 import { useDebounce } from "@/hooks/useDebounce";
 import SessionForm from "./SessionForm";
-
+import {useRouter} from "next/navigation";
+import Loader from "@/components/FullScreenLoader";
 const ITEMS_PER_PAGE = 5; // Controls pagination
 
-export default function SessionManagement({
-  onSessionSelect,
-}: {
-  onSessionSelect: (sessionId: string) => void;
+export default function SessionManagement({}: {
 }) {
   const { userId } = useUser();
-  const { sessions, createSession, deleteSession } = useBadmintonSessions();
+  const { loading, sessions, createSession, deleteSession } = useBadmintonSessions();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [deletingSessionId, setDeletingSessionId] = useState<string | null>(
-    null
-  );
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [currentPage, setCurrentPage] = useState(1);
-
+  const router = useRouter();
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
+    const handleSessionSelect = (sessionId: string) => {
+      router.push(`/session/${sessionId}`);
+    };
+  
   // Format date for better readability
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString("en-US", {
@@ -174,7 +173,11 @@ export default function SessionManagement({
           </Button>
         </div>
 
-        {sessions.length === 0 ? (
+        {loading? (
+          <div className="flex justify-center py-6">
+            <Loader/>
+          </div>
+        ) : sessions.length === 0 ? (
           <div className="text-gray-500 text-center py-6">
             No sessions created yet.
           </div>
@@ -193,7 +196,7 @@ export default function SessionManagement({
                 {paginatedSessions.map((session) => (
                   <TableRow
                     key={session.id}
-                    onClick={() => onSessionSelect(session.id)}
+                    onClick={() => handleSessionSelect(session.id)}
                     className="cursor-pointer hover:bg-gray-100 transition-all duration-200"
                   >
                     <TableCell className="font-medium">

@@ -3,8 +3,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Transaction } from "@/types/types";
-import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, Medal } from "lucide-react";
+import {  Medal } from "lucide-react";
 import { getHeadToHeadStats, getBestAndWorstPartners } from "@/lib/utils";
 
 interface HeadToHeadStatsProps {
