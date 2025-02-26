@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Gamepad2, TrendingUp, TrendingDown, BarChart2, UserCheck, UserX } from "lucide-react";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useUser } from "@/hooks/useUser";
-import Loader from "@/components/FullScreenLoader"; // Import Loader component
+import Loader from "@/components/FullScreenLoader";
 import { getHeadToHeadStats } from "@/lib/utils";
 import HeadToHeadTable from "./HeadToHeadTable";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -50,7 +50,7 @@ export default function AllTimeStats({ userName }: { userName: string | null }) 
 
       {loading ? (
         <div className="flex justify-center items-center py-6">
-          <Loader /> {/* Show loader while data is fetching */}
+          <Loader />
         </div>
       ) : (
         <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 justify-center">
@@ -87,21 +87,27 @@ export default function AllTimeStats({ userName }: { userName: string | null }) 
             <p className="text-sm text-gray-500">Win / Loss</p>
           </div>
 
-          {/* Best Partner */}
+          {/* Best Partner - Minimalistic UI */}
           {bestPartners?.length > 0 && (
-            <div className="flex flex-col items-center text-center">
-              <UserCheck className="w-8 h-8 text-green-600" />
-              <p className="text-lg font-semibold">{bestPartners[0]?.name || "N/A"}</p>
+            <div className="flex flex-col items-center text-center border rounded-lg p-4 shadow-sm">
+              <UserCheck className="w-8 h-8 text-gray-700" />
+              <p className="text-lg font-semibold mt-2">{bestPartners[0]?.name || "N/A"}</p>
               <p className="text-sm text-gray-500">Best Partner</p>
+              <p className="text-md font-medium text-gray-700">
+                {bestPartners[0]?.wins}W / {bestPartners[0]?.losses}L
+              </p>
             </div>
           )}
 
-          {/* Worst Partner */}
+          {/* Worst Partner - Minimalistic UI */}
           {worstPartners?.length > 0 && (
-            <div className="flex flex-col items-center text-center">
-              <UserX className="w-8 h-8 text-red-600" />
-              <p className="text-lg font-semibold">{worstPartners[0]?.name || "N/A"}</p>
+            <div className="flex flex-col items-center text-center border rounded-lg p-4 shadow-sm">
+              <UserX className="w-8 h-8 text-gray-700" />
+              <p className="text-lg font-semibold mt-2">{worstPartners[0]?.name || "N/A"}</p>
               <p className="text-sm text-gray-500">Worst Partner</p>
+              <p className="text-md font-medium text-gray-700">
+                {worstPartners[0]?.wins}W / {worstPartners[0]?.losses}L
+              </p>
             </div>
           )}
         </CardContent>
@@ -120,7 +126,7 @@ export default function AllTimeStats({ userName }: { userName: string | null }) 
               <DialogTitle className="text-xl font-bold">Head-to-Head Stats</DialogTitle>
             </DialogHeader>
             <div className="max-h-[500px] overflow-y-auto p-4">
-              <HeadToHeadTable statsArray={statsArray} showLastX={5}/>
+              <HeadToHeadTable statsArray={statsArray} showLastX={5} />
             </div>
           </DialogContent>
         </Dialog>
