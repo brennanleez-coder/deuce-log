@@ -25,7 +25,7 @@ function AuthHeader() {
   return (
     <header className="flex items-center justify-between px-6 md:px-16 py-4 bg-white shadow-sm">
       <Link href="/">
-        <h1 className="text-lg md:text-2xl font-bold text-gray-800">Deuce Log</h1>
+        <h1 className="text-lg md:text-2xl font-bold text-blue-600">Deuce Log</h1>
       </Link>
       <div className="relative flex items-center space-x-2" ref={dropdownRef}>
         {/* Clickable User Section */}
