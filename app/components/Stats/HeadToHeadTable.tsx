@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import Fuse from "fuse.js";
 import { Input } from "@/components/ui/input";
 
@@ -16,6 +16,7 @@ interface HeadToHeadTableProps {
 
 export default function HeadToHeadTable({ statsArray, showLastX = 3 }: HeadToHeadTableProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null); // Ref to prevent auto-focus
 
   // Configure Fuse.js for fuzzy search
   const fuse = useMemo(
@@ -40,6 +41,7 @@ export default function HeadToHeadTable({ statsArray, showLastX = 3 }: HeadToHea
       {/* Search Input */}
       <div className="my-4 flex justify-center">
         <Input
+          ref={inputRef} // Prevents auto-focus on render
           type="text"
           placeholder="Search opponent..."
           value={searchQuery}

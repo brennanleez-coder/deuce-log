@@ -32,6 +32,7 @@ export default function AllTimeStats({ userName }: { userName: string | null }) 
   const {
     matchesPlayed,
     netAmount,
+    netAmountChange,
     winCount,
     lossCount,
     bestPartners,
@@ -53,8 +54,8 @@ export default function AllTimeStats({ userName }: { userName: string | null }) 
           <Loader />
         </div>
       ) : (
-        <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-          {/* Matches Played */}
+<CardContent className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
+{/* Matches Played */}
           <Card className="flex flex-col items-center text-center p-4 shadow-sm border rounded-lg">
             <Gamepad2 className="w-8 h-8 text-blue-600" />
             <p className="text-lg font-semibold mt-2">{matchesPlayed}</p>

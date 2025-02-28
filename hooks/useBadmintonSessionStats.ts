@@ -11,13 +11,10 @@ interface SessionStats {
   totalLossesAmount: number;
   wins: Transaction[];
   losses: Transaction[];
-  bestPartners: string | null;
-  worstPartners: string | null;
+  bestPartners: { name: string; wins: number; losses: number; }[] | null;
+  worstPartners: { name: string; wins: number; losses: number; }[] | null;
 }
 
-/**
- * Custom Hook to compute badminton session statistics.
- */
 export const useBadmintonSessionStats = (transactions: Transaction[], userName: string | null): SessionStats => {
   return useMemo(() => {
     if (!transactions || transactions.length === 0 || !userName) {
@@ -30,8 +27,8 @@ export const useBadmintonSessionStats = (transactions: Transaction[], userName: 
         totalLossesAmount: 0,
         wins: [],
         losses: [],
-        bestPartner: null,
-        worstPartner: null,
+        bestPartners: null,
+        worstPartners: null,
       };
     }
 
@@ -63,6 +60,8 @@ export const useBadmintonSessionStats = (transactions: Transaction[], userName: 
         ? t.team2.includes(userName)
         : t.team1.includes(userName);
     });
+
+
 
     // Count wins and losses per teammate
     transactions.forEach((t) => {
