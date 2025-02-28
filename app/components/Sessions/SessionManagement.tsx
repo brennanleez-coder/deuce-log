@@ -36,14 +36,14 @@ import { Input } from "@/components/ui/input";
 import { ClipLoader } from "react-spinners";
 import { useDebounce } from "@/hooks/useDebounce";
 import SessionForm from "./SessionForm";
-import {useRouter} from "next/navigation";
+import { useRouter } from "next/navigation";
 import Loader from "@/components/FullScreenLoader";
 const ITEMS_PER_PAGE = 5; // Controls pagination
 
-export default function SessionManagement({}: {
-}) {
+export default function SessionManagement({}: {}) {
   const { userId } = useUser();
-  const { loading, sessions, createSession, deleteSession } = useBadmintonSessions();
+  const { loading, sessions, createSession, deleteSession } =
+    useBadmintonSessions();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -52,10 +52,10 @@ export default function SessionManagement({}: {
   const router = useRouter();
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-    const handleSessionSelect = (sessionId: string) => {
-      router.push(`/session/${sessionId}`);
-    };
-  
+  const handleSessionSelect = (sessionId: string) => {
+    router.push(`/session/${sessionId}`);
+  };
+
   // Format date for better readability
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString("en-US", {
@@ -85,8 +85,9 @@ export default function SessionManagement({}: {
   };
 
   const handleSubmit = async (values: any) => {
-    if (!userId)
+    if (!userId) {
       return console.error("User ID is required to create a session");
+    }
 
     try {
       setIsLoading(true);
@@ -97,12 +98,19 @@ export default function SessionManagement({}: {
             .filter(Boolean)
         : [];
 
-      await createSession(
+      // Create the session and get the returned session object
+      const newSession = await createSession(
         values.name,
         Number.parseFloat(values.courtFee),
         playersArray
       );
+
       setIsModalOpen(false);
+
+      // Navigate to the session page
+      if (newSession?.id) {
+        router.push(`/session/${newSession.id}`);
+      }
     } catch (error) {
       console.error("Error creating session:", error);
     } finally {
@@ -173,9 +181,9 @@ export default function SessionManagement({}: {
           </Button>
         </div>
 
-        {loading? (
+        {loading ? (
           <div className="flex justify-center py-6">
-            <Loader/>
+            <Loader />
           </div>
         ) : sessions.length === 0 ? (
           <div className="text-gray-500 text-center py-6">

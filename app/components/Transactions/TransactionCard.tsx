@@ -55,7 +55,7 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
   const handleTogglePaid = async () => {
     if (!currentTransaction) return;
     setIsMarkingPaid(true);
-
+    
     // **Optimistic Update**
     const previousTransaction = { ...currentTransaction };
     const updatedTransaction = {
@@ -78,8 +78,8 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
         bookmaker: transaction.bookmaker,
         bettorWon: transaction.bettorWon,
         // Toggle the paid status
-        paid: !transaction.paid,
-        paidBy: !transaction.paid ? userId : "", // assign userId when marking as paid, remove when marking unpaid
+        paid: updatedTransaction.paid,
+        paidBy: updatedTransaction.paid ? userId : null, // assign userId when marking as paid, remove when marking unpaid
       });
 
       // **Ensure UI reflects API response**
@@ -112,7 +112,7 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
       className={`shadow-md rounded-lg p-4 border hover:shadow-lg transition ${
         currentTransaction?.paid
           ? "bg-green-50 border-green-500"
-          : "bg-gray-100 border-gray-300"
+          : "bg-white border-gray-300"
       }`}
     >
       <div className="flex justify-between items-center mb-2">

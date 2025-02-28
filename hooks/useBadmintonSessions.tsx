@@ -63,6 +63,7 @@ export const useBadmintonSessions = () => {
         setSessions((prev) =>
           prev.map((s) => (s.id === tempId ? newSession : s))
         );
+        return newSession;
       } catch (error) {
         console.error("Error creating session:", error);
         // Rollback state if request fails
