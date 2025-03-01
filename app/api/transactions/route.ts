@@ -37,7 +37,7 @@ export async function POST(req: Request) {
       bettorWon,
     } = await req.json();
 
-    if (!sessionId || !userId || !type || !amount || !team1 || !team2) {
+    if (!sessionId || !userId || !type || !team1 || !team2) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 

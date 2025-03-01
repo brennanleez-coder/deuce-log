@@ -26,7 +26,7 @@ import { useBadmintonSessions } from "@/hooks/useBadmintonSessions";
 const transactionSchema = z.object({
   sessionId: z.string().min(1, "Session ID is required"),
   type: z.enum(["MATCH", "SIDEBET"]),
-  amount: z.number().min(1, "Amount must be greater than 0"),
+  amount: z.number().min(0, "Amount must be at least 0"),
   team1Player1: z.string().min(1, "Team 1 must have at least one member"),
   team1Player2: z.string().optional(),
   team2Player1: z.string().min(1, "Team 2 must have at least one member"),
@@ -109,6 +109,7 @@ const TransactionForm = ({
   const [session, setSession] = useState<any>(null);
   const [sessionPlayers, setSessionPlayers] = useState<string[]>([]);
   const [playersLoading, setPlayersLoading] = useState(false);
+  const [isFriendly, setIsFriendly] = useState(false);
   const transactionType = watch("type");
   const winningTeam = watch("winningTeam");
 
@@ -169,6 +170,12 @@ const TransactionForm = ({
 
     fetchAllPlayers();
   }, [userId, sessionId]);
+
+  React.useEffect(() => {
+    if (isFriendly) {
+      setValue("amount", 0, { shouldValidate: true });
+    }
+  }, [isFriendly, setValue]);
 
   const addPlayerToSession = async (newPlayerName: string) => {
     try {
@@ -329,7 +336,9 @@ const TransactionForm = ({
             <RadioGroup
               value={winningTeam || ""}
               onValueChange={(value) =>
-                setValue("winningTeam", value as "team1" | "team2", { shouldValidate: true })
+                setValue("winningTeam", value as "team1" | "team2", {
+                  shouldValidate: true,
+                })
               }
               className="grid grid-cols-2 gap-4"
             >
@@ -424,6 +433,49 @@ const TransactionForm = ({
               </Select>
             </div>
           </div>
+          {/* Friendly Match Radio Group */}
+          <div className="space-y-2 mt-4">
+            <Label className="text-sm font-medium">Friendly Match?</Label>
+            <RadioGroup
+              value={isFriendly ? "yes" : "no"}
+              onValueChange={(value) => {
+                const friendly = value === "yes";
+                setIsFriendly(friendly);
+                // Immediately set amount to 0 if friendly is true.
+                if (friendly) {
+                  setValue("amount", 0, { shouldValidate: true });
+                }
+              }}
+              className="grid grid-cols-2 gap-4"
+            >
+              <div>
+                <RadioGroupItem
+                  value="yes"
+                  id="friendlyYes"
+                  className="peer sr-only"
+                />
+                <Label
+                  htmlFor="friendlyYes"
+                  className="flex flex-col items-center justify-center rounded-md border-2 border-muted p-4 hover:bg-accent peer-data-[state=checked]:border-primary transition-colors"
+                >
+                  <span className="text-sm font-medium">Yes</span>
+                </Label>
+              </div>
+              <div>
+                <RadioGroupItem
+                  value="no"
+                  id="friendlyNo"
+                  className="peer sr-only"
+                />
+                <Label
+                  htmlFor="friendlyNo"
+                  className="flex flex-col items-center justify-center rounded-md border-2 border-muted p-4 hover:bg-accent peer-data-[state=checked]:border-primary transition-colors"
+                >
+                  <span className="text-sm font-medium">No</span>
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
         </>
       )}
 
@@ -501,8 +553,10 @@ const TransactionForm = ({
         </Label>
         <Input
           type="number"
+          defaultValue={0}
           {...register("amount", { valueAsNumber: true })}
           placeholder="Enter amount"
+          disabled={isFriendly}
         />
         {errors.amount && (
           <p className="text-red-500">{errors.amount.message}</p>
