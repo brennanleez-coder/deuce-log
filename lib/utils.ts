@@ -137,15 +137,14 @@ export const getBestAndWorstPartners = (
     };
   });
 
-  // 3. Identify best partners by ratio (descending)
   const bestPartners = [...statsArray]
-    .sort((a, b) => b.ratio - a.ratio)
+    .sort((a, b) => b.ratio - a.ratio || b.totalGames - a.totalGames)
     .slice(0, 2);
 
-  // 4. Identify worst partners by ratio (ascending)
   const worstPartners = [...statsArray]
-    .sort((a, b) => a.ratio - b.ratio)
+    .sort((a, b) => a.ratio - b.ratio || a.totalGames - b.totalGames)
     .slice(0, 2);
+
 
   return { bestPartners, worstPartners };
 };
