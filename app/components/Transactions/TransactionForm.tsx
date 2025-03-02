@@ -21,12 +21,13 @@ import axios from "axios";
 import FuzzyCreatableSelect from "@/components/FuzzyCreatableSelect";
 import { BadmintonSession } from "@prisma/client";
 import Loader from "@/components/FullScreenLoader";
-import { useBadmintonSessions } from "@/hooks/useBadmintonSessions";
 
 const transactionSchema = z.object({
   sessionId: z.string().min(1, "Session ID is required"),
   type: z.enum(["MATCH", "SIDEBET"]),
-  amount: z.number().min(0, "Amount must be at least 0"),
+  amount: z.coerce
+    .number({ invalid_type_error: "Enter a valid number" })
+    .min(0, "Amount must be at least 0"),
   team1Player1: z.string().min(1, "Team 1 must have at least one member"),
   team1Player2: z.string().optional(),
   team2Player1: z.string().min(1, "Team 2 must have at least one member"),
@@ -91,7 +92,7 @@ const TransactionForm = ({
         : {
             sessionId,
             type: "MATCH",
-            amount: 0,
+            amount: "",
             team1Player1: name,
             team1Player2: "",
             team2Player1: "",
@@ -101,7 +102,7 @@ const TransactionForm = ({
             bettor: name,
             bookmaker: "",
             bettorWon: false,
-            winningTeam: undefined,
+            winningTeam: "team2",
           },
   });
 
@@ -124,13 +125,11 @@ const TransactionForm = ({
         setValue("payer", team2Player1, { shouldValidate: true });
         setValue("receiver", team1Player1, { shouldValidate: true });
       } else {
-        // If Team 2 wins, set payer as Team 1's player1 and receiver as Team 2's player1.
         setValue("payer", team1Player1, { shouldValidate: true });
         setValue("receiver", team2Player1, { shouldValidate: true });
       }
     }
   }, [winningTeam, team1Player1, team2Player1, setValue]);
-  const { sessions } = useBadmintonSessions();
   React.useEffect(() => {
     if (!userId || !sessionId) return;
 
@@ -172,10 +171,27 @@ const TransactionForm = ({
   }, [userId, sessionId]);
 
   React.useEffect(() => {
+    if (transaction?.amount === 0 && transaction?.type === "MATCH") {
+      // Only set this once at the beginning
+      setIsFriendly(true);
+    }
+    // Either leave dependency array empty (for once on mount)
+    // or put `[transaction]` if 'transaction' is fetched asynchronously.
+  }, [transaction]);
+
+  // 2) Another effect: whenever isFriendly = true, set amount = 0
+  React.useEffect(() => {
     if (isFriendly) {
       setValue("amount", 0, { shouldValidate: true });
     }
   }, [isFriendly, setValue]);
+
+  React.useEffect(() => {
+    if (!isEditing && sessionPlayers.length) {
+      setValue("payer", sessionPlayers[2], { shouldValidate: true });
+      setValue("receiver", sessionPlayers[0], { shouldValidate: true });
+    }
+  }, [isEditing, sessionPlayers, setValue]);
 
   const addPlayerToSession = async (newPlayerName: string) => {
     try {
@@ -226,7 +242,10 @@ const TransactionForm = ({
 
   if (playersLoading) return <Loader />;
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6 mt-4">
+    <form
+      onSubmit={handleSubmit(handleFormSubmit)}
+      className="space-y-6 p-4 max-h-[90vh] overflow-y-auto"
+    >
       {/* Transaction Type */}
       <div className="w-full">
         <RadioGroup
@@ -251,28 +270,11 @@ const TransactionForm = ({
               Match
             </Label>
           </div>
-
-          {/* Uncomment this block if SIDEBET is available again */}
-
-          {/* <div className="w-full">
-            <RadioGroupItem
-              value="SIDEBET"
-              id="sidebet"
-              className="peer sr-only"
-            />
-            <Label htmlFor="sidebet" className="flex flex-col items-center">
-              <Coins className="w-6 h-6 text-primary mb-1" />
-              Side Bet
-            </Label>
-          </div> */}
         </RadioGroup>
       </div>
 
-      {/* Amount Field */}
-
       {transactionType === "MATCH" && (
         <>
-          {/* Team Fields in 2v2 Format with VS */}
           <fieldset className="border p-4 rounded-lg">
             <legend className="text-lg font-medium flex items-center gap-2">
               <Users className="w-6 h-6 text-primary" /> Match Details
@@ -295,7 +297,12 @@ const TransactionForm = ({
                   }
                   sessionPlayers={sessionPlayers}
                   onAddPlayer={addPlayerToSession}
-                  exclude={[name]}
+                  exclude={[
+                    name,
+                    watch("team1Player1"),
+                    watch("team2Player1"),
+                    watch("team2Player2"),
+                  ]}
                 />
               </div>
               {/* VS Column */}
@@ -314,7 +321,12 @@ const TransactionForm = ({
                   }
                   sessionPlayers={sessionPlayers}
                   onAddPlayer={addPlayerToSession}
-                  exclude={[name]}
+                  exclude={[
+                    name,
+                    watch("team1Player1"),
+                    watch("team2Player1"),
+                    watch("team2Player2"),
+                  ]}
                 />
                 <FuzzyCreatableSelect
                   placeholder="Opponent's name"
@@ -324,56 +336,102 @@ const TransactionForm = ({
                   }
                   sessionPlayers={sessionPlayers}
                   onAddPlayer={addPlayerToSession}
-                  exclude={[name]}
+                  exclude={[
+                    name,
+                    watch("team1Player1"),
+                    watch("team2Player1"),
+                    watch("team2Player2"),
+                  ]}
                 />
               </div>
             </div>
           </fieldset>
 
-          {/* Winning Team Radio Group */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Select Winning Team</Label>
-            <RadioGroup
-              value={winningTeam || ""}
-              onValueChange={(value) =>
-                setValue("winningTeam", value as "team1" | "team2", {
-                  shouldValidate: true,
-                })
-              }
-              className="grid grid-cols-2 gap-4"
-            >
-              <div>
-                <RadioGroupItem
-                  value="team1"
-                  id="winTeam1"
-                  className="peer sr-only"
-                />
-                <Label
-                  htmlFor="winTeam1"
-                  className="flex flex-col items-center justify-center rounded-md border-2 border-muted p-4 hover:bg-accent peer-data-[state=checked]:border-primary transition-colors"
-                >
-                  <span className="text-sm font-medium">Team 1 Wins</span>
-                </Label>
-              </div>
-              <div>
-                <RadioGroupItem
-                  value="team2"
-                  id="winTeam2"
-                  className="peer sr-only"
-                />
-                <Label
-                  htmlFor="winTeam2"
-                  className="flex flex-col items-center justify-center rounded-md border-2 border-muted p-4 hover:bg-accent peer-data-[state=checked]:border-primary transition-colors"
-                >
-                  <span className="text-sm font-medium">Team 2 Wins</span>
-                </Label>
-              </div>
-            </RadioGroup>
-            {errors.winningTeam && (
-              <p className="text-red-500 text-xs">
-                {errors.winningTeam.message}
-              </p>
-            )}
+          <div className="flex justify-between items-center w-full gap-4">
+            {/* Did you win the match? */}
+            <div className="flex flex-col w-1/2">
+              <Label className="text-sm font-medium">
+                Did you win the match?
+              </Label>
+              <Button
+                variant={
+                  watch("winningTeam") === "team1" ? "default" : "outline"
+                }
+                onClick={() => {
+                  if (watch("winningTeam") === "team1") {
+                    setValue("winningTeam", "team2", { shouldValidate: true });
+                  } else {
+                    setValue("winningTeam", "team1", { shouldValidate: true });
+                  }
+                }}
+              >
+                {watch("winningTeam") === "team1" ? "Yes" : "No"}
+              </Button>
+              {errors.winningTeam && (
+                <p className="text-red-500 text-xs">
+                  {errors.winningTeam.message}
+                </p>
+              )}
+            </div>
+
+            {/* <div className="flex flex-col w-1/2">
+              <Label className="text-sm font-medium">Friendly Match?</Label>
+              <RadioGroup
+                value={isFriendly ? "yes" : "no"}
+                onValueChange={(val) => {
+                  if (val === "yes") {
+                    setIsFriendly(true);
+                    setValue("amount", 0, { shouldValidate: true });
+                  } else {
+                    setIsFriendly(false);
+                  }
+                }}
+              >
+                <div className="relative">
+                  <RadioGroupItem
+                    value="yes"
+                    id="friendlyYes"
+                    className="peer sr-only"
+                    onClick={() => {
+                      if (isFriendly) {
+                        setIsFriendly(false);
+                      }
+                    }}
+                  />
+                  <Label
+                    htmlFor="friendlyYes"
+                    className="flex flex-col items-center justify-center rounded-md border-2 
+                   border-muted p-4 hover:bg-accent peer-data-[state=checked]:border-primary 
+                   transition-colors"
+                  >
+                    <span className="text-sm font-medium">
+                      {isFriendly ? "Yes" : "No"}
+                    </span>
+                  </Label>
+                </div>
+                <RadioGroupItem value="no" className="hidden" />
+              </RadioGroup>
+            </div> */}
+            <div className="flex flex-col w-1/2">
+    <Label className="text-sm font-medium">Friendly Match?</Label>
+    <div className="flex gap-2">
+      <Button
+        variant={isFriendly ? "default" : "outline"}
+        onClick={() => {
+          setIsFriendly(true);
+          setValue("amount", 0, { shouldValidate: true });
+        }}
+      >
+        Yes
+      </Button>
+      <Button
+        variant={!isFriendly ? "default" : "outline"}
+        onClick={() => setIsFriendly(false)}
+      >
+        No
+      </Button>
+    </div>
+  </div>
           </div>
 
           {/* Payer & Receiver Fields */}
@@ -433,118 +491,6 @@ const TransactionForm = ({
               </Select>
             </div>
           </div>
-          {/* Friendly Match Radio Group */}
-          <div className="space-y-2 mt-4">
-            <Label className="text-sm font-medium">Friendly Match?</Label>
-            <RadioGroup
-              value={isFriendly ? "yes" : "no"}
-              onValueChange={(value) => {
-                const friendly = value === "yes";
-                setIsFriendly(friendly);
-                // Immediately set amount to 0 if friendly is true.
-                if (friendly) {
-                  setValue("amount", 0, { shouldValidate: true });
-                }
-              }}
-              className="grid grid-cols-2 gap-4"
-            >
-              <div>
-                <RadioGroupItem
-                  value="yes"
-                  id="friendlyYes"
-                  className="peer sr-only"
-                />
-                <Label
-                  htmlFor="friendlyYes"
-                  className="flex flex-col items-center justify-center rounded-md border-2 border-muted p-4 hover:bg-accent peer-data-[state=checked]:border-primary transition-colors"
-                >
-                  <span className="text-sm font-medium">Yes</span>
-                </Label>
-              </div>
-              <div>
-                <RadioGroupItem
-                  value="no"
-                  id="friendlyNo"
-                  className="peer sr-only"
-                />
-                <Label
-                  htmlFor="friendlyNo"
-                  className="flex flex-col items-center justify-center rounded-md border-2 border-muted p-4 hover:bg-accent peer-data-[state=checked]:border-primary transition-colors"
-                >
-                  <span className="text-sm font-medium">No</span>
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
-        </>
-      )}
-
-      {transactionType === "SIDEBET" && (
-        <>
-          {/* Sidebet Details */}
-          <fieldset className="border p-4 rounded-lg">
-            <legend className="text-lg font-medium flex items-center gap-2">
-              Sidebet Details
-            </legend>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Bettor</Label>
-              <Input
-                {...register("bettor")}
-                value={name}
-                disabled
-                className="bg-gray-100 cursor-not-allowed"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Bookmaker</Label>
-              <Input
-                {...register("bookmaker")}
-                placeholder="Enter bookmaker's name"
-              />
-              {errors.bookmaker && (
-                <p className="text-red-500">{errors.bookmaker.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Did the Bettor Win?</Label>
-              <RadioGroup
-                value={watch("bettorWon") ? "yes" : "no"}
-                onValueChange={(value) =>
-                  setValue("bettorWon", value === "yes", {
-                    shouldValidate: true,
-                  })
-                }
-                className="grid grid-cols-2 gap-4"
-              >
-                <div>
-                  <RadioGroupItem
-                    value="yes"
-                    id="bettorWonYes"
-                    className="peer sr-only"
-                  />
-                  <Label
-                    htmlFor="bettorWonYes"
-                    className="flex flex-col items-center justify-center rounded-md border-2 border-muted p-4 hover:bg-accent peer-data-[state=checked]:border-primary transition-colors"
-                  >
-                    <span className="text-sm font-medium">Yes</span>
-                  </Label>
-                </div>
-                <div>
-                  <RadioGroupItem
-                    value="no"
-                    id="bettorWonNo"
-                    className="peer sr-only"
-                  />
-                  <Label
-                    htmlFor="bettorWonNo"
-                    className="flex flex-col items-center justify-center rounded-md border-2 border-muted p-4 hover:bg-accent peer-data-[state=checked]:border-primary transition-colors"
-                  >
-                    <span className="text-sm font-medium">No</span>
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
-          </fieldset>
         </>
       )}
       <div className="space-y-2">

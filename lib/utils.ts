@@ -83,35 +83,39 @@ export function getHeadToHeadStats(
 }
 
 
-export const getBestAndWorstPartners = (transactions: Transaction[], userName: string) => {
+export const getBestAndWorstPartners = (
+  transactions: Transaction[],
+  userName: string
+) => {
+  // 1. Collect (wins, losses) for each partner
   const partnerStats: Record<string, { wins: number; losses: number }> = {};
 
   transactions.forEach((t) => {
-    // Ensure teams exist before accessing them
     if (!t.team1 || !t.team2) return;
 
     const userInTeam1 = Array.isArray(t.team1) && t.team1.includes(userName);
     const userInTeam2 = Array.isArray(t.team2) && t.team2.includes(userName);
 
+    // If user is not in either team, skip
     if (!userInTeam1 && !userInTeam2) return;
 
     // Determine winning team
     const winningTeam = t.team1[0] === t.payer ? "team2" : "team1";
 
-    // User's team
+    // Identify which team the user is on
     const userTeam = userInTeam1 ? "team1" : "team2";
 
-    // Determine if the user's team won
+    // Check if the user's team won
     const isWin = userTeam === winningTeam;
 
-    // Get the user's partners (excluding themselves), ensuring it's an array
-    const partners = (t[userTeam] || []).filter((player) => player !== userName);
+    // Get the user's partners (excluding themselves)
+    const partners = (t[userTeam] || []).filter((p) => p !== userName);
 
+    // Update stats for each partner
     partners.forEach((partner) => {
       if (!partnerStats[partner]) {
         partnerStats[partner] = { wins: 0, losses: 0 };
       }
-
       if (isWin) {
         partnerStats[partner].wins += 1;
       } else {
@@ -120,15 +124,28 @@ export const getBestAndWorstPartners = (transactions: Transaction[], userName: s
     });
   });
 
-  // Convert stats to an array
-  const sortedPartners = Object.entries(partnerStats).map(([partner, stats]) => ({
-    name: partner,
-    wins: stats.wins,
-    losses: stats.losses,
-  }));
+  // 2. Convert partnerStats to an array with a computed ratio
+  const statsArray = Object.entries(partnerStats).map(([name, { wins, losses }]) => {
+    const totalGames = wins + losses;
+    const ratio = totalGames > 0 ? wins / totalGames : 0;
+    return {
+      name,
+      wins,
+      losses,
+      totalGames,
+      ratio,
+    };
+  });
 
-  return {
-    bestPartners: sortedPartners.sort((a, b) => b.wins - a.wins).slice(0, 2),
-    worstPartners: sortedPartners.sort((a, b) => b.losses - a.losses).slice(0, 2),
-  };
+  // 3. Identify best partners by ratio (descending)
+  const bestPartners = [...statsArray]
+    .sort((a, b) => b.ratio - a.ratio)
+    .slice(0, 2);
+
+  // 4. Identify worst partners by ratio (ascending)
+  const worstPartners = [...statsArray]
+    .sort((a, b) => a.ratio - b.ratio)
+    .slice(0, 2);
+
+  return { bestPartners, worstPartners };
 };

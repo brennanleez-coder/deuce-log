@@ -1,12 +1,6 @@
 "use client";
 import { useState } from "react";
-import {
-  CheckCircle,
-  Users,
-  DollarSign,
-  Pencil,
-  Check,
-} from "lucide-react";
+import { CheckCircle, Users, DollarSign, Pencil, Check } from "lucide-react";
 import { Transaction } from "@/types/types";
 import {
   Dialog,
@@ -31,7 +25,8 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
   const { editTransaction } = useTransactions(transaction.sessionId);
   const [isEditing, setIsEditing] = useState(false);
   const [isMarkingPaid, setIsMarkingPaid] = useState(false);
-  const [currentTransaction, setCurrentTransaction] = useState<Transaction>(transaction);
+  const [currentTransaction, setCurrentTransaction] =
+    useState<Transaction>(transaction);
 
   const handleEdit = async (formData: Partial<Transaction>) => {
     setIsEditing(false);
@@ -55,7 +50,7 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
   const handleTogglePaid = async () => {
     if (!currentTransaction) return;
     setIsMarkingPaid(true);
-    
+
     // **Optimistic Update**
     const previousTransaction = { ...currentTransaction };
     const updatedTransaction = {
@@ -156,7 +151,10 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
         <div>
           <ul className="mt-1 space-y-0.5">
             {currentTransaction?.team1.map((player, index) => (
-              <li key={`team1-${index}`} className={`text-sm ${getPlayerColorClass(player)}`}>
+              <li
+                key={`team1-${index}`}
+                className={`text-sm ${getPlayerColorClass(player)}`}
+              >
                 {player}
               </li>
             ))}
@@ -165,7 +163,10 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
         <div>
           <ul className="mt-1 space-y-0.5">
             {currentTransaction?.team2.map((player, index) => (
-              <li key={`team2-${index}`} className={`text-sm ${getPlayerColorClass(player)}`}>
+              <li
+                key={`team2-${index}`}
+                className={`text-sm ${getPlayerColorClass(player)}`}
+              >
                 {player}
               </li>
             ))}
@@ -173,7 +174,6 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
         </div>
       </div>
 
-      {/* Footer: Payment + Amount */}
       <div className="flex justify-between items-center border-t pt-3 mt-3">
         <div className="flex items-center justify-center gap-2 w-[150px] h-9">
           <Button
@@ -186,18 +186,40 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
                 : "border-gray-600 text-gray-600 hover:bg-gray-200"
             }`}
           >
-            {isMarkingPaid ? "Updating..." : currentTransaction?.paid ? "Paid" : "Mark as Paid"}
-            {currentTransaction?.paid ? <CheckCircle className="w-5 h-5" /> : <Check className="w-4 h-4" />}
+            {isMarkingPaid
+              ? "Updating..."
+              : currentTransaction?.paid
+              ? "Paid"
+              : "Mark as Paid"}
+            {currentTransaction?.paid ? (
+              <CheckCircle className="w-5 h-5" />
+            ) : (
+              <Check className="w-4 h-4" />
+            )}
           </Button>
         </div>
 
         {/* Amount */}
         <div className="flex items-center gap-2">
-          <DollarSign className="w-5 h-5 text-gray-700" />
-          <p className={`text-sm font-semibold ${currentTransaction?.paid ? "text-green-700" : "text-gray-700"}`}>
-            {currentTransaction?.payer === currentTransaction?.team1[0] ? "-" : "+"}$
-            {currentTransaction?.amount}
-          </p>
+          {currentTransaction?.amount === 0 ? (
+            <p className="text-sm font-semibold p-1 bg-cyan-50 rounded-lg shadow-md text-gray-700">
+              Friendly Match
+            </p>
+          ) : (
+            <>
+              <DollarSign className="w-5 h-5 text-gray-700" />
+              <p
+                className={`text-sm font-semibold ${
+                  currentTransaction?.paid ? "text-green-700" : "text-gray-700"
+                }`}
+              >
+                {currentTransaction?.payer === currentTransaction?.team1[0]
+                  ? "-"
+                  : "+"}
+                ${currentTransaction?.amount}
+              </p>
+            </>
+          )}
         </div>
       </div>
     </div>

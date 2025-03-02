@@ -3,9 +3,12 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Medal } from "lucide-react";
+
 import { getHeadToHeadStats, getBestAndWorstPartners } from "@/lib/utils";
 import HeadToHeadTable from "./HeadToHeadTable";
 import { Transaction } from "@/types/types";
+
+import BestWorstPartnerCard from "@/app/components/Stats/BestWorstPartnerCard";
 
 interface HeadToHeadStatsProps {
   transactions: Transaction[];
@@ -35,7 +38,7 @@ export default function HeadToHeadStats({
   }
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-md mt-4">
+    <div className="bg-white rounded-lg shadow-md">
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
@@ -55,26 +58,26 @@ export default function HeadToHeadStats({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-lg">
                 {/* Best Partner */}
                 {bestPartners?.length > 0 && (
-                  <div className="flex flex-col items-center text-center border rounded-lg p-4 shadow-sm w-full">
-                    <Medal className="w-6 h-6 text-yellow-500 mb-2" />
-                    <p className="text-md font-semibold text-gray-800">{bestPartners[0]?.name || "N/A"}</p>
-                    <p className="text-sm text-gray-500">Best Partner</p>
-                    <p className="text-md font-medium text-gray-700">
-                      {bestPartners[0]?.wins}W / {bestPartners[0]?.losses}L
-                    </p>
-                  </div>
+                  <BestWorstPartnerCard
+                    name={bestPartners[0]?.name}
+                    label="Best Partner"
+                    wins={bestPartners[0]?.wins}
+                    losses={bestPartners[0]?.losses}
+                    icon={<Medal className="w-6 h-6 text-yellow-500 mb-2" />}
+                    className="flex flex-col items-center text-center border rounded-lg p-4 shadow-sm w-full"
+                  />
                 )}
 
                 {/* Worst Partner */}
                 {worstPartners?.length > 0 && (
-                  <div className="flex flex-col items-center text-center border rounded-lg p-4 shadow-sm w-full">
-                    <Medal className="w-6 h-6 text-gray-500 mb-2" />
-                    <p className="text-md font-semibold text-gray-800">{worstPartners[0]?.name || "N/A"}</p>
-                    <p className="text-sm text-gray-500">Worst Partner</p>
-                    <p className="text-md font-medium text-gray-700">
-                      {worstPartners[0]?.wins}W / {worstPartners[0]?.losses}L
-                    </p>
-                  </div>
+                  <BestWorstPartnerCard
+                    name={worstPartners[0]?.name}
+                    label="Worst Partner"
+                    wins={worstPartners[0]?.wins}
+                    losses={worstPartners[0]?.losses}
+                    icon={<Medal className="w-6 h-6 text-gray-500 mb-2" />}
+                    className="flex flex-col items-center text-center border rounded-lg p-4 shadow-sm w-full"
+                  />
                 )}
               </div>
             </div>

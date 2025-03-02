@@ -5,8 +5,7 @@ import { useTransactions } from "@/hooks/useTransactions";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Users } from "lucide-react";
-import TransactionForm from "@/app/components/Transactions/TransactionForm";
+import { ArrowLeft, Users, Medal } from "lucide-react";
 import { Transaction } from "@/types/types";
 import { useBadmintonSessionStats } from "@/hooks/useBadmintonSessionStats";
 import {
@@ -16,16 +15,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import TransactionCard from "@/app/components/Transactions/TransactionCard";
 import SessionMetrics from "@/app/components/Stats/SessionMetrics";
 import EditSessionModal from "@/app/components/Sessions/EditSessionModal";
 import HeadToHeadStats from "@/app/components/Stats/HeadToHeadStats";
 import Loader from "@/components/FullScreenLoader";
 import { useBadmintonSessions } from "@/hooks/useBadmintonSessions";
 import Fuse from "fuse.js";
-import { Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
-
+import BestWorstPartnerCard from "@/app/components/Stats/BestWorstPartnerCard";
+import TransactionList from "@/app/components/Transactions/TransactionList";
 export default function SessionPage({ params }: { params: { id: string } }) {
   const { userId, name } = useUser();
   const { sessions } = useBadmintonSessions();
@@ -104,28 +101,70 @@ export default function SessionPage({ params }: { params: { id: string } }) {
             netAmount={netAmount}
           />
 
-          {/* Head-to-Head Preview with Dialog */}
           <Dialog open={isStatsOpen} onOpenChange={setIsStatsOpen}>
             <DialogTrigger asChild>
-              <div className="cursor-pointer bg-white p-4 rounded-lg shadow-md flex justify-between items-center">
-                <div className="text-center">
-                  <p className="text-sm text-green-600">Best Partner</p>
-                  {bestPartners &&
-                    (bestPartners.length > 0 ? bestPartners[0].name : "N/A")}
+              <div
+                className="cursor-pointer bg-white p-4 rounded-lg shadow-md 
+                 flex flex-col md:flex-row gap-4 w-full md:items-center 
+                 md:justify-between"
+              >
+                {/* Container that grows on desktop */}
+                <div className="flex flex-col sm:flex-row gap-4 flex-1">
+                  {/* Best Partner Card */}
+                  {bestPartners?.length > 0 ? (
+                    <BestWorstPartnerCard
+                      name={bestPartners[0].name}
+                      wins={bestPartners[0].wins}
+                      losses={bestPartners[0].losses}
+                      label="Best Partner"
+                      icon={<Medal className="w-8 h-8 text-yellow-500" />}
+                      className="w-full sm:w-1/2"
+                    />
+                  ) : (
+                    <BestWorstPartnerCard
+                      name="N/A"
+                      wins={0}
+                      losses={0}
+                      label="Best Partner"
+                      icon={<Medal className="w-8 h-8 text-gray-700" />}
+                      className="w-full sm:w-1/2"
+                    />
+                  )}
+
+                  {/* Worst Partner Card */}
+                  {worstPartners?.length > 0 ? (
+                    <BestWorstPartnerCard
+                      name={worstPartners[0].name}
+                      wins={worstPartners[0].wins}
+                      losses={worstPartners[0].losses}
+                      label="Worst Partner"
+                      icon={<Medal className="w-8 h-8 text-gray-700" />}
+                      className="w-full sm:w-1/2"
+                    />
+                  ) : (
+                    <BestWorstPartnerCard
+                      name="N/A"
+                      wins={0}
+                      losses={0}
+                      label="Worst Partner"
+                      icon={<Medal className="w-8 h-8 text-yellow-500" />}
+                      className="w-full sm:w-1/2"
+                    />
+                  )}
                 </div>
-                <div className="text-center">
-                  <p className="text-sm text-red-600">Worst Partner</p>
-                  {worstPartners &&
-                    (worstPartners.length > 0 ? worstPartners[0].name : "N/A")}
-                </div>
-                <Button variant="outline" className="flex items-center gap-2">
+
+                {/* The "View Stats" button */}
+                <Button
+                  variant="outline"
+                  className="flex items-center gap-2 self-end md:self-center"
+                >
                   <Users className="w-5 h-5" />
                   View Stats
                 </Button>
               </div>
             </DialogTrigger>
 
-            <DialogContent className="max-w-3xl">
+            <DialogContent className="max-w-3xl w-full">
               <DialogHeader>
                 <DialogTitle>Head-to-Head Stats</DialogTitle>
               </DialogHeader>
@@ -133,91 +172,20 @@ export default function SessionPage({ params }: { params: { id: string } }) {
             </DialogContent>
           </Dialog>
         </div>
-
-        {/* Transactions Section */}
-        <section className="bg-white p-6 rounded-lg shadow-md">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">Matches</h2>
-            <Dialog open={isOpen} onOpenChange={setIsOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  onClick={() => setIsOpen(true)}
-                  className="flex items-center gap-2"
-                  variant="outline"
-                >
-                  <Plus className="w-5 h-5" />
-                  <span className="text-sm">Add</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-lg">
-                <DialogHeader>
-                  <DialogTitle>Add Match Transaction</DialogTitle>
-                </DialogHeader>
-                <TransactionForm
-                  userId={userId}
-                  name={name}
-                  sessionId={sessionId}
-                  onSubmit={handleSubmit}
-                  isEditing={false}
-                />
-              </DialogContent>
-            </Dialog>
-          </div>
-          {transactions.length !== 0 && (<div className="mb-4 flex justify-center items-center gap-2">
-            <Search className="w-5 h-5 text-gray-500" />
-            <Input
-              type="text"
-              placeholder="Search by player, partner, or opponent..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full max-w-md border border-gray-300 px-4 py-2 rounded-md focus:ring-2 focus:ring-blue-500"
-            />
-          </div>)}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Wins Column */}
-            <div>
-              <div className="flex justify-between items-center mb-2 text-green-600">
-                <h3 className="text-lg font-semibold">Wins ({winCount})</h3>
-                <h3 className="text-lg font-semibold">${totalWinsAmount}</h3>
-              </div>
-              {filteredTransactions.wins.length === 0 ? (
-                <p className="text-center text-gray-500 text-sm">
-                  No wins found.
-                </p>
-              ) : (
-                <ul className="space-y-4">
-                  {filteredTransactions.wins.map((transaction) => (
-                    <TransactionCard
-                      key={transaction.id}
-                      transaction={transaction}
-                    />
-                  ))}
-                </ul>
-              )}
-            </div>
-            {/* Losses Column */}
-            <div>
-              <div className="flex justify-between items-center mb-2 text-red-600">
-                <h3 className="text-lg font-semibold">Losses ({lossCount})</h3>
-                <h3 className="text-lg font-semibold">${totalLossesAmount}</h3>
-              </div>
-              {filteredTransactions.losses.length === 0 ? (
-                <p className="text-center text-gray-500 text-sm">
-                  No losses found.
-                </p>
-              ) : (
-                <ul className="space-y-4">
-                  {filteredTransactions.losses.map((transaction) => (
-                    <TransactionCard
-                      key={transaction.id}
-                      transaction={transaction}
-                    />
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
-        </section>
+        
+        <TransactionList
+          userId={userId}
+          name={name}
+          sessionId={sessionId}
+          addTransaction={handleSubmit}
+          transactions={transactions}
+          wins={wins}
+          losses={losses}
+          winCount={winCount}
+          lossCount={lossCount}
+          totalWinsAmount={totalWinsAmount}
+          totalLossesAmount={totalLossesAmount}
+        />
       </div>
     </main>
   );
