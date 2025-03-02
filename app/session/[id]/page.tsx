@@ -33,7 +33,7 @@ export default function SessionPage({ params }: { params: { id: string } }) {
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const currentSession = sessions.find((s) => s.id === sessionId);
   const [searchQuery, setSearchQuery] = useState("");
-
+  console.log("transactions", transactions);
   const {
     matchesPlayed,
     winCount,

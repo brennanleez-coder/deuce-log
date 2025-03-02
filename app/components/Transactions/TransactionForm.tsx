@@ -348,25 +348,32 @@ const TransactionForm = ({
           </fieldset>
 
           <div className="flex justify-between items-center w-full gap-4">
-            {/* Did you win the match? */}
-            <div className="flex flex-col w-1/2">
+            <div className="flex flex-col w-1/2 space-y-2">
               <Label className="text-sm font-medium">
                 Did you win the match?
               </Label>
-              <Button
-                variant={
-                  watch("winningTeam") === "team1" ? "default" : "outline"
-                }
-                onClick={() => {
-                  if (watch("winningTeam") === "team1") {
-                    setValue("winningTeam", "team2", { shouldValidate: true });
-                  } else {
-                    setValue("winningTeam", "team1", { shouldValidate: true });
+              <div className="flex space-x-2">
+                <Button
+                  variant={
+                    watch("winningTeam") === "team1" ? "default" : "outline"
                   }
-                }}
-              >
-                {watch("winningTeam") === "team1" ? "Yes" : "No"}
-              </Button>
+                  onClick={() =>
+                    setValue("winningTeam", "team1", { shouldValidate: true })
+                  }
+                >
+                  Yes
+                </Button>
+                <Button
+                  variant={
+                    watch("winningTeam") === "team2" ? "default" : "outline"
+                  }
+                  onClick={() =>
+                    setValue("winningTeam", "team2", { shouldValidate: true })
+                  }
+                >
+                  No
+                </Button>
+              </div>
               {errors.winningTeam && (
                 <p className="text-red-500 text-xs">
                   {errors.winningTeam.message}
@@ -374,64 +381,26 @@ const TransactionForm = ({
               )}
             </div>
 
-            {/* <div className="flex flex-col w-1/2">
+            <div className="flex flex-col w-1/2">
               <Label className="text-sm font-medium">Friendly Match?</Label>
-              <RadioGroup
-                value={isFriendly ? "yes" : "no"}
-                onValueChange={(val) => {
-                  if (val === "yes") {
+              <div className="flex gap-2">
+                <Button
+                  variant={isFriendly ? "default" : "outline"}
+                  onClick={() => {
                     setIsFriendly(true);
                     setValue("amount", 0, { shouldValidate: true });
-                  } else {
-                    setIsFriendly(false);
-                  }
-                }}
-              >
-                <div className="relative">
-                  <RadioGroupItem
-                    value="yes"
-                    id="friendlyYes"
-                    className="peer sr-only"
-                    onClick={() => {
-                      if (isFriendly) {
-                        setIsFriendly(false);
-                      }
-                    }}
-                  />
-                  <Label
-                    htmlFor="friendlyYes"
-                    className="flex flex-col items-center justify-center rounded-md border-2 
-                   border-muted p-4 hover:bg-accent peer-data-[state=checked]:border-primary 
-                   transition-colors"
-                  >
-                    <span className="text-sm font-medium">
-                      {isFriendly ? "Yes" : "No"}
-                    </span>
-                  </Label>
-                </div>
-                <RadioGroupItem value="no" className="hidden" />
-              </RadioGroup>
-            </div> */}
-            <div className="flex flex-col w-1/2">
-    <Label className="text-sm font-medium">Friendly Match?</Label>
-    <div className="flex gap-2">
-      <Button
-        variant={isFriendly ? "default" : "outline"}
-        onClick={() => {
-          setIsFriendly(true);
-          setValue("amount", 0, { shouldValidate: true });
-        }}
-      >
-        Yes
-      </Button>
-      <Button
-        variant={!isFriendly ? "default" : "outline"}
-        onClick={() => setIsFriendly(false)}
-      >
-        No
-      </Button>
-    </div>
-  </div>
+                  }}
+                >
+                  Yes
+                </Button>
+                <Button
+                  variant={!isFriendly ? "default" : "outline"}
+                  onClick={() => setIsFriendly(false)}
+                >
+                  No
+                </Button>
+              </div>
+            </div>
           </div>
 
           {/* Payer & Receiver Fields */}
