@@ -177,7 +177,7 @@ const TransactionForm = ({
     }
     // Either leave dependency array empty (for once on mount)
     // or put `[transaction]` if 'transaction' is fetched asynchronously.
-  }, [transaction]);
+  }, []);
 
   // 2) Another effect: whenever isFriendly = true, set amount = 0
   React.useEffect(() => {
@@ -208,6 +208,20 @@ const TransactionForm = ({
       console.error("Error adding player:", error);
       alert("Failed to add player. Check console for details.");
     }
+  };
+
+  const handleWinningTeamChange = (team: "team1" | "team2") => {
+    setValue("winningTeam", team, { shouldValidate: true });
+    setValue(
+      "payer",
+      team === "team1" ? getValues("team2Player1") : getValues("team1Player1"),
+      { shouldValidate: true }
+    );
+    setValue(
+      "receiver",
+      team === "team1" ? getValues("team1Player1") : getValues("team2Player1"),
+      { shouldValidate: true }
+    );
   };
 
   const handleFormSubmit = async (data: TransactionFormData) => {
@@ -352,28 +366,21 @@ const TransactionForm = ({
               <Label className="text-sm font-medium">
                 Did you win the match?
               </Label>
-              <div className="flex space-x-2">
-                <Button
-                  variant={
-                    watch("winningTeam") === "team1" ? "default" : "outline"
-                  }
-                  onClick={() =>
-                    setValue("winningTeam", "team1", { shouldValidate: true })
-                  }
-                >
+              <RadioGroup
+                value={winningTeam}
+                onValueChange={handleWinningTeamChange}
+                className="flex gap-4"
+              >
+                <RadioGroupItem value="team1" id="won" />
+                <Label htmlFor="won" className="cursor-pointer">
                   Yes
-                </Button>
-                <Button
-                  variant={
-                    watch("winningTeam") === "team2" ? "default" : "outline"
-                  }
-                  onClick={() =>
-                    setValue("winningTeam", "team2", { shouldValidate: true })
-                  }
-                >
+                </Label>
+
+                <RadioGroupItem value="team2" id="lost" />
+                <Label htmlFor="lost" className="cursor-pointer">
                   No
-                </Button>
-              </div>
+                </Label>
+              </RadioGroup>
               {errors.winningTeam && (
                 <p className="text-red-500 text-xs">
                   {errors.winningTeam.message}
@@ -383,23 +390,32 @@ const TransactionForm = ({
 
             <div className="flex flex-col w-1/2">
               <Label className="text-sm font-medium">Friendly Match?</Label>
-              <div className="flex gap-2">
-                <Button
-                  variant={isFriendly ? "default" : "outline"}
-                  onClick={() => {
-                    setIsFriendly(true);
-                    setValue("amount", 0, { shouldValidate: true });
-                  }}
-                >
-                  Yes
-                </Button>
-                <Button
-                  variant={!isFriendly ? "default" : "outline"}
-                  onClick={() => setIsFriendly(false)}
-                >
-                  No
-                </Button>
-              </div>
+              <RadioGroup
+                value={isFriendly ? "yes" : "no"}
+                onValueChange={(value) => {
+                  setIsFriendly(value === "yes");
+                  setValue(
+                    "amount",
+                    value === "yes" ? 0 : getValues("amount"),
+                    { shouldValidate: true }
+                  );
+                }}
+                className="flex gap-4"
+              >
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="yes" id="friendly-yes" />
+                  <Label htmlFor="friendly-yes" className="cursor-pointer">
+                    Yes
+                  </Label>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="no" id="friendly-no" />
+                  <Label htmlFor="friendly-no" className="cursor-pointer">
+                    No
+                  </Label>
+                </div>
+              </RadioGroup>
             </div>
           </div>
 

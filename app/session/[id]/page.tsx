@@ -29,10 +29,9 @@ export default function SessionPage({ params }: { params: { id: string } }) {
   const { transactions, addTransaction } = useTransactions(params.id);
   const router = useRouter();
   const sessionId = params.id;
-  const [isOpen, setIsOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const currentSession = sessions.find((s) => s.id === sessionId);
-  const [searchQuery, setSearchQuery] = useState("");
+
   console.log("transactions", transactions);
   const {
     matchesPlayed,
@@ -47,26 +46,10 @@ export default function SessionPage({ params }: { params: { id: string } }) {
     worstPartners,
   } = useBadmintonSessionStats(transactions, name);
 
-  // Get filtered transactions for both wins and losses
-  const filteredTransactions = useMemo(() => {
-    const fuse = new Fuse(transactions, {
-      keys: ["team1", "team2"], // Searching across all players
-      threshold: 0.0, // Allows slight typos
-    });
-
-    if (!searchQuery) return { wins, losses };
-    const results = fuse.search(searchQuery).map((result) => result.item);
-    return {
-      wins: results.filter((t) => wins.includes(t)) || [],
-      losses: results.filter((t) => losses.includes(t)) || [],
-    };
-  }, [searchQuery, transactions, wins, losses]);
-
   if (!currentSession) return <Loader fullScreen />;
 
   const handleSubmit = async (transaction: Transaction) => {
     await addTransaction(transaction);
-    setIsOpen(false);
   };
 
   return (

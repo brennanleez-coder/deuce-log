@@ -76,7 +76,6 @@ export default function TransactionsList({
     setOrder("desc");
   };
 
-  // -- Apply filtered logic --
   const filteredTransactions = useFilteredTransactions(
     transactions,
     wins,
@@ -125,7 +124,6 @@ export default function TransactionsList({
       ? `$${filteredLossesAmount} / $${totalLossesAmount}`
       : `$${totalLossesAmount}`;
 
-  // Handler for adding a transaction (pass this down to TransactionForm)
   const handleSubmit = (transaction: Transaction) => {
     addTransaction(transaction);
     setIsOpen(false);
