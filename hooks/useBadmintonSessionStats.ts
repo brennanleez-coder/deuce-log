@@ -114,6 +114,15 @@ export const useBadmintonSessionStats = (
         toughestOpponents.push({ name, wins: stats.wins, losses: stats.losses });
       }
     }
+    if (mostDefeatedOpponents.length === 0) {
+      const singleWinOpponent = Object.entries(opponentStats).find(
+        ([_, stats]) => stats.losses > 0
+      );
+      if (singleWinOpponent) {
+        const [name, stats] = singleWinOpponent;
+        mostDefeatedOpponents.push({ name, wins: stats.wins, losses: stats.losses });
+      }
+    }
 
     const { bestPartners, worstPartners } = getBestAndWorstPartners(
       transactions,

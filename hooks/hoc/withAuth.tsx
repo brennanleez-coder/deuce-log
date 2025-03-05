@@ -11,7 +11,7 @@ export default function withAuth<T extends JSX.IntrinsicAttributes>(WrappedCompo
     useEffect(() => {
       if (status === 'unauthenticated') {
         // Optionally pass a callbackUrl to redirect back after sign-in
-        signIn(undefined, { callbackUrl: "/" })
+        signIn(undefined, { callbackUrl: "/login" })
       }
     }, [status, router])
 
