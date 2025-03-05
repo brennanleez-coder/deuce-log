@@ -21,13 +21,11 @@ import axios from "axios";
 import FuzzyCreatableSelect from "@/components/FuzzyCreatableSelect";
 import { BadmintonSession } from "@prisma/client";
 import Loader from "@/components/FullScreenLoader";
-
+import { toast } from "sonner";
 const transactionSchema = z.object({
   sessionId: z.string().min(1, "Session ID is required"),
   type: z.enum(["MATCH", "SIDEBET"]),
-  amount: z.coerce
-    .number({ invalid_type_error: "Enter a valid number" })
-    .min(0, "Amount must be at least 0"),
+  amount: z.number().min(0, "Amount must be at least 0"),
   team1Player1: z.string().min(1, "Team 1 must have at least one member"),
   team1Player2: z.string().optional(),
   team2Player1: z.string().min(1, "Team 2 must have at least one member"),
@@ -37,7 +35,6 @@ const transactionSchema = z.object({
   bettor: z.string().optional(),
   bookmaker: z.string().optional(),
   bettorWon: z.boolean().optional(),
-  // Allow empty string as default, but require non-empty on validation.
   winningTeam: z
     .union([z.enum(["team1", "team2"]), z.literal("")])
     .refine((val) => val !== "", { message: "Please select a winning team" }),
@@ -87,12 +84,12 @@ const TransactionForm = ({
             bookmaker: transaction.bookmaker || "",
             bettorWon: transaction.bettorWon ?? false, // Ensure boolean default
             winningTeam:
-              transaction.payer === transaction.team1[0] ? "team2" : "team1",
+              transaction.receiver === transaction.team1[0] ? "team1" : "team2", // ✅ Fixed
           }
         : {
             sessionId,
             type: "MATCH",
-            amount: "",
+            amount: 0,
             team1Player1: name,
             team1Player2: "",
             team2Player1: "",
@@ -117,6 +114,9 @@ const TransactionForm = ({
   // Watch the team player fields
   const team1Player1 = watch("team1Player1");
   const team2Player1 = watch("team2Player1");
+
+  const payer = watch("payer");
+  const receiver = watch("receiver");
 
   React.useEffect(() => {
     if (winningTeam) {
@@ -171,22 +171,6 @@ const TransactionForm = ({
   }, [userId, sessionId]);
 
   React.useEffect(() => {
-    if (transaction?.amount === 0 && transaction?.type === "MATCH") {
-      // Only set this once at the beginning
-      setIsFriendly(true);
-    }
-    // Either leave dependency array empty (for once on mount)
-    // or put `[transaction]` if 'transaction' is fetched asynchronously.
-  }, []);
-
-  // 2) Another effect: whenever isFriendly = true, set amount = 0
-  React.useEffect(() => {
-    if (isFriendly) {
-      setValue("amount", 0, { shouldValidate: true });
-    }
-  }, [isFriendly, setValue]);
-
-  React.useEffect(() => {
     if (!isEditing && sessionPlayers.length) {
       setValue("payer", sessionPlayers[2], { shouldValidate: true });
       setValue("receiver", sessionPlayers[0], { shouldValidate: true });
@@ -228,7 +212,6 @@ const TransactionForm = ({
     if (!userId)
       return console.error("User ID is required to add a transaction");
     setLoading(true);
-    // trim all data
     Object.keys(data).forEach((key) => {
       if (typeof data[key] === "string") data[key] = data[key].trim();
     });
@@ -236,19 +219,16 @@ const TransactionForm = ({
       sessionId,
       userId,
       ...data,
-      // Combine match fields into arrays only if type is MATCH.
       ...(data.type === "MATCH" && {
         team1: [data.team1Player1, data.team1Player2].filter(Boolean),
         team2: [data.team2Player1, data.team2Player2].filter(Boolean),
       }),
     };
+    console.log("payload", payload);
     try {
       await onSubmit(payload);
     } catch (error: any) {
-      console.error(
-        "Error creating transaction:",
-        error.response?.data || error.message
-      );
+      toast.error("Failed to add match.");
     } finally {
       setLoading(false);
     }
@@ -260,7 +240,6 @@ const TransactionForm = ({
       onSubmit={handleSubmit(handleFormSubmit)}
       className="space-y-6 p-4 max-h-[90vh] overflow-y-auto"
     >
-      {/* Transaction Type */}
       <div className="w-full">
         <RadioGroup
           value={transactionType}
@@ -319,14 +298,11 @@ const TransactionForm = ({
                   ]}
                 />
               </div>
-              {/* VS Column */}
               <div className="text-center">
                 <p className="text-xl font-bold">VS</p>
               </div>
-              {/* Team 2 */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Team 2</Label>
-
                 <FuzzyCreatableSelect
                   placeholder="Opponent's name"
                   value={watch("team2Player1") || null}
@@ -361,72 +337,61 @@ const TransactionForm = ({
             </div>
           </fieldset>
 
-          <div className="flex justify-between items-center w-full gap-4">
-            <div className="flex flex-col w-1/2 space-y-2">
-              <Label className="text-sm font-medium">
-                Did you win the match?
-              </Label>
-              <RadioGroup
-                value={winningTeam}
-                onValueChange={handleWinningTeamChange}
-                className="flex gap-4"
-              >
-                <RadioGroupItem value="team1" id="won" />
-                <Label htmlFor="won" className="cursor-pointer">
+          <div className="flex flex-col w-full gap-2">
+            <Label className="text-sm font-medium text-left w-full">
+              Did you win the match?
+            </Label>
+            <RadioGroup
+              value={winningTeam}
+              onValueChange={handleWinningTeamChange}
+              className="flex w-full gap-4"
+            >
+              <div className="w-full">
+                <RadioGroupItem value="team1" id="won" className="hidden" />
+                <Label
+                  htmlFor="won"
+                  onClick={() => handleWinningTeamChange("team1")}
+                  className={`flex items-center justify-center w-full h-10 border-2 rounded-lg cursor-pointer transition
+        ${
+          winningTeam === "team1"
+            ? "bg-blue-500 text-white border-blue-600"
+            : "border-gray-300 hover:bg-gray-200"
+        }`}
+                >
                   Yes
                 </Label>
+              </div>
 
-                <RadioGroupItem value="team2" id="lost" />
-                <Label htmlFor="lost" className="cursor-pointer">
+              <div className="w-full">
+                <RadioGroupItem value="team2" id="lost" className="hidden" />
+                <Label
+                  htmlFor="lost"
+                  onClick={() => handleWinningTeamChange("team2")}
+                  className={`flex items-center justify-center w-full h-10 border-2 rounded-lg cursor-pointer transition
+        ${
+          winningTeam === "team2"
+            ? "bg-red-500 text-white border-red-600"
+            : "border-gray-300 hover:bg-gray-200"
+        }`}
+                >
                   No
                 </Label>
-              </RadioGroup>
-              {errors.winningTeam && (
-                <p className="text-red-500 text-xs">
-                  {errors.winningTeam.message}
-                </p>
-              )}
-            </div>
-
-            <div className="flex flex-col w-1/2">
-              <Label className="text-sm font-medium">Friendly Match?</Label>
-              <RadioGroup
-                value={isFriendly ? "yes" : "no"}
-                onValueChange={(value) => {
-                  setIsFriendly(value === "yes");
-                  setValue(
-                    "amount",
-                    value === "yes" ? 0 : getValues("amount"),
-                    { shouldValidate: true }
-                  );
-                }}
-                className="flex gap-4"
-              >
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="yes" id="friendly-yes" />
-                  <Label htmlFor="friendly-yes" className="cursor-pointer">
-                    Yes
-                  </Label>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="no" id="friendly-no" />
-                  <Label htmlFor="friendly-no" className="cursor-pointer">
-                    No
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
+              </div>
+            </RadioGroup>
+            {errors.winningTeam && (
+              <p className="text-red-500 text-xs">
+                {errors.winningTeam.message}
+              </p>
+            )}
           </div>
 
-          {/* Payer & Receiver Fields */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="text-sm font-medium flex items-center gap-2">
                 <User className="w-5 h-5 text-primary" /> Payer (Loser)
               </Label>
               <Select
-                value={watch("payer") || "unassigned"}
+                value={payer}
                 onValueChange={(value) => setValue("payer", value)}
               >
                 <SelectTrigger className="bg-red-100 border border-red-500">
@@ -452,7 +417,7 @@ const TransactionForm = ({
                 <User className="w-5 h-5 text-primary" /> Receiver (Winner)
               </Label>
               <Select
-                value={watch("receiver") || "unassigned"}
+                value={receiver}
                 onValueChange={(value) => setValue("receiver", value)}
               >
                 <SelectTrigger className="bg-green-100 border border-green-500">
@@ -484,7 +449,7 @@ const TransactionForm = ({
         </Label>
         <Input
           type="number"
-          defaultValue={0}
+          // defaultValue={0}
           {...register("amount", { valueAsNumber: true })}
           placeholder="Enter amount"
           disabled={isFriendly}

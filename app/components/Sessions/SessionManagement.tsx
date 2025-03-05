@@ -21,9 +21,8 @@ import SessionListCards from "@/app/components/Sessions/SessionListCards";
 const ITEMS_PER_PAGE = 5;
 type ViewMode = "table" | "cards";
 
-export default function SessionManagement() {
+export default function SessionManagement({loading, sessions, createSession, deleteSession}) {
   const { userId } = useUser();
-  const { loading, sessions, createSession, deleteSession } = useBadmintonSessions();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
