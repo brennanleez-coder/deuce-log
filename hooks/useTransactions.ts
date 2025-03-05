@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useSession } from "next-auth/react";
 import { Transaction } from "@/types/types";
+import { useUser } from "./useUser";
 
 interface EditTransactionParams {
   transactionId: string;
@@ -20,16 +21,9 @@ interface EditTransactionParams {
 
 // Hook to manage transactions state independently
 export const useTransactions = (selectedSession: string | null = null) => {
-  const { data: session } = useSession();
-  const [userId, setUserId] = useState<string | null>(null);
+  const {userId} = useUser()
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (session?.user?.id) {
-      setUserId(session.user.id);
-    }
-  }, [session]);
 
   // Fetch transactions when selectedSession changes
   useEffect(() => {

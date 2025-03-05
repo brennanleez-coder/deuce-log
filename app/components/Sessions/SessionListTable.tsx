@@ -1,11 +1,9 @@
-// SessionListTable.tsx
 "use client";
 
-import React from "react";
+import React, { useEffect, useState, useMemo } from "react";
+import axios from "axios";
 import { useBadmintonSessionStats } from "@/hooks/useBadmintonSessionStats";
 import { useUser } from "@/hooks/useUser";
-import { useTransactions } from "@/hooks/useTransactions";
-import { Transaction } from "@/types/types";
 import {
   Table,
   TableHeader,
@@ -26,13 +24,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
+import { Transaction } from "@/types/types";
 
 type Session = {
   id: string;
   name: string;
   courtFee: number;
   createdAt: string;
-  transactions: Transaction[];
 };
 
 interface SessionListTableProps {
@@ -48,7 +46,37 @@ export default function SessionListTable({
   handleDeleteSession,
   formatDate,
 }: SessionListTableProps) {
-  const { name } = useUser();
+  const { name, userId } = useUser();
+  const [sessionTransactions, setSessionTransactions] = useState<Record<string, Transaction[]>>({});
+  const [loading, setLoading] = useState(true);
+
+  // Fetch transactions for all sessions
+  useEffect(() => {
+    if (!userId) return;
+
+    const fetchTransactions = async () => {
+      try {
+        const { data } = await axios.get("/api/transactions", {
+          params: { userId },
+        });
+
+        // Group transactions by session ID
+        const transactionsBySession = data.reduce((acc: Record<string, Transaction[]>, transaction: Transaction) => {
+          acc[transaction.sessionId] = acc[transaction.sessionId] || [];
+          acc[transaction.sessionId].push(transaction);
+          return acc;
+        }, {});
+
+        setSessionTransactions(transactionsBySession);
+      } catch (error) {
+        console.error("Error fetching transactions:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTransactions();
+  }, [userId]);
 
   return (
     <div className="w-full overflow-x-auto">
@@ -66,13 +94,16 @@ export default function SessionListTable({
         </TableHeader>
         <TableBody>
           {sessions.map((session) => {
-            const { transactions } = useTransactions(session.id);
-            const { matchesPlayed, winCount, lossCount, netAmount } =
-              useBadmintonSessionStats(transactions, name);
+            const transactions = sessionTransactions[session.id] || [];
+
+            // Compute session stats using useMemo for optimization
+            const { matchesPlayed, winCount, lossCount, netAmount } = useMemo(
+              () => useBadmintonSessionStats(transactions, name),
+              [transactions, name]
+            );
 
             const totalGames = winCount + lossCount;
-            const winRate =
-              totalGames > 0 ? ((winCount / totalGames) * 100).toFixed(1) + "%" : "N/A";
+            const winRate = totalGames > 0 ? `${((winCount / totalGames) * 100).toFixed(1)}%` : "N/A";
 
             return (
               <TableRow
@@ -86,51 +117,33 @@ export default function SessionListTable({
                 <TableCell className="text-center">{matchesPlayed}</TableCell>
                 <TableCell
                   className={`text-center font-semibold ${
-                    totalGames > 0
-                      ? winCount > lossCount
-                        ? "text-green-600"
-                        : "text-red-600"
-                      : "text-gray-500"
+                    totalGames > 0 ? (winCount > lossCount ? "text-green-600" : "text-red-600") : "text-gray-500"
                   }`}
                 >
                   {winRate}
                 </TableCell>
                 <TableCell
-                  className={`text-center font-semibold ${
-                    netAmount >= 0 ? "text-green-600" : "text-red-600"
-                  }`}
+                  className={`text-center font-semibold ${netAmount >= 0 ? "text-green-600" : "text-red-600"}`}
                 >
                   ${netAmount.toFixed(2)}
                 </TableCell>
                 <TableCell className="text-right">
-                  {/* Delete button */}
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => e.stopPropagation()}
-                      >
+                      <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
                         <Trash2 className="h-4 w-4 text-red-500" />
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent
-                      className="max-w-md"
-                      onClick={(e) => e.stopPropagation()}
-                    >
+                    <AlertDialogContent className="max-w-md" onClick={(e) => e.stopPropagation()}>
                       <AlertDialogHeader>
                         <AlertDialogTitle>Delete Session?</AlertDialogTitle>
                       </AlertDialogHeader>
                       <p className="text-gray-600 px-4">
-                        Are you sure you want to delete{" "}
-                        <strong>{session.name}</strong>? This action cannot be undone.
+                        Are you sure you want to delete <strong>{session.name}</strong>? This action cannot be undone.
                       </p>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={(e) => handleDeleteSession(session.id, e)}
-                          className="bg-red-600 hover:bg-red-700"
-                        >
+                        <AlertDialogAction onClick={(e) => handleDeleteSession(session.id, e)} className="bg-red-600 hover:bg-red-700">
                           Yes, Delete
                         </AlertDialogAction>
                       </AlertDialogFooter>
@@ -142,6 +155,9 @@ export default function SessionListTable({
           })}
         </TableBody>
       </Table>
+
+      {/* Show loading message while fetching transactions */}
+      {loading && <div className="text-gray-500 text-center py-4">Loading sessions...</div>}
     </div>
   );
 }

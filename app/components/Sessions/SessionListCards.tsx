@@ -1,9 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState, useMemo } from "react";
+import axios from "axios";
 import { useBadmintonSessionStats } from "@/hooks/useBadmintonSessionStats";
 import { useUser } from "@/hooks/useUser";
-import { useTransactions } from "@/hooks/useTransactions";
 import { Transaction } from "@/types/types";
 import { Card } from "@/components/ui/card";
 import {
@@ -32,7 +32,6 @@ type Session = {
   name: string;
   courtFee: number;
   createdAt: string;
-  transactions: Transaction[];
 };
 
 interface SessionListCardsProps {
@@ -48,18 +47,52 @@ export default function SessionListCards({
   handleDeleteSession,
   formatDate,
 }: SessionListCardsProps) {
-  const { name } = useUser();
+  const { name, userId } = useUser();
+  const [sessionTransactions, setSessionTransactions] = useState<Record<string, Transaction[]>>({});
+  const [loading, setLoading] = useState(true);
+
+  // Fetch transactions for all sessions
+  useEffect(() => {
+    if (!userId) return;
+
+    const fetchTransactions = async () => {
+      try {
+        const { data } = await axios.get("/api/transactions", {
+          params: { userId },
+        });
+
+        // Group transactions by session ID
+        const transactionsBySession = data.reduce((acc: Record<string, Transaction[]>, transaction: Transaction) => {
+          acc[transaction.sessionId] = acc[transaction.sessionId] || [];
+          acc[transaction.sessionId].push(transaction);
+          return acc;
+        }, {});
+
+        setSessionTransactions(transactionsBySession);
+      } catch (error) {
+        console.error("Error fetching transactions:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTransactions();
+  }, [userId]);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {sessions.map((session) => {
-        const { transactions } = useTransactions(session.id);
-        const { matchesPlayed, winCount, lossCount, netAmount } =
-          useBadmintonSessionStats(transactions, name);
+        const transactions = sessionTransactions[session.id] || [];
+
+        // Compute session stats using useMemo for optimization
+        const { matchesPlayed, winCount, lossCount, netAmount } = useMemo(
+          () => useBadmintonSessionStats(transactions, name),
+          [transactions, name]
+        );
 
         const totalGames = winCount + lossCount;
         const hasMatches = totalGames > 0;
-        const winRate = hasMatches ? ((winCount / totalGames) * 100).toFixed(1) + "%" : "N/A";
+        const winRate = hasMatches ? `${((winCount / totalGames) * 100).toFixed(1)}%` : "N/A";
 
         return (
           <div
@@ -164,6 +197,9 @@ export default function SessionListCards({
           </div>
         );
       })}
+
+      {/* Show loading message while fetching transactions */}
+      {loading && <div className="text-gray-500 text-center py-4">Loading sessions...</div>}
     </div>
   );
 }
