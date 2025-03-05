@@ -40,7 +40,7 @@ export default function LoginPage() {
           Welcome to <span className="text-blue-600">Deuce log</span>
         </h2>
         <p className="mt-2 text-sm text-gray-600">
-          A minimalist tool to gain performance insights—all in one place.
+          A minimalist tool to gain performance insights.
         </p>
         
         <div className="mt-6">
