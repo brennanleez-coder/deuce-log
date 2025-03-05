@@ -26,6 +26,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import BestWorstPartnerCard from "./BestWorstPartnerCard";
+import StatsCard from "./StatsCard";
 
 export default function AllTimeStats({
   userName,
@@ -34,7 +35,6 @@ export default function AllTimeStats({
   userName: string | null;
   totalSessionFees: number;
 }) {
-  // Bail early if props aren’t valid
   if (!userName) return null;
   if (typeof totalSessionFees !== "number") return null;
 
@@ -42,7 +42,6 @@ export default function AllTimeStats({
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // NEW: Toggle for friendly matches in the Win/Loss card
   const [includeFriendly, setIncludeFriendly] = useState(true);
 
   const { fetchTransactionsByUserId } = useTransactions(null);
@@ -59,7 +58,6 @@ export default function AllTimeStats({
     toast.success("All-Time Stats Loaded");
   }, [userId]);
 
-  // Stats for ALL matches (including friendly)
   const statsAll = useBadmintonSessionStats(allTransactions, userName);
   const {
     matchesPlayed,
@@ -70,19 +68,14 @@ export default function AllTimeStats({
     worstPartners,
   } = statsAll;
 
-  // Stats EXCLUDING friendly matches (amount === 0)
   const friendlyExcluded = allTransactions.filter((t) => t.amount !== 0);
   const statsNoFriendly = useBadmintonSessionStats(friendlyExcluded, userName);
   const { winCount: nfWinCount, lossCount: nfLossCount } = statsNoFriendly;
 
-  // Decide which net amount to show (toggle from your existing code)
   const displayedNetAmount = includeFees
     ? netAmount - totalSessionFees
     : netAmount;
 
-  // Decide which W/L counts to show
-  // If "includeFriendly" is true => show overall W/L
-  // Otherwise => show W/L excluding friendly matches
   const displayedWinCount = includeFriendly ? winCount : nfWinCount;
   const displayedLossCount = includeFriendly ? lossCount : nfLossCount;
 
@@ -103,68 +96,38 @@ export default function AllTimeStats({
         </div>
       ) : (
         <>
-          {/* Use a grid with auto-rows so all cards remain same height */}
           <CardContent className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 auto-rows-[1fr]">
             {/* 1) Matches Played Card */}
-            <Card className="flex flex-col justify-center items-center text-center p-4 shadow-sm border rounded-lg h-full">
-              <Gamepad2 className="w-8 h-8 text-blue-600" />
-              <p className="text-lg font-semibold mt-2">{matchesPlayed}</p>
-              <p className="text-sm text-gray-500">Matches Played</p>
-            </Card>
+            <StatsCard
+              icon={<Gamepad2 className="w-8 h-8 text-blue-600" />}
+              value={matchesPlayed}
+              label="Matches Played"
+            />
 
-            {/* 2) Net Amount Card (with net-fees toggle) */}
-            <Card className="flex flex-col justify-between items-center text-center p-4 shadow-sm border rounded-lg h-full">
-              <div>
-                {displayedNetAmount >= 0 ? (
+            {/* Net Amount */}
+            <StatsCard
+              icon={
+                displayedNetAmount >= 0 ? (
                   <TrendingUp className="w-8 h-8 text-green-500" />
                 ) : (
                   <TrendingDown className="w-8 h-8 text-red-500" />
-                )}
-                <p
-                  className={`text-lg font-semibold mt-2 ${
-                    displayedNetAmount >= 0
-                      ? "text-green-600"
-                      : "text-red-600"
-                  }`}
-                >
-                  ${displayedNetAmount.toFixed(2)}
-                </p>
-                <p className="text-sm text-gray-500">
-                  Net Amount
-                  {includeFees ? " (Fees Included)" : ""}
-                </p>
-              </div>
+                )
+              }
+              value={`$${displayedNetAmount.toFixed(2)}`}
+              label={`Net Amount ${includeFees ? "(Fees Included)" : ""}`}
+              valueClassName={displayedNetAmount >= 0 ? "text-green-600" : "text-red-600"}
+              buttonLabel={includeFees ? "Hide Session Fees" : "Include Session Fees"}
+              onToggle={() => setIncludeFees((prev) => !prev)}
+            />
 
-              <Button
-                variant="outline"
-                className="mt-4"
-                onClick={() => setIncludeFees((prev) => !prev)}
-              >
-                {includeFees ? "Hide Session Fees" : "Include Session Fees"}
-              </Button>
-            </Card>
-
-            {/* 3) Win / Loss Count Card (with friendly toggle) */}
-            <Card className="flex flex-col justify-between items-center text-center p-4 shadow-sm border rounded-lg h-full">
-              <div>
-                <BarChart2 className="w-8 h-8 text-gray-600" />
-                <p className="text-lg font-semibold mt-2">
-                  {displayedWinCount}W / {displayedLossCount}L
-                </p>
-                <p className="text-sm text-gray-500">Win / Loss</p>
-              </div>
-
-              {/* Friendly toggle button at bottom */}
-              <Button
-                variant="outline"
-                className="mt-4"
-                onClick={() => setIncludeFriendly((prev) => !prev)}
-              >
-                {includeFriendly
-                  ? "Exclude Friendly Matches"
-                  : "Include Friendly Matches"}
-              </Button>
-            </Card>
+            {/* Win / Loss */}
+            <StatsCard
+              icon={<BarChart2 className="w-8 h-8 text-gray-600" />}
+              value={`${displayedWinCount}W / ${displayedLossCount}L`}
+              label="Win / Loss"
+              buttonLabel={includeFriendly ? "Without Friendly Matches" : "With Friendly Matches"}
+              onToggle={() => setIncludeFriendly((prev) => !prev)}
+            />
 
             {/* 4) Best Partner Card */}
             {bestPartners?.length > 0 ? (
@@ -219,7 +182,8 @@ export default function AllTimeStats({
                 Head-to-Head Stats
               </DialogTitle>
             </DialogHeader>
-            <div className="max-h-[500px] overflow-y-auto p-4">
+            <div className="max-h-[500px] overflow
+            -y-auto p-4">
               <HeadToHeadTable statsArray={statsArray} showLastX={5} />
             </div>
           </DialogContent>
