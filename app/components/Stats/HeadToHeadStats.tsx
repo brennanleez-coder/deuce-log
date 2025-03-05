@@ -52,31 +52,7 @@ export default function HeadToHeadStats({
           >
             {/* Partner Performance */}
             <div className="border-b pb-4 mb-4 flex flex-col items-center">
-              {/* <h4 className="text-md font-semibold text-gray-700 mb-3 text-center">
-                Partner Performance
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-lg">
-                {bestPartners?.length > 0 && (
-                  <BestWorstPartnerCard
-                    name={bestPartners[0]?.name}
-                    label="Best Partner"
-                    wins={bestPartners[0]?.wins}
-                    losses={bestPartners[0]?.losses}
-                    icon={<Medal className="w-6 h-6 text-yellow-500 mb-2" />}
-                    className="flex flex-col items-center text-center border rounded-lg p-4 shadow-sm w-full"
-                  />
-                )}
-                {worstPartners?.length > 0 && (
-                  <BestWorstPartnerCard
-                    name={worstPartners[0]?.name}
-                    label="Worst Partner"
-                    wins={worstPartners[0]?.wins}
-                    losses={worstPartners[0]?.losses}
-                    icon={<Medal className="w-6 h-6 text-gray-500 mb-2" />}
-                    className="flex flex-col items-center text-center border rounded-lg p-4 shadow-sm w-full"
-                  />
-                )}
-              </div> */}
+
               <h4 className="text-lg font-semibold text-gray-900 text-center mb-6">
                 Opponent Podium 🏆
               </h4>
