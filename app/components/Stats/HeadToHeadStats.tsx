@@ -24,12 +24,10 @@ export default function HeadToHeadStats({
   // --- Calculate stats ---
   const statsArray = getHeadToHeadStats(transactions, userName);
 
-
-    const { bestPartners, worstPartners } = useBadmintonSessionStats(
-      transactions,
-      userName
-    );
-  
+  const { mostDefeatedOpponents, toughestOpponents } = useBadmintonSessionStats(
+    transactions,
+    userName
+  );
 
   if (statsArray.length === 0) {
     return (
@@ -54,12 +52,10 @@ export default function HeadToHeadStats({
           >
             {/* Partner Performance */}
             <div className="border-b pb-4 mb-4 flex flex-col items-center">
-              <h4 className="text-md font-semibold text-gray-700 mb-3 text-center">
+              {/* <h4 className="text-md font-semibold text-gray-700 mb-3 text-center">
                 Partner Performance
               </h4>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-lg">
-                {/* Best Partner */}
                 {bestPartners?.length > 0 && (
                   <BestWorstPartnerCard
                     name={bestPartners[0]?.name}
@@ -70,8 +66,6 @@ export default function HeadToHeadStats({
                     className="flex flex-col items-center text-center border rounded-lg p-4 shadow-sm w-full"
                   />
                 )}
-
-                {/* Worst Partner */}
                 {worstPartners?.length > 0 && (
                   <BestWorstPartnerCard
                     name={worstPartners[0]?.name}
@@ -82,6 +76,50 @@ export default function HeadToHeadStats({
                     className="flex flex-col items-center text-center border rounded-lg p-4 shadow-sm w-full"
                   />
                 )}
+              </div> */}
+              <h4 className="text-lg font-semibold text-gray-900 text-center mb-6">
+                Opponent Podium 🏆
+              </h4>
+
+              {/* Podium Layout */}
+              <div className="grid grid-cols-2 gap-8 w-full max-w-2xl mx-auto">
+                {/* Toughest Opponents - Rivals */}
+                <div className="flex flex-col items-center gap-4">
+                  <h5 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                    Most Challenging Opponents
+                  </h5>
+                  {toughestOpponents?.map((opponent, index) => (
+                    <div
+                      key={opponent.name}
+                      className="flex flex-col items-center"
+                    >
+                      <Medal className="w-6 h-6 text-blue-500 mb-1" />
+                      <p className="text-md font-semibold">{opponent.name}</p>
+                      <p className="text-sm text-gray-600">
+                        Wins: {opponent.wins} | Losses: {opponent.losses}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Most Beaten Opponents */}
+                <div className="flex flex-col items-center gap-4">
+                  <h5 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                    Most Defeated Opponents
+                  </h5>
+                  {mostDefeatedOpponents?.map((opponent, index) => (
+                    <div
+                      key={opponent.name}
+                      className="flex flex-col items-center"
+                    >
+                      <Medal className="w-6 h-6 text-gray-600 mb-1" />
+                      <p className="text-md font-semibold">{opponent.name}</p>
+                      <p className="text-sm text-gray-600">
+                        Wins: {opponent.wins} | Losses: {opponent.losses}
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 

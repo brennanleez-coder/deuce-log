@@ -5,7 +5,7 @@ import { useTransactions } from "@/hooks/useTransactions";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Users, Medal } from "lucide-react";
+import { ArrowLeft, Users, UserX, Flame, ThumbsUp } from "lucide-react";
 import { Transaction } from "@/types/types";
 import { useBadmintonSessionStats } from "@/hooks/useBadmintonSessionStats";
 import {
@@ -88,38 +88,36 @@ export default function SessionPage({ params }: { params: { id: string } }) {
 
           {/* Partner & Opponent Stats Card */}
           <div className="border border-gray-200 bg-white p-6 rounded-lg shadow-md flex flex-col md:flex-row gap-4 w-full">
-            {/* Stats Columns */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">
               <BestWorstPartnerCard
                 name={bestPartners?.[0]?.name || "N/A"}
                 wins={bestPartners?.[0]?.wins || 0}
                 losses={bestPartners?.[0]?.losses || 0}
                 label="Best Partner"
-                icon={<Medal className="w-6 h-6 text-yellow-500" />}
+                icon={<Users className="w-6 h-6 text-blue-500" />}
               />
               <BestWorstPartnerCard
                 name={worstPartners?.[0]?.name || "N/A"}
                 wins={worstPartners?.[0]?.wins || 0}
                 losses={worstPartners?.[0]?.losses || 0}
                 label="Worst Partner"
-                icon={<Medal className="w-6 h-6 text-gray-500" />}
+                icon={<UserX className="w-6 h-6 text-gray-500" />}
               />
               <BestWorstPartnerCard
                 name={toughestOpponents?.[0]?.name || "N/A"}
                 wins={toughestOpponents?.[0]?.wins || 0}
                 losses={toughestOpponents?.[0]?.losses || 0}
                 label="Toughest Opponent"
-                icon={<Medal className="w-6 h-6 text-red-500" />}
+                icon={<Flame className="w-6 h-6 text-red-500" />}
               />
               <BestWorstPartnerCard
                 name={mostDefeatedOpponents?.[0]?.name || "N/A"}
                 wins={mostDefeatedOpponents?.[0]?.wins || 0}
                 losses={mostDefeatedOpponents?.[0]?.losses || 0}
                 label="Most Defeated Opponent"
-                icon={<Medal className="w-6 h-6 text-green-500" />}
+                icon={<ThumbsUp className="w-6 h-6 text-green-500" />}
               />
             </div>
-
             {/* Dialog Buttons */}
             <div className="flex flex-col gap-4 self-center">
               <Dialog>
