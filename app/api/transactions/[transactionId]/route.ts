@@ -26,7 +26,6 @@ export async function PUT(req: Request, { params }: { params: { transactionId: s
       paidBy
     } = await req.json();
 
-    // Check if transaction exists before updating
     const existingTransaction = await prisma.transaction.findUnique({
       where: { id: transactionId },
     });
@@ -38,13 +37,13 @@ export async function PUT(req: Request, { params }: { params: { transactionId: s
       );
     }
 
-    // Validate required fields based on transaction type
-    if (!type || !amount || !team1 || !team2) {
+    if (!type || amount === undefined || amount === null || !team1 || !team2) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
+
 
     if (type === "MATCH" && (!payer || !receiver)) {
       return NextResponse.json(

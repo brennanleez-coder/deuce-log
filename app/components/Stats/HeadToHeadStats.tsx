@@ -9,7 +9,7 @@ import HeadToHeadTable from "./HeadToHeadTable";
 import { Transaction } from "@/types/types";
 
 import BestWorstPartnerCard from "@/app/components/Stats/BestWorstPartnerCard";
-
+import { useBadmintonSessionStats } from "@/hooks/useBadmintonSessionStats";
 interface HeadToHeadStatsProps {
   transactions: Transaction[];
   userName: string;
@@ -23,10 +23,13 @@ export default function HeadToHeadStats({
 
   // --- Calculate stats ---
   const statsArray = getHeadToHeadStats(transactions, userName);
-  const { bestPartners, worstPartners } = getBestAndWorstPartners(
-    transactions,
-    userName
-  );
+
+
+    const { bestPartners, worstPartners } = useBadmintonSessionStats(
+      transactions,
+      userName
+    );
+  
 
   if (statsArray.length === 0) {
     return (

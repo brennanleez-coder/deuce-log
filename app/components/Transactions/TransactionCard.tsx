@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import TransactionForm from "@/app/components/Transactions/TransactionForm";
 import { useUser } from "@/hooks/useUser";
 import { useTransactions } from "@/hooks/useTransactions";
+import { formatDistanceToNow } from "date-fns";
 
 interface TransactionCardProps {
   transaction: Transaction;
@@ -49,7 +50,7 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
 
   const handleTogglePaid = async () => {
     if (!currentTransaction) return;
-    setIsMarkingPaid(true);
+    // setIsMarkingPaid(true);
 
     // **Optimistic Update**
     const previousTransaction = { ...currentTransaction };
@@ -84,7 +85,7 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
       // **Rollback UI on failure**
       setCurrentTransaction(previousTransaction);
     } finally {
-      setIsMarkingPaid(false);
+      // setIsMarkingPaid(false);
     }
   };
 
@@ -99,7 +100,9 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
   }
 
   const formattedTimestamp = currentTransaction?.timestamp
-    ? new Date(currentTransaction?.timestamp).toLocaleString()
+    ? formatDistanceToNow(new Date(currentTransaction.timestamp), {
+        addSuffix: true,
+      })
     : "";
 
   return (
@@ -146,10 +149,10 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
         </Dialog>
       </div>
 
-      {/* Teams Section */}
-      <div className="grid grid-cols-2 gap-6 border-t pt-3">
+      <div className="grid grid-cols-3 items-center justify-center gap-6 border-t pt-3 text-center">
+        {/* Team 1 */}
         <div>
-          <ul className="mt-1 space-y-0.5">
+          <ul className="space-y-0.5">
             {currentTransaction?.team1.map((player, index) => (
               <li
                 key={`team1-${index}`}
@@ -160,8 +163,13 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
             ))}
           </ul>
         </div>
+
+        {/* VS Column */}
+        <div className="text-lg font-semibold text-gray-700">VS</div>
+
+        {/* Team 2 */}
         <div>
-          <ul className="mt-1 space-y-0.5">
+          <ul className="space-y-0.5">
             {currentTransaction?.team2.map((player, index) => (
               <li
                 key={`team2-${index}`}
@@ -179,22 +187,47 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
           <Button
             onClick={handleTogglePaid}
             disabled={isMarkingPaid}
-            variant="outline"
-            className={`flex items-center gap-2 px-2 py-1 text-sm font-medium transition-colors h-8 ${
-              currentTransaction?.paid
-                ? "border-green-600 text-green-600 hover:bg-green-100"
-                : "border-gray-600 text-gray-600 hover:bg-gray-200"
-            }`}
+            variant="ghost"
+            className={`flex items-center gap-2 px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 ease-in-out h-9
+    ${
+      currentTransaction?.paid
+        ? "bg-green-100 text-green-700 border-green-500 hover:bg-green-200"
+        : "bg-gray-100 text-gray-700 border-gray-400 hover:bg-gray-200"
+    }`}
           >
-            {isMarkingPaid
-              ? "Updating..."
-              : currentTransaction?.paid
-              ? "Paid"
-              : "Mark as Paid"}
-            {currentTransaction?.paid ? (
-              <CheckCircle className="w-5 h-5" />
+            {isMarkingPaid ? (
+              <>
+                <svg
+                  className="animate-spin h-4 w-4 text-gray-500"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8H4z"
+                  ></path>
+                </svg>
+                <span>Updating...</span>
+              </>
+            ) : currentTransaction?.paid ? (
+              <>
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                <span>Paid</span>
+              </>
             ) : (
-              <Check className="w-4 h-4" />
+              <>
+                <Check className="w-4 h-4 text-gray-600" />
+                <span>Mark as Paid</span>
+              </>
             )}
           </Button>
         </div>
@@ -202,8 +235,8 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
         {/* Amount */}
         <div className="flex items-center gap-2">
           {currentTransaction?.amount === 0 ? (
-            <p className="text-sm font-semibold p-1 bg-cyan-50 rounded-lg shadow-md text-gray-700">
-              Friendly Match
+            <p className="text-sm font-semibold p-2 rounded-full tracking-wide">
+              🎉 Friendly Match
             </p>
           ) : (
             <>

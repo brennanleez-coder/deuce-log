@@ -48,10 +48,14 @@ export default function TransactionsList({
   const [isOpen, setIsOpen] = useState(false);
 
   // Default sort => timestamp descending
-  const [sortBy, setSortBy] = useState<"timestamp" | "amount" | "">("timestamp");
+  const [sortBy, setSortBy] = useState<"timestamp" | "amount" | "">(
+    "timestamp"
+  );
   const [order, setOrder] = useState<"asc" | "desc">("desc");
   const [searchQuery, setSearchQuery] = useState("");
-  const [friendlyFilter, setFriendlyFilter] = useState<"all" | "friendly">("all");
+  const [friendlyFilter, setFriendlyFilter] = useState<"all" | "friendly">(
+    "all"
+  );
   const friendlyOption = friendlyFilter === "friendly" ? true : undefined;
 
   const handleSortToggle = (field: "timestamp" | "amount") => {
@@ -101,7 +105,8 @@ export default function TransactionsList({
   );
 
   // Decide how to label the friendly button
-  const friendlyButtonLabel = friendlyFilter === "friendly" ? "All" : "Friendly Only";
+  const friendlyButtonLabel =
+    friendlyFilter === "friendly" ? "All" : "Friendly Only";
 
   // Format the headers conditionally
   const winsHeader =
@@ -130,7 +135,7 @@ export default function TransactionsList({
   };
 
   return (
-    <section className="bg-white p-6 rounded-lg shadow-md">
+    <section className="bg-white p-6 rounded-lg border border-gray-200 shadow-md">
       <div className="flex justify-between items-center mb-4 ">
         <h2 className="text-lg font-semibold">Matches</h2>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -195,7 +200,10 @@ export default function TransactionsList({
             </Button>
 
             {/* Amount Sort Button */}
-            <Button variant="outline" onClick={() => handleSortToggle("amount")}>
+            <Button
+              variant="outline"
+              onClick={() => handleSortToggle("amount")}
+            >
               Amount
               {sortBy === "amount" &&
                 (order === "asc" ? (

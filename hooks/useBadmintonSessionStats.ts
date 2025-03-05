@@ -11,11 +11,16 @@ interface SessionStats {
   totalLossesAmount: number;
   wins: Transaction[];
   losses: Transaction[];
-  bestPartners: { name: string; wins: number; losses: number; }[] | null;
-  worstPartners: { name: string; wins: number; losses: number; }[] | null;
+  bestPartners: { name: string; wins: number; losses: number }[] | null;
+  worstPartners: { name: string; wins: number; losses: number }[] | null;
+  toughestOpponents: { name: string; wins: number; losses: number }[] | null;
+  mostDefeatedOpponents: { name: string; wins: number; losses: number }[] | null;
 }
 
-export const useBadmintonSessionStats = (transactions: Transaction[], userName: string | null): SessionStats => {
+export const useBadmintonSessionStats = (
+  transactions: Transaction[],
+  userName: string | null
+): SessionStats => {
   return useMemo(() => {
     if (!transactions || transactions.length === 0 || !userName) {
       return {
@@ -29,11 +34,10 @@ export const useBadmintonSessionStats = (transactions: Transaction[], userName: 
         losses: [],
         bestPartners: null,
         worstPartners: null,
+        toughestOpponents: null,
+        mostDefeatedOpponents: null,
       };
     }
-
-    let partnerWinCount: Record<string, number> = {};
-    let partnerLossCount: Record<string, number> = {};
 
     const netAmount = transactions.reduce((acc, t) => {
       const winningTeam = t.team1[0] === t.payer ? "team2" : "team1";
@@ -46,7 +50,6 @@ export const useBadmintonSessionStats = (transactions: Transaction[], userName: 
       }
       return acc;
     }, 0);
-
     const wins = transactions.filter((t) => {
       const winningTeam = t.team1[0] === t.payer ? "team2" : "team1";
       return winningTeam === "team1"
@@ -61,28 +64,62 @@ export const useBadmintonSessionStats = (transactions: Transaction[], userName: 
         : t.team1.includes(userName);
     });
 
+    // Opponent stats
+    const opponentStats: Record<string, { wins: number; losses: number }> = {};
 
-
-    // Count wins and losses per teammate
     transactions.forEach((t) => {
-      const isWin = wins.includes(t);
-      const isLoss = losses.includes(t);
-      const team = t.team1.includes(userName) ? t.team1 : t.team2;
-      const partners = team.filter((player) => player !== userName);
+      const userInTeam1 = t.team1.includes(userName);
+      const userInTeam2 = t.team2.includes(userName);
 
-      partners.forEach((partner) => {
-        if (isWin) {
-          partnerWinCount[partner] = (partnerWinCount[partner] || 0) + 1;
+      if (!userInTeam1 && !userInTeam2) return;
+
+      const winningTeam = t.team1[0] === t.payer ? "team2" : "team1";
+      const userIsWinner =
+        (userInTeam1 && winningTeam === "team1") ||
+        (userInTeam2 && winningTeam === "team2");
+
+      const opponents = userInTeam1 ? t.team2 : t.team1;
+
+      opponents.forEach((opponent) => {
+        if (!opponentStats[opponent]) {
+          opponentStats[opponent] = { wins: 0, losses: 0 };
         }
-        if (isLoss) {
-          partnerLossCount[partner] = (partnerLossCount[partner] || 0) + 1;
+        if (userIsWinner) {
+          opponentStats[opponent].wins += 1;
+        } else {
+          opponentStats[opponent].losses += 1;
         }
       });
     });
 
+    const toughestOpponents = Object.entries(opponentStats)
+      .filter(([_, stats]) => stats.losses > stats.wins)
+      .sort((a, b) => b[1].losses - a[1].wins)
+      .slice(0, 2)
+      .map(([name, stats]) => ({ name, wins: stats.wins, losses: stats.losses }));
 
+    const mostDefeatedOpponents = Object.entries(opponentStats)
+      .filter(([_, stats]) => stats.wins > stats.losses)
+      .sort((a, b) => b[1].wins - a[1].losses)
+      .slice(0, 2)
+      .map(([name, stats]) => ({ name, wins: stats.wins, losses: stats.losses }));
 
-    const { bestPartners, worstPartners } = getBestAndWorstPartners(transactions, userName);
+    // Ensure at least one "toughest opponent" appears if the user has a single loss
+    if (toughestOpponents.length === 0) {
+      const singleLossOpponent = Object.entries(opponentStats).find(
+        ([_, stats]) => stats.losses > 0
+      );
+      if (singleLossOpponent) {
+        const [name, stats] = singleLossOpponent;
+        toughestOpponents.push({ name, wins: stats.wins, losses: stats.losses });
+      }
+    }
+
+    const { bestPartners, worstPartners } = getBestAndWorstPartners(
+      transactions,
+      userName
+    );
+
     return {
       matchesPlayed: transactions.length,
       netAmount,
@@ -94,6 +131,8 @@ export const useBadmintonSessionStats = (transactions: Transaction[], userName: 
       losses,
       bestPartners,
       worstPartners,
+      toughestOpponents,
+      mostDefeatedOpponents,
     };
   }, [transactions, userName]);
 };

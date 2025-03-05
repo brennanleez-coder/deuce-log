@@ -16,50 +16,59 @@ export default function SessionMetrics({
   netAmount,
 }: SessionMetricsProps) {
   return (
-    <div className="bg-gray-50 p-6 rounded-xl shadow-md border border-gray-200">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+    <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
         {/* Matches Played */}
-        <div className="flex flex-col items-center">
-          <Gamepad2 className="w-6 h-6 text-blue-500" />
-          <p className="text-sm text-gray-600 mt-1">Matches</p>
-          <p className="text-2xl font-semibold text-gray-900">{matchesPlayed}</p>
-        </div>
+        <MetricCard icon={<Gamepad2 className="w-6 h-6 text-blue-500" />} label="Matches" value={matchesPlayed} />
 
         {/* Wins */}
-        <div className="flex flex-col items-center">
-          <CheckCircle className="w-6 h-6 text-green-500" />
-          <p className="text-sm text-green-600 mt-1">Wins</p>
-          <p className="text-2xl font-semibold text-green-700">{winCount}</p>
-        </div>
+        <MetricCard icon={<CheckCircle className="w-6 h-6 text-green-500" />} label="Wins" value={winCount} textColor="text-green-700" />
 
         {/* Losses */}
-        <div className="flex flex-col items-center">
-          <XCircle className="w-6 h-6 text-red-500" />
-          <p className="text-sm text-red-600 mt-1">Losses</p>
-          <p className="text-2xl font-semibold text-red-700">{lossCount}</p>
-        </div>
+        <MetricCard icon={<XCircle className="w-6 h-6 text-red-500" />} label="Losses" value={lossCount} textColor="text-red-700" />
 
         {/* Net Amount */}
-        <div className="flex flex-col items-center">
-          <Trophy
-            className={`w-6 h-6 ${
-              netAmount > 0 ? "text-green-500" : netAmount < 0 ? "text-red-500" : "text-gray-500"
-            }`}
-          />
-          <p className="text-sm text-gray-600 mt-1">Net</p>
-          <p
-            className={`text-2xl font-semibold ${
-              netAmount > 0 ? "text-green-700" : netAmount < 0 ? "text-red-700" : "text-gray-800"
-            }`}
-          >
-            {netAmount > 0
+        <MetricCard
+          icon={
+            <Trophy
+              className={`w-6 h-6 ${
+                netAmount > 0 ? "text-green-500" : netAmount < 0 ? "text-red-500" : "text-gray-500"
+              }`}
+            />
+          }
+          label="Net"
+          value={
+            netAmount > 0
               ? `+ $${netAmount.toFixed(2)}`
               : netAmount < 0
               ? `- $${Math.abs(netAmount).toFixed(2)}`
-              : `$${netAmount.toFixed(2)}`}
-          </p>
-        </div>
+              : `$${netAmount.toFixed(2)}`
+          }
+          textColor={
+            netAmount > 0 ? "text-green-700" : netAmount < 0 ? "text-red-700" : "text-gray-800"
+          }
+        />
       </div>
+    </div>
+  );
+}
+
+function MetricCard({
+  icon,
+  label,
+  value,
+  textColor = "text-gray-900",
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string | number;
+  textColor?: string;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-1">
+      {icon}
+      <p className="text-xs text-gray-500">{label}</p>
+      <p className={`text-lg font-semibold ${textColor}`}>{value}</p>
     </div>
   );
 }
