@@ -26,11 +26,6 @@ export const authOptions: NextAuthOptions = {
   },
 
   callbacks: {
-    async redirect({ url, baseUrl }) {
-      if (url === "/api/auth/error") {
-        return url.startsWith(baseUrl)
-      }
-    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
