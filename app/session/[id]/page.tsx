@@ -77,7 +77,7 @@ export default function SessionPage({ params }: { params: { id: string } }) {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-white to-gray-100 p-6 font-sans">
+    <main className="min-h-screen bg-gradient-to-b from-white to-gray-100 font-sans">
       <div className="flex flex-col gap-y-4 max-w-5xl mx-auto">
         <header className="flex items-center justify-between mb-6">
           <Button
