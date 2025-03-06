@@ -75,7 +75,7 @@ function AuthHeader() {
                 className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-md shadow-lg py-2 z-50"
               >
                 {/* Report Bug Button with Dialog */}
-                <Dialog>
+                {/* <Dialog>
                   <DialogTrigger asChild>
                     <Button className="block w-full text-left text-gray-700 px-4 py-2" variant="ghost">
                       Report Bug
@@ -95,7 +95,7 @@ function AuthHeader() {
                       Send Bug Report
                     </Button>
                   </DialogContent>
-                </Dialog>
+                </Dialog> */}
 
                 <Button
                   onClick={handleLogout}
