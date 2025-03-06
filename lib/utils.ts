@@ -82,6 +82,75 @@ export function getHeadToHeadStats(
   return statsArray;
 }
 
+interface PartnerRecord {
+  partner: string;
+  totalWins: number;
+  totalLosses: number;
+  encounters: EncounterResult[];
+}
+export function getPartnerStats(
+  transactions: Transaction[],
+  userName: string
+): PartnerRecord[] {
+  // A map of partnerName -> { totalWins, totalLosses, encounters[] }
+  const partnerStats: Record<
+    string,
+    { totalWins: number; totalLosses: number; encounters: EncounterResult[] }
+  > = {};
+
+  transactions.forEach((t) => {
+    const userInTeam1 = t.team1.includes(userName);
+    const userInTeam2 = t.team2.includes(userName);
+
+    // Skip if user isn't in any team
+    if (!userInTeam1 && !userInTeam2) return;
+
+    // Determine which team won:
+    const winningTeam = t.team1[0] === t.payer ? "team2" : "team1";
+
+    // Check if the user was on the winning team
+    const userIsWinner =
+      (userInTeam1 && winningTeam === "team1") ||
+      (userInTeam2 && winningTeam === "team2");
+
+    // The "partners" are the other players on the user's team
+    const partners = userInTeam1 ? t.team1.filter((p) => p !== userName) : t.team2.filter((p) => p !== userName);
+
+    partners.forEach((partner) => {
+      if (!partnerStats[partner]) {
+        partnerStats[partner] = {
+          totalWins: 0,
+          totalLosses: 0,
+          encounters: [],
+        };
+      }
+
+      if (userIsWinner) {
+        // From the user's perspective: "W"
+        partnerStats[partner].totalWins += 1;
+        partnerStats[partner].encounters.push("W");
+      } else {
+        // From the user's perspective: "L"
+        partnerStats[partner].totalLosses += 1;
+        partnerStats[partner].encounters.push("L");
+      }
+    });
+  });
+
+  // Convert the object map to an array
+  const statsArray = Object.entries(partnerStats).map(([partner, record]) => ({
+    partner,
+    totalWins: record.totalWins,
+    totalLosses: record.totalLosses,
+    encounters: record.encounters,
+  }));
+
+  // Sort alphabetically by partner name
+  statsArray.sort((a, b) => a.partner.localeCompare(b.partner));
+
+  return statsArray;
+}
+
 
 export const getBestAndWorstPartners = (
   transactions: Transaction[],

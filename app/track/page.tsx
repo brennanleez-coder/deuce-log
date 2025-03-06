@@ -27,20 +27,27 @@ function Home() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [dropdownRef]);
-  const { loading, sessions, createSession, deleteSession } = useBadmintonSessions();
-  const aggregateSessionFees = sessions.reduce((acc, session) => acc + session.courtFee, 0);
+  const { loading, sessions, createSession, deleteSession } =
+    useBadmintonSessions();
+  const aggregateSessionFees = sessions.reduce(
+    (acc, session) => acc + session.courtFee,
+    0
+  );
   return (
     <main className="min-h-screen text-gray-900 p-6 font-sans">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row gap-6">
           <div className="flex flex-col flex-1 gap-y-6">
-            <AllTimeStats userName={session?.user?.name} totalSessionFees={aggregateSessionFees} />
+            <AllTimeStats
+              userName={session?.user?.name}
+              totalSessionFees={aggregateSessionFees}
+            />
 
             <SessionManagement
-            loading={loading}
-            sessions={sessions}
-            createSession={createSession}
-            deleteSession={deleteSession}
+              loading={loading}
+              sessions={sessions}
+              createSession={createSession}
+              deleteSession={deleteSession}
             />
           </div>
         </div>

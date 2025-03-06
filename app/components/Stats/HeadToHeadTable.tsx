@@ -14,21 +14,22 @@ interface HeadToHeadTableProps {
   showLastX?: number;
 }
 
-export default function HeadToHeadTable({ statsArray, showLastX = 3 }: HeadToHeadTableProps) {
+export default function HeadToHeadTable({
+  statsArray,
+  showLastX = 3,
+}: HeadToHeadTableProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null); // Prevents auto-focus on render
 
-  // Configure Fuse.js for fuzzy search
   const fuse = useMemo(
     () =>
       new Fuse(statsArray, {
         keys: ["opponent"],
-        threshold: 0.4, // Lower means stricter matching, higher allows more errors
+        threshold: 0.4,
       }),
     [statsArray]
   );
 
-  // Get filtered results
   const filteredStats = useMemo(() => {
     if (!searchQuery) return statsArray;
     return fuse.search(searchQuery).map((result) => result.item);
@@ -38,10 +39,9 @@ export default function HeadToHeadTable({ statsArray, showLastX = 3 }: HeadToHea
 
   return (
     <div className="w-full">
-      {/* Search Input */}
       <div className="sticky top-0 bg-white z-10 py-3">
         <Input
-          ref={inputRef} // Prevents auto-focus on render
+          ref={inputRef}
           type="text"
           placeholder="Search opponent..."
           value={searchQuery}
@@ -61,33 +61,40 @@ export default function HeadToHeadTable({ statsArray, showLastX = 3 }: HeadToHea
             </tr>
           </thead>
           <tbody>
-            {filteredStats.map(({ opponent, totalWins, totalLosses, encounters }) => {
-              const lastX = encounters.slice(-showLastX);
+            {filteredStats.map(
+              ({ opponent, totalWins, totalLosses, encounters }) => {
+                const lastX = encounters.slice(-showLastX);
 
-              return (
-                <tr key={opponent} className="border-b hover:bg-gray-50 transition">
-                  <td className="p-3 font-medium text-gray-800 whitespace-nowrap">{opponent}</td>
-                  <td className="p-3 text-gray-700">{`${totalWins}W / ${totalLosses}L`}</td>
-                  <td className="p-3">
-                    <div className="flex justify-center gap-2">
-                      {lastX.map((result, i) => (
-                        <span
-                          key={i}
-                          className={`px-2 py-1 rounded border text-xs font-bold 
+                return (
+                  <tr
+                    key={opponent}
+                    className="border-b hover:bg-gray-50 transition"
+                  >
+                    <td className="p-3 font-medium text-gray-800 whitespace-nowrap">
+                      {opponent}
+                    </td>
+                    <td className="p-3 text-gray-700">{`${totalWins}W / ${totalLosses}L`}</td>
+                    <td className="p-3">
+                      <div className="flex justify-center gap-2">
+                        {lastX.map((result, i) => (
+                          <span
+                            key={i}
+                            className={`px-2 py-1 rounded border text-xs font-bold 
                             ${
                               result === "W"
                                 ? "border-green-600 text-green-600"
                                 : "border-red-600 text-red-600"
                             }`}
-                        >
-                          {result}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
+                          >
+                            {result}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              }
+            )}
           </tbody>
         </table>
       </div>

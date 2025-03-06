@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import BestWorstPartnerCard from "./BestWorstPartnerCard";
 import StatsCard from "./StatsCard";
+import PerformanceCharts from "./PerformanceCharts";
 
 export default function AllTimeStats({
   userName,
@@ -39,10 +40,11 @@ export default function AllTimeStats({
   if (typeof totalSessionFees !== "number") return null;
 
   const [includeFees, setIncludeFees] = useState(false);
+  const [includeFriendly, setIncludeFriendly] = useState(true);
+  const [includeFriendlyMatches, setIncludeFriendlyMatches] = useState(true); // New toggle for Matches Played
+
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-
-  const [includeFriendly, setIncludeFriendly] = useState(true);
 
   const { fetchTransactionsByUserId } = useTransactions(null);
   const { userId } = useUser();
@@ -68,18 +70,15 @@ export default function AllTimeStats({
     worstPartners,
   } = statsAll;
 
-  const friendlyExcluded = allTransactions.filter((t) => t.amount !== 0);
-  const statsNoFriendly = useBadmintonSessionStats(friendlyExcluded, userName);
-  const { winCount: nfWinCount, lossCount: nfLossCount } = statsNoFriendly;
+  const filteredTransactions = allTransactions.filter((t) => t.amount !== 0);
+  const statsNoFriendly = useBadmintonSessionStats(filteredTransactions, userName);
+  const { winCount: nfWinCount, lossCount: nfLossCount, matchesPlayed: nfMatchesPlayed } = statsNoFriendly;
 
-  const displayedNetAmount = includeFees
-    ? netAmount - totalSessionFees
-    : netAmount;
-
+  const displayedMatchesPlayed = includeFriendlyMatches ? matchesPlayed : nfMatchesPlayed;
+  const displayedNetAmount = includeFees ? netAmount - totalSessionFees : netAmount;
   const displayedWinCount = includeFriendly ? winCount : nfWinCount;
   const displayedLossCount = includeFriendly ? lossCount : nfLossCount;
 
-  // Build Head-to-head stats array
   const statsArray = getHeadToHeadStats(allTransactions, userName);
 
   return (
@@ -96,12 +95,16 @@ export default function AllTimeStats({
         </div>
       ) : (
         <>
+          <PerformanceCharts data={allTransactions} />
           <CardContent className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 auto-rows-[1fr]">
-            {/* 1) Matches Played Card */}
+            
+            {/* Matches Played - Toggle Between Friendly & Non-Friendly */}
             <StatsCard
               icon={<Gamepad2 className="w-8 h-8 text-blue-600" />}
-              value={matchesPlayed}
+              value={displayedMatchesPlayed}
               label="Matches Played"
+              buttonLabel={includeFriendlyMatches ? "Without Friendly" : "With Friendly"}
+              onToggle={() => setIncludeFriendlyMatches((prev) => !prev)}
             />
 
             {/* Net Amount */}
@@ -115,8 +118,12 @@ export default function AllTimeStats({
               }
               value={`$${displayedNetAmount.toFixed(2)}`}
               label={`Net Amount ${includeFees ? "(Fees Included)" : ""}`}
-              valueClassName={displayedNetAmount >= 0 ? "text-green-600" : "text-red-600"}
-              buttonLabel={includeFees ? "Hide Session Fees" : "Include Session Fees"}
+              valueClassName={
+                displayedNetAmount >= 0 ? "text-green-600" : "text-red-600"
+              }
+              buttonLabel={
+                includeFees ? "Hide Session Fees" : "Include Session Fees"
+              }
               onToggle={() => setIncludeFees((prev) => !prev)}
             />
 
@@ -125,11 +132,11 @@ export default function AllTimeStats({
               icon={<BarChart2 className="w-8 h-8 text-gray-600" />}
               value={`${displayedWinCount}W / ${displayedLossCount}L`}
               label="Win / Loss"
-              buttonLabel={includeFriendly ? "Without Friendly Matches" : "With Friendly Matches"}
+              buttonLabel={includeFriendly ? "Without Friendly" : "With Friendly"}
               onToggle={() => setIncludeFriendly((prev) => !prev)}
             />
 
-            {/* 4) Best Partner Card */}
+            {/* Best Partner */}
             {bestPartners?.length > 0 ? (
               <BestWorstPartnerCard
                 icon={<Medal className="w-8 h-8 text-yellow-500" />}
@@ -147,7 +154,7 @@ export default function AllTimeStats({
               </Card>
             )}
 
-            {/* 5) Worst Partner Card */}
+            {/* Worst Partner */}
             {worstPartners?.length > 0 ? (
               <BestWorstPartnerCard
                 icon={<Medal className="w-8 h-8 text-gray-700" />}
@@ -168,7 +175,6 @@ export default function AllTimeStats({
         </>
       )}
 
-      {/* Head-to-Head Stats Button */}
       <div className="flex justify-center mt-6">
         <Dialog>
           <DialogTrigger asChild>
@@ -182,8 +188,7 @@ export default function AllTimeStats({
                 Head-to-Head Stats
               </DialogTitle>
             </DialogHeader>
-            <div className="max-h-[500px] overflow
-            -y-auto p-4">
+            <div className="max-h-[500px] overflow-y-auto p-4">
               <HeadToHeadTable statsArray={statsArray} showLastX={5} />
             </div>
           </DialogContent>

@@ -3,28 +3,29 @@
 import React from "react";
 import { Medal } from "lucide-react";
 import { useBadmintonSessionStats } from "@/hooks/useBadmintonSessionStats";
-import HeadToHeadTable from "./HeadToHeadTable";
 import { Transaction } from "@/types/types";
-import { getHeadToHeadStats } from "@/lib/utils";
+
 import BestWorstPartnerCard from "@/app/components/Stats/BestWorstPartnerCard";
-interface HeadToHeadStatsProps {
+import PartnerPerformanceTable from "@/app/components/Stats/PartnerPerformanceTable";
+import { getPartnerStats } from "@/lib/utils";
+
+interface PartnerStatsProps {
   transactions: Transaction[];
   userName: string;
 }
 
-export default function HeadToHeadStats({
+export default function PartnerStats({
   transactions,
   userName,
-}: HeadToHeadStatsProps) {
+}: PartnerStatsProps) {
   const { bestPartners, worstPartners } = useBadmintonSessionStats(
     transactions,
     userName
   );
 
-  if (
-    (!bestPartners || bestPartners.length === 0) &&
-    (!worstPartners || worstPartners.length === 0)
-  ) {
+  const partnerStats = getPartnerStats(transactions, userName);
+
+  if (partnerStats.length === 0) {
     return (
       <div className="bg-white p-4 rounded-lg shadow-md mt-4">
         <h3 className="text-lg font-semibold mb-2">Partner Performance</h3>
@@ -38,7 +39,9 @@ export default function HeadToHeadStats({
       <h4 className="text-md font-semibold text-gray-700 mb-3 text-center">
         Partner Performance
       </h4>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-lg">
+
+      {/* Best & Worst Partner Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-lg mb-4">
         {bestPartners?.length > 0 && (
           <BestWorstPartnerCard
             name={bestPartners[0]?.name}
@@ -60,6 +63,9 @@ export default function HeadToHeadStats({
           />
         )}
       </div>
+
+      {/* Partner Performance Table */}
+      <PartnerPerformanceTable partnerStats={partnerStats} />
     </div>
   );
 }

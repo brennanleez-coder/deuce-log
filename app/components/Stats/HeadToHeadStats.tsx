@@ -39,7 +39,7 @@ export default function HeadToHeadStats({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md">
+    <div className="bg-white rounded-lg shadow-md p-5">
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
