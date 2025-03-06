@@ -44,7 +44,7 @@ export default function SessionForm({ onSubmit, isLoading }: SessionFormProps) {
                 Session Name
               </label>
               <FormControl>
-                <Input {...field} placeholder="Weekly lose to Brennan Session" />
+                <Input {...field} placeholder="Session Name" />
               </FormControl>
               <FormMessage />
             </FormItem>
