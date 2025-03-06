@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useSession } from "next-auth/react";
 import { Transaction, BadmintonSession } from "@/types/types";
-
+import { useQuery } from "@tanstack/react-query";
 // Hook to manage sessions state independently
 export const useBadmintonSessions = () => {
   const { data: session } = useSession();
@@ -15,24 +15,17 @@ export const useBadmintonSessions = () => {
       setUserId(session.user.id);
     }
   }, [session]);
-
-  useEffect(() => {
-    if (!userId) return;
-    const fetchSessions = async () => {
-      setLoading(true);
-      try {
-        const { data } = await axios.get("/api/badminton-sessions", {
-          params: { userId },
-        });
-        setSessions(data);
-      } catch (error) {
-        console.error("Error fetching sessions:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchSessions();
-  }, [userId]);
+  const { data: sessionsTanStack = [], isLoading } = useQuery({
+    queryKey: ["sessions", userId],
+    queryFn: async () => {
+      if (!userId) return [];
+      const { data } = await axios.get("/api/badminton-sessions", {
+        params: { userId },
+      });
+      return data;
+    },
+    enabled: !!userId, // Only fetch if userId exists
+  });
 
   const createSession = useCallback(
     async (sessionName: string, courtFee: number, players: string[]) => {
@@ -52,12 +45,15 @@ export const useBadmintonSessions = () => {
       setSessions((prev) => [...prev, optimisticSession]);
 
       try {
-        const { data: newSession } = await axios.post("/api/badminton-sessions", {
-          name: sessionName,
-          courtFee,
-          players,
-          userId,
-        });
+        const { data: newSession } = await axios.post(
+          "/api/badminton-sessions",
+          {
+            name: sessionName,
+            courtFee,
+            players,
+            userId,
+          }
+        );
 
         // Replace temporary session with the real one from the API
         setSessions((prev) =>
@@ -74,7 +70,12 @@ export const useBadmintonSessions = () => {
   );
 
   const editSession = useCallback(
-    async ({sessionId, name, courtFee, players}:{
+    async ({
+      sessionId,
+      name,
+      courtFee,
+      players,
+    }: {
       sessionId: string;
       name: string;
       courtFee: number;
@@ -106,7 +107,6 @@ export const useBadmintonSessions = () => {
     [sessions]
   );
 
-
   const deleteSession = useCallback(
     async (sessionId: string) => {
       const prevSessions = [...sessions];
@@ -126,6 +126,5 @@ export const useBadmintonSessions = () => {
     [sessions]
   );
 
-
-  return { sessions, createSession, editSession, deleteSession, loading };
+  return { sessionsTanStack, createSession, editSession, deleteSession, isLoading };
 };

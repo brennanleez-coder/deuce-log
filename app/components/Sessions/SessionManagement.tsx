@@ -22,6 +22,11 @@ const ITEMS_PER_PAGE = 5;
 type ViewMode = "table" | "cards";
 
 export default function SessionManagement({loading, sessions, createSession, deleteSession}) {
+  if (!sessions
+    || !createSession
+    || !deleteSession) {
+    return null;
+  }
   const { userId } = useUser();
 
   const [isModalOpen, setIsModalOpen] = useState(false);

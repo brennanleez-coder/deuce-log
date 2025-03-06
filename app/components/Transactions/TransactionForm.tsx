@@ -234,7 +234,7 @@ const TransactionForm = ({
     }
   };
 
-  if (playersLoading) return <Loader />;
+  // if (playersLoading) return <Loader />;
   return (
     <form
       onSubmit={handleSubmit(handleFormSubmit)}
@@ -268,7 +268,10 @@ const TransactionForm = ({
 
       {transactionType === "MATCH" && (
         <>
-          <fieldset className="border p-4 rounded-lg">
+        {playersLoading? (
+          <Loader />
+        )
+        :(  <fieldset className="border p-4 rounded-lg">
             <legend className="text-lg font-medium flex items-center gap-2">
               <Users className="w-6 h-6 text-primary" /> Match Details
             </legend>
@@ -336,7 +339,9 @@ const TransactionForm = ({
               </div>
             </div>
           </fieldset>
+)}
 
+        
           <div className="flex flex-col w-full gap-2">
             <Label className="text-sm font-medium text-left w-full">
               Did you win the match?

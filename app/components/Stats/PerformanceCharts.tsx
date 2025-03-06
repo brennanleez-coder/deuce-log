@@ -128,7 +128,7 @@ const PerformanceCharts: React.FC<LineChartProps> = ({ data }) => {
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height={isMobile ? 200 : 250}>
+      <ResponsiveContainer width="100%" height={isMobile ? 130 : 180}>
         {chartType === "netAmount" ? (
           <LineChart data={cumulativeNetData}>
             <CartesianGrid strokeDasharray="3 3" />

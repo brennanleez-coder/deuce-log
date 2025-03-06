@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+
 export async function PUT(req: Request, { params }: { params: { sessionId: string } }) {
   try {
     const sessionId = params.sessionId; // Extract session ID from URL

@@ -23,16 +23,32 @@ import Loader from "@/components/FullScreenLoader";
 import { useBadmintonSessions } from "@/hooks/useBadmintonSessions";
 import BestWorstPartnerCard from "@/app/components/Stats/BestWorstPartnerCard";
 import TransactionList from "@/app/components/Transactions/TransactionList";
-
+import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 export default function SessionPage({ params }: { params: { id: string } }) {
   const { userId, name } = useUser();
-  const { sessions } = useBadmintonSessions();
   const { transactions, addTransaction } = useTransactions(params.id);
   const router = useRouter();
   const sessionId = params.id;
-  const [isStatsOpen, setIsStatsOpen] = useState(false);
-  const currentSession = sessions.find((s) => s.id === sessionId);
 
+  const {
+    data: session,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["session", sessionId],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/badminton-sessions?sessionId=${sessionId}`
+      );
+      if (!response.ok) {
+        toast.error("Failed to fetch session");
+      }
+      return response.json();
+    },
+    enabled: !!sessionId,
+  });
+  console.log("session , ", session);
   const {
     matchesPlayed,
     winCount,
@@ -48,10 +64,16 @@ export default function SessionPage({ params }: { params: { id: string } }) {
     mostDefeatedOpponents,
   } = useBadmintonSessionStats(transactions, name);
 
-  if (!currentSession) return <Loader fullScreen />;
+  if (isLoading) return <Loader fullScreen />;
 
   const handleSubmitTransaction = async (transaction: Transaction) => {
-    await addTransaction(transaction);
+    try {
+      await addTransaction(transaction);
+      toast.success("Match added");
+    } catch (error) {
+      toast.error("Failed to add match");
+    }
+
   };
 
   return (
@@ -67,13 +89,13 @@ export default function SessionPage({ params }: { params: { id: string } }) {
             <span className="text-sm">Back</span>
           </Button>
           <h1 className="text-2xl font-bold text-gray-900">
-            {currentSession?.name}
+            {session?.name}
           </h1>
           <EditSessionModal
-            sessionId={currentSession.id}
-            currentName={currentSession.name}
-            currentCourtFee={currentSession.courtFee}
-            currentPlayers={currentSession.players}
+            sessionId={session?.id}
+            currentName={session?.name}
+            currentCourtFee={session?.courtFee}
+            currentPlayers={session?.players}
           />
         </header>
 

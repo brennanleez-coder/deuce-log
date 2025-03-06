@@ -27,24 +27,27 @@ function Home() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [dropdownRef]);
-  const { loading, sessions, createSession, deleteSession } =
+  const { isLoading, sessionsTanStack: sessions, createSession, deleteSession } =
     useBadmintonSessions();
   const aggregateSessionFees = sessions.reduce(
     (acc, session) => acc + session.courtFee,
     0
   );
+  console.log(sessions)
   return (
-    <main className="min-h-screen text-gray-900 p-6 font-sans">
+    <main className="min-h-screen text-gray-900 p-4 font-sans">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row gap-6">
           <div className="flex flex-col flex-1 gap-y-6">
             <AllTimeStats
               userName={session?.user?.name}
               totalSessionFees={aggregateSessionFees}
+              transactions={sessions.flatMap((s) => s.transactions)}
+              loading={isLoading}
             />
 
             <SessionManagement
-              loading={loading}
+              loading={isLoading}
               sessions={sessions}
               createSession={createSession}
               deleteSession={deleteSession}

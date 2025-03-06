@@ -57,18 +57,7 @@ export const useTransactions = (selectedSession: string | null = null) => {
       bettor,
       bookmaker,
       bettorWon,
-    }: {
-      sessionId: string;
-      type: "MATCH" | "SIDEBET";
-      amount: number;
-      team1?: string[];
-      team2?: string[];
-      payer?: string;
-      receiver?: string;
-      bettor?: string;
-      bookmaker?: string;
-      bettorWon?: boolean;
-    }) => {
+    }: Transaction) => {
       if (!userId) return console.error("User ID is required to add a transaction");
 
       const tempId = `temp-${Math.random().toString(36).substring(2, 9)}`;

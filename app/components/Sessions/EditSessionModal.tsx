@@ -26,10 +26,9 @@ export default function EditSessionModal({
   currentCourtFee,
   currentPlayers,
 }: EditSessionProps) {
-  const { editSession, sessions } = useBadmintonSessions();
+  const { editSession, } = useBadmintonSessions();
   const [name, setName] = useState(currentName);
   const [courtFee, setCourtFee] = useState(currentCourtFee);
-  const [players, setPlayers] = useState(currentPlayers.join(", "));
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -37,14 +36,13 @@ export default function EditSessionModal({
     setIsLoading(true);
 
     // Store previous state in case of rollback
-    const prevSessions = [...sessions];
+    // const prevSessions = [...sessions];
 
     // Optimistically update UI
     const updatedSession = {
       sessionId,
       name,
       courtFee,
-      players: players.split(",").map((p) => p.trim()),
     };
 
     // Update UI before API call
@@ -55,9 +53,6 @@ export default function EditSessionModal({
       setIsOpen(false);
     } catch (error: any) {
       console.error("Error saving session:", error.message);
-      
-      // Rollback UI if API fails
-      editSession(prevSessions.find((s) => s.id === sessionId)!);
     } finally {
       setIsLoading(false);
     }
@@ -89,14 +84,6 @@ export default function EditSessionModal({
               onChange={(e) => setCourtFee(parseFloat(e.target.value) || 0)}
             />
           </div>
-          {/* <div>
-            <Label>Players (comma-separated)</Label>
-            <Input
-              value={players}
-              onChange={(e) => setPlayers(e.target.value)}
-              placeholder="Enter player names"
-            />
-          </div> */}
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
             <Button onClick={handleSave} disabled={isLoading}>

@@ -22,7 +22,7 @@ export default function StatsCard({
   onToggle,
 }: StatsCardProps) {
   return (
-    <Card className="flex flex-col justify-between items-center text-center p-4 shadow-sm border rounded-lg h-full min-h-[140px] sm:min-h-[160px]">
+    <Card className="flex flex-col justify-between items-center text-center p-4 shadow-sm border rounded-lg h-full min-h-[140px] sm:min-h-[160px] min-w-[120px] sm:min-w-[140px]">
       <div className="flex flex-col items-center">
         {icon}
         <p className={`text-lg font-semibold mt-2 ${valueClassName}`}>
@@ -34,7 +34,7 @@ export default function StatsCard({
       {buttonLabel && onToggle && (
         <Button
           variant="outline"
-          className="mt-4 w-full text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-2 leading-tight sm:leading-normal"
+          className="mt-4 w-full text-[10px] md:text-sm px-2 py-1 sm:px-3 sm:py-2 leading-tight sm:leading-normal"
           onClick={onToggle}
         >
           {buttonLabel}

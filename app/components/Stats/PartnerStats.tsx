@@ -18,14 +18,7 @@ export default function PartnerStats({
   transactions,
   userName,
 }: PartnerStatsProps) {
-  const { bestPartners, worstPartners } = useBadmintonSessionStats(
-    transactions,
-    userName
-  );
-
-  const partnerStats = getPartnerStats(transactions, userName);
-
-  if (partnerStats.length === 0) {
+  if (transactions.length === 0) {
     return (
       <div className="bg-white p-4 rounded-lg shadow-md mt-4">
         <h3 className="text-lg font-semibold mb-2">Partner Performance</h3>
@@ -33,6 +26,15 @@ export default function PartnerStats({
       </div>
     );
   }
+
+  const { bestPartners, worstPartners } = useBadmintonSessionStats(
+    transactions,
+    userName
+  );
+
+  const partnerStats = getPartnerStats(transactions, userName);
+  console.log("partner stats", partnerStats)
+  console.log("partner stats transactions", transactions);
 
   return (
     <div className="flex flex-col items-center bg-white rounded-xl shadow-md p-6 border border-gray-200 max-h-[80vh] overflow-y-auto">
