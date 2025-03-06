@@ -10,7 +10,7 @@ import {
   TrendingDown,
   BarChart2,
   Medal,
-  Users
+  Users,
 } from "lucide-react";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useUser } from "@/hooks/useUser";
@@ -32,7 +32,7 @@ import PartnerStats from "./PartnerStats";
 import PerformanceCharts from "./PerformanceCharts";
 import HeadToHeadStats from "./HeadToHeadStats";
 
-interface AllTimeStatsProps  {
+interface AllTimeStatsProps {
   userName: string | null;
   totalSessionFees: number;
   transactions: Transaction[];
@@ -54,12 +54,7 @@ export default function AllTimeStats({
   const [includeFriendlyMatches, setIncludeFriendlyMatches] = useState(true);
 
   const statsAll = useBadmintonSessionStats(transactions, userName);
-  const {
-    matchesPlayed,
-    netAmount,
-    winCount,
-    lossCount,
-  } = statsAll;
+  const { matchesPlayed, netAmount, winCount, lossCount } = statsAll;
 
   const filteredTransactions = transactions.filter((t) => t.amount !== 0);
   const statsNoFriendly = useBadmintonSessionStats(
@@ -81,8 +76,6 @@ export default function AllTimeStats({
   const displayedWinCount = includeFriendly ? winCount : nfWinCount;
   const displayedLossCount = includeFriendly ? lossCount : nfLossCount;
 
-  
-
   return (
     <Card className="bg-white border border-gray-200 shadow-md rounded-xl p-4">
       <CardHeader>
@@ -97,8 +90,8 @@ export default function AllTimeStats({
         </div>
       ) : (
         <>
-          <CardContent className="grid grid-cols-3 auto-rows-[1fr] gap-x-12">
-          <StatsCard
+          <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 auto-rows-fr gap-6">
+            <StatsCard
               icon={<Gamepad2 className="w-8 h-8 text-blue-600" />}
               value={displayedMatchesPlayed}
               label="Matches Played"
@@ -121,9 +114,7 @@ export default function AllTimeStats({
               valueClassName={
                 displayedNetAmount >= 0 ? "text-green-600" : "text-red-600"
               }
-              buttonLabel={
-                includeFees ? "Hide Fees" : "Include Fees"
-              }
+              buttonLabel={includeFees ? "Hide Fees" : "Include Fees"}
               onToggle={() => setIncludeFees((prev) => !prev)}
             />
 
@@ -137,8 +128,8 @@ export default function AllTimeStats({
               onToggle={() => setIncludeFriendly((prev) => !prev)}
             />
           </CardContent>
-          <PerformanceCharts data={transactions} />
 
+          <PerformanceCharts data={transactions} />
         </>
       )}
 
@@ -146,7 +137,7 @@ export default function AllTimeStats({
         <Dialog>
           <DialogTrigger asChild>
             <Button variant="outline" className="px-4 py-2">
-              View Head-to-Head Stats
+              H2H Stats
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
@@ -157,7 +148,10 @@ export default function AllTimeStats({
             </DialogHeader>
             <div className="max-h-[500px] overflow-y-auto p-4">
               {/* <HeadToHeadTable statsArray={h2hStatsArray} showLastX={5} /> */}
-              <HeadToHeadStats transactions={transactions} userName={userName} />
+              <HeadToHeadStats
+                transactions={transactions}
+                userName={userName}
+              />
             </div>
           </DialogContent>
         </Dialog>

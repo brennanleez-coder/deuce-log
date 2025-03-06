@@ -1,10 +1,20 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
 export default function LandingPage() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    const userLoggedIn = localStorage.getItem("userLoggedIn") === "true";
+    setIsLoggedIn(userLoggedIn);
+  }, []);
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen text-gray-900 px-4">
       <motion.div
@@ -21,14 +31,25 @@ export default function LandingPage() {
           A minimalist tool to record your match outcomes, track head-to-head stats, 
           and gain performance insights—all in one place.
         </p>
-        <Link href="/auth/login">
+        
+        {isLoggedIn ? (
           <Button
             size="lg"
-            className="bg-white text-blue-600 hover:text-blue-700 hover:bg-gray-50 border border-blue-600 transition-colors duration-200"
+            onClick={() => router.push("/track")}
+            className="bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-200"
           >
-            Get Started
+            Return to Session
           </Button>
-        </Link>
+        ) : (
+          <Link href="/auth/login">
+            <Button
+              size="lg"
+              className="bg-white text-blue-600 hover:text-blue-700 hover:bg-gray-50 border border-blue-600 transition-colors duration-200"
+            >
+              Get Started
+            </Button>
+          </Link>
+        )}
       </motion.div>
     </div>
   );

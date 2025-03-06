@@ -5,19 +5,24 @@ interface LoaderProps {
   fullScreen?: boolean;
   size?: number;
   color?: string;
+  overlayColor?: string;
 }
 
 const Loader: React.FC<LoaderProps> = ({
   fullScreen = false,
   size = 80,
-  color = "blue",
+  color = "#3B82F6", // Tailwind's blue-500
+  overlayColor = "rgba(255, 255, 255, 0.8)", // Soft white overlay
 }) => {
-  const containerClasses = fullScreen
-    ? "fixed inset-0 flex items-center justify-center bg-white z-50"
-    : "flex items-center justify-center w-full h-full";
-
   return (
-    <div className={containerClasses}>
+    <div
+      className={`flex items-center justify-center transition-opacity duration-300 ${
+        fullScreen
+          ? "fixed inset-0 z-50 bg-opacity-50 backdrop-blur-sm"
+          : "w-full h-full"
+      }`}
+      style={fullScreen ? { backgroundColor: overlayColor } : {}}
+    >
       <ClipLoader size={size} color={color} />
     </div>
   );
