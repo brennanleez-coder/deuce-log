@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import axios from "axios";
-import { useBadmintonSessionStats } from "@/hooks/useBadmintonSessionStats";
+import { useAllBadmintonSessionStats } from "@/hooks/useAllBadmintonSessionStats";
 import { useUser } from "@/hooks/useUser";
 import {
   Table,
@@ -24,8 +24,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
-import { Transaction } from "@/types/types";
-
 type Session = {
   id: string;
   name: string;
@@ -47,10 +45,9 @@ export default function SessionListTable({
   formatDate,
 }: SessionListTableProps) {
   const { name, userId } = useUser();
-  const [sessionTransactions, setSessionTransactions] = useState<Record<string, Transaction[]>>({});
+  const [sessionStats, setSessionStats] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // Fetch transactions for all sessions
   useEffect(() => {
     if (!userId) return;
 
@@ -59,15 +56,10 @@ export default function SessionListTable({
         const { data } = await axios.get("/api/transactions", {
           params: { userId },
         });
-
-        // Group transactions by session ID
-        const transactionsBySession = data.reduce((acc: Record<string, Transaction[]>, transaction: Transaction) => {
-          acc[transaction.sessionId] = acc[transaction.sessionId] || [];
-          acc[transaction.sessionId].push(transaction);
-          return acc;
-        }, {});
-
-        setSessionTransactions(transactionsBySession);
+        if (data.length !== 0) {
+          const sessionStats = useAllBadmintonSessionStats(data, name);
+          setSessionStats(sessionStats);
+        }
       } catch (error) {
         console.error("Error fetching transactions:", error);
       } finally {
@@ -94,16 +86,12 @@ export default function SessionListTable({
         </TableHeader>
         <TableBody>
           {sessions.map((session) => {
-            const transactions = sessionTransactions[session.id] || [];
-
-            // Compute session stats using useMemo for optimization
-            const { matchesPlayed, winCount, lossCount, netAmount } = useMemo(
-              () => useBadmintonSessionStats(transactions, name),
-              [transactions, name]
-            );
-
-            const totalGames = winCount + lossCount;
-            const winRate = totalGames > 0 ? `${((winCount / totalGames) * 100).toFixed(1)}%` : "N/A";
+            const stats = sessionStats[session.id] || {
+              matchesPlayed: 0,
+              netAmount: 0,
+              winCount: 0,
+              lossCount: 0,
+            };
 
             return (
               <TableRow
@@ -113,37 +101,61 @@ export default function SessionListTable({
               >
                 <TableCell className="font-medium">{session.name}</TableCell>
                 <TableCell>{formatDate(session.createdAt)}</TableCell>
-                <TableCell className="text-center">${session.courtFee.toFixed(2)}</TableCell>
-                <TableCell className="text-center">{matchesPlayed}</TableCell>
-                <TableCell
-                  className={`text-center font-semibold ${
-                    totalGames > 0 ? (winCount > lossCount ? "text-green-600" : "text-red-600") : "text-gray-500"
-                  }`}
-                >
-                  {winRate}
+                <TableCell className="text-center">
+                  ${session.courtFee.toFixed(2)}
+                </TableCell>
+                <TableCell className="text-center">
+                  {stats?.matchesPlayed}
                 </TableCell>
                 <TableCell
-                  className={`text-center font-semibold ${netAmount >= 0 ? "text-green-600" : "text-red-600"}`}
+                  className={`text-center font-semibold ${
+                    stats?.matchesPlayed > 0
+                      ? stats?.winCount > stats?.lossCount
+                        ? "text-green-600"
+                        : "text-red-600"
+                      : "text-gray-500"
+                  }`}
                 >
-                  ${netAmount.toFixed(2)}
+                  {`${((stats?.winCount / stats?.matchesPlayed) * 100).toFixed(
+                    1
+                  )}%`}
+                </TableCell>
+                <TableCell
+                  className={`text-center font-semibold ${
+                    stats?.netAmount >= 0 ? "text-green-600" : "text-red-600"
+                  }`}
+                >
+                  ${stats?.netAmount.toFixed(2)}
                 </TableCell>
                 <TableCell className="text-right">
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <Trash2 className="h-4 w-4 text-red-500" />
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent className="max-w-md" onClick={(e) => e.stopPropagation()}>
+                    <AlertDialogContent
+                      className="max-w-md"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <AlertDialogHeader>
                         <AlertDialogTitle>Delete Session?</AlertDialogTitle>
                       </AlertDialogHeader>
                       <p className="text-gray-600 px-4">
-                        Are you sure you want to delete <strong>{session.name}</strong>? This action cannot be undone.
+                        Are you sure you want to delete{" "}
+                        <strong>{session.name}</strong>? This action cannot be
+                        undone.
                       </p>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={(e) => handleDeleteSession(session.id, e)} className="bg-red-600 hover:bg-red-700">
+                        <AlertDialogAction
+                          onClick={(e) => handleDeleteSession(session.id, e)}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
                           Yes, Delete
                         </AlertDialogAction>
                       </AlertDialogFooter>
@@ -157,7 +169,11 @@ export default function SessionListTable({
       </Table>
 
       {/* Show loading message while fetching transactions */}
-      {loading && <div className="text-gray-500 text-center py-4">Loading sessions...</div>}
+      {loading && (
+        <div className="text-gray-500 text-center py-4">
+          Loading sessions...
+        </div>
+      )}
     </div>
   );
 }

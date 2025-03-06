@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useBadmintonSessionStats } from "@/hooks/useBadmintonSessionStats";
+import { useAllBadmintonSessionStats } from "@/hooks/useAllBadmintonSessionStats";
 import { useUser } from "@/hooks/useUser";
-import { Transaction } from "@/types/types";
 import { Card } from "@/components/ui/card";
 import {
   AlertDialog,
@@ -48,10 +47,9 @@ export default function SessionListCards({
   formatDate,
 }: SessionListCardsProps) {
   const { name, userId } = useUser();
-  const [sessionTransactions, setSessionTransactions] = useState<Record<string, Transaction[]>>({});
+  const [sessionStats, setSessionStats] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
 
-  // Fetch transactions for all sessions
   useEffect(() => {
     if (!userId) return;
 
@@ -61,14 +59,10 @@ export default function SessionListCards({
           params: { userId },
         });
 
-        // Group transactions by session ID
-        const transactionsBySession = data.reduce((acc: Record<string, Transaction[]>, transaction: Transaction) => {
-          acc[transaction.sessionId] = acc[transaction.sessionId] || [];
-          acc[transaction.sessionId].push(transaction);
-          return acc;
-        }, {});
-
-        setSessionTransactions(transactionsBySession);
+        if (data.length !== 0) {
+          const sessionStats = useAllBadmintonSessionStats(data, name);
+          setSessionStats(sessionStats);
+        }
       } catch (error) {
         console.error("Error fetching transactions:", error);
       } finally {
@@ -82,17 +76,16 @@ export default function SessionListCards({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {sessions.map((session) => {
-        const transactions = sessionTransactions[session.id] || [];
+        const stats = sessionStats[session.id] || {
+          matchesPlayed: 0,
+          netAmount: 0,
+          winCount: 0,
+          lossCount: 0,
+        };
 
-        // Compute session stats using useMemo for optimization
-        const { matchesPlayed, winCount, lossCount, netAmount } = useMemo(
-          () => useBadmintonSessionStats(transactions, name),
-          [transactions, name]
-        );
-
-        const totalGames = winCount + lossCount;
-        const hasMatches = totalGames > 0;
-        const winRate = hasMatches ? `${((winCount / totalGames) * 100).toFixed(1)}%` : "N/A";
+        const winRate = stats.matchesPlayed
+          ? ((stats.winCount / stats.matchesPlayed) * 100).toFixed(2)
+          : "0.00";
 
         return (
           <div
@@ -123,7 +116,8 @@ export default function SessionListCards({
                     </AlertDialogHeader>
                     <p className="text-gray-600 px-4">
                       Are you sure you want to delete{" "}
-                      <strong>{session.name}</strong>? This action cannot be undone.
+                      <strong>{session.name}</strong>? This action cannot be
+                      undone.
                     </p>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -138,68 +132,59 @@ export default function SessionListCards({
                 </AlertDialog>
               </div>
 
-              {/* Two-column grid layout for better space utilization */}
               <div className="grid grid-cols-2 gap-4 text-gray-600">
-                {/* Left Column */}
                 <div className="space-y-2">
-                  {/* Date */}
                   <div className="flex items-center gap-2">
                     <Calendar className="w-5 h-5 text-gray-500" />
                     <span>{formatDate(session.createdAt)}</span>
                   </div>
 
-                  {/* Court Fee */}
                   <div className="flex items-center gap-2">
                     <DollarSign className="w-5 h-5 text-gray-500" />
                     <span>${session.courtFee.toFixed(2)}</span>
                   </div>
 
-                  {/* Matches Played */}
                   <div className="flex items-center gap-2">
                     <BarChart2 className="w-5 h-5 text-blue-500" />
-                    <span>{matchesPlayed} Matches</span>
+                    <span>{stats.matchesPlayed} Matches</span>
                   </div>
                 </div>
 
-                {/* Right Column - Using Chips (Only show if there are matches) */}
-                {hasMatches && (
-                  <div className="flex flex-col gap-2">
-                    {/* Win Rate Chip */}
-                    <Badge
-                      className={`text-sm py-1 px-2 w-fit ${
-                        winCount > lossCount
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {winRate} Win Rate
-                    </Badge>
+                <div className="flex flex-col gap-2">
+                  <Badge
+                    className={`text-sm py-1 px-2 w-fit ${
+                      stats.winCount > stats.lossCount
+                        ? "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    {winRate}% 
+                  </Badge>
 
-                    {/* Net Amount Chip */}
-                    <Badge
-                      className={`text-sm py-1 px-2 w-fit ${
-                        netAmount >= 0
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {netAmount >= 0 ? (
-                        <TrendingUp className="w-4 h-4 mr-1 inline" />
-                      ) : (
-                        <TrendingDown className="w-4 h-4 mr-1 inline" />
-                      )}
-                      ${netAmount.toFixed(2)}
-                    </Badge>
-                  </div>
-                )}
+                  <Badge
+                    className={`text-sm py-1 px-2 w-fit ${
+                      stats.netAmount >= 0
+                        ? "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    {stats.netAmount >= 0 ? (
+                      <TrendingUp className="w-4 h-4 mr-1 inline" />
+                    ) : (
+                      <TrendingDown className="w-4 h-4 mr-1 inline" />
+                    )}
+                    ${stats.netAmount.toFixed(2)}
+                  </Badge>
+                </div>
               </div>
             </Card>
           </div>
         );
       })}
 
-      {/* Show loading message while fetching transactions */}
-      {loading && <div className="text-gray-500 text-center py-4">Loading sessions...</div>}
+      {loading && (
+        <div className="text-gray-500 text-center py-4">Loading sessions...</div>
+      )}
     </div>
   );
 }

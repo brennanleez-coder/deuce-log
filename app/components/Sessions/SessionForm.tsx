@@ -17,7 +17,6 @@ import {
 const sessionSchema = z.object({
   name: z.string().min(1, "Session name is required"),
   courtFee: z.string().min(1, "Court fee is required"),
-  players: z.string().optional(),
 });
 
 export type SessionFormData = z.infer<typeof sessionSchema>;
@@ -30,7 +29,7 @@ interface SessionFormProps {
 export default function SessionForm({ onSubmit, isLoading }: SessionFormProps) {
   const form = useForm<SessionFormData>({
     resolver: zodResolver(sessionSchema),
-    defaultValues: { name: "", courtFee: "", players: "" },
+    defaultValues: { name: "", courtFee: ""},
   });
 
   return (
