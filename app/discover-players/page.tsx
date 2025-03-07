@@ -34,7 +34,7 @@ export default function DiscoverPlayers() {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="min-h-screen bg-white font-sans px-4 md:px-10 pt-16 p-4 md:p-6" // 👈 Added padding to prevent overlap
+      className="min-h-screen bg-white font-sans px-4 md:px-10 pt-16"
     >
       <div className="flex flex-col gap-y-6 max-w-5xl mx-auto">
         <motion.header
