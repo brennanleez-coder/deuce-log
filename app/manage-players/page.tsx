@@ -20,7 +20,7 @@ import axios from "axios";
 
 const ManagePlayersPage = () => {
   const router = useRouter();
-  const { userId } = useUser();
+  const { userId, name } = useUser();
   const [players, setPlayers] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -37,7 +37,7 @@ const ManagePlayersPage = () => {
     const dedupePlayers = Array.from(
       new Set(allSessions.flatMap((s: any) => s.players || []))
     );
-    setPlayers(dedupePlayers);
+    setPlayers(dedupePlayers.filter(p => p !== name));
   }, [userId, allSessions, sessionsLoading]);
 
   if (sessionsLoading) {
