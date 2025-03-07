@@ -25,9 +25,15 @@ import BestWorstPartnerCard from "@/app/components/Stats/BestWorstPartnerCard";
 import TransactionList from "@/app/components/Transactions/TransactionList";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import Confetti from "react-confetti";
+import { useWindowSize } from "react-use";
+
 export default function SessionPage({ params }: { params: { id: string } }) {
+  const { width, height } = useWindowSize();
   const { userId, name } = useUser();
   const { transactions, addTransaction } = useTransactions(params.id);
+  const [showConfetti, setShowConfetti] = useState(false);
+
   const router = useRouter();
   const sessionId = params.id;
 
@@ -68,16 +74,44 @@ export default function SessionPage({ params }: { params: { id: string } }) {
 
   const handleSubmitTransaction = async (transaction: Transaction) => {
     try {
-      await addTransaction(transaction);
-      toast.success("Match added");
+      // Run the confetti/toast immediately (non-blocking)
+      if (transaction.winningTeam === "team1") {
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 5500); // Confetti lasts 5.5s
+        toast.success(
+          `🎉 You won against ${transaction.team2[0] || ""}, ${
+            transaction.team2[1] || ""
+          }!`
+        );
+      } else {
+        toast.warning("Tough loss, but you'll get them next time! 💪", {
+          icon: "😢",
+          duration: 5000,
+        });
+      }
+  
+      // Fire the API request **without blocking the interactions**
+      const transactionPromise = addTransaction(transaction);
+  
+      // Optionally await the result to catch errors (doesn't block UI interactions)
+      await transactionPromise;
     } catch (error) {
-      toast.error("Failed to add match");
+      toast.error("Failed to add match. Please try again.");
     }
-
   };
+  
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-white to-gray-100 font-sans">
+      {showConfetti && (
+        <Confetti
+          width={width}
+          height={height}
+          numberOfPieces={500} // More confetti!
+          recycle={false} // Ensures it doesn't keep looping
+        />
+      )}
+
       <div className="flex flex-col gap-y-4 max-w-5xl mx-auto">
         <header className="flex items-center justify-between mb-6">
           <Button
@@ -88,9 +122,7 @@ export default function SessionPage({ params }: { params: { id: string } }) {
             <ArrowLeft className="w-5 h-5" />
             <span className="text-sm">Back</span>
           </Button>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {session?.name}
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-900">{session?.name}</h1>
           <EditSessionModal
             sessionId={session?.id}
             currentName={session?.name}
