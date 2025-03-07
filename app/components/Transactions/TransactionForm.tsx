@@ -19,9 +19,10 @@ import { z } from "zod";
 import { Transaction } from "@/types/types";
 import axios from "axios";
 import FuzzyCreatableSelect from "@/components/FuzzyCreatableSelect";
-import { BadmintonSession } from "@prisma/client";
 import Loader from "@/components/FullScreenLoader";
 import { toast } from "sonner";
+import { useBadmintonSessions } from "@/hooks/useBadmintonSessions";
+
 const transactionSchema = z.object({
   sessionId: z.string().min(1, "Session ID is required"),
   type: z.enum(["MATCH", "SIDEBET"]),
@@ -104,6 +105,8 @@ const TransactionForm = ({
   });
 
   const [loading, setLoading] = useState(false);
+  const { sessions: allSessions, isLoading: sessionsLoading } = useBadmintonSessions();
+
   const [session, setSession] = useState<any>(null);
   const [sessionPlayers, setSessionPlayers] = useState<string[]>([]);
   const [playersLoading, setPlayersLoading] = useState(false);
@@ -130,45 +133,22 @@ const TransactionForm = ({
       }
     }
   }, [winningTeam, team1Player1, team2Player1, setValue]);
+
+
   React.useEffect(() => {
-    if (!userId || !sessionId) return;
+    if (!userId || !sessionId || sessionsLoading) return;
 
-    const fetchAllPlayers = async () => {
-      try {
-        setPlayersLoading(true); // start loading
-        // Example: fetch all sessions for the user
-        const { data: allSessions } = await axios.get(
-          "/api/badminton-sessions",
-          {
-            params: { userId },
-          }
-        );
-        // Find the relevant session
-        const requiredSession = allSessions.find(
-          (s: any) => s.id === sessionId
-        );
-        if (!requiredSession) {
-          console.warn("Session not found for this userId and sessionId.");
-          setPlayersLoading(false);
-          return;
-        }
-        setSession(requiredSession);
+    // Find the required session (if needed)
+    const requiredSession = allSessions.find((s: any) => s.id === sessionId);
+    setSession(requiredSession);
 
-        const allTimeSessionPlayers = allSessions.flatMap(
-          (s: BadmintonSession) => s.players
-        );
-        const dedupePlayers = Array.from(new Set(allTimeSessionPlayers));
-        setSessionPlayers(dedupePlayers);
-        // We'll use the array of players from that session
-      } catch (error) {
-        console.error("Error fetching sessions:", error);
-      } finally {
-        setPlayersLoading(false); // done loading
-      }
-    };
-
-    fetchAllPlayers();
-  }, [userId, sessionId]);
+    // Instead of making a separate axios call,
+    // deduplicate players from all sessions available via the hook.
+    const dedupePlayers = Array.from(
+      new Set(allSessions.flatMap((s: any) => s.players || []))
+    );
+    setSessionPlayers(dedupePlayers);
+  }, [userId, sessionId, allSessions, sessionsLoading]);
 
   React.useEffect(() => {
     if (!isEditing && sessionPlayers.length) {
@@ -190,7 +170,7 @@ const TransactionForm = ({
       setSessionPlayers(updated); // local state
     } catch (error) {
       console.error("Error adding player:", error);
-      alert("Failed to add player. Check console for details.");
+      toast.error("Failed to add player to session.");
     }
   };
 
