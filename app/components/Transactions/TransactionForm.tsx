@@ -105,7 +105,8 @@ const TransactionForm = ({
   });
 
   const [loading, setLoading] = useState(false);
-  const { sessions: allSessions, isLoading: sessionsLoading } = useBadmintonSessions();
+  const { sessions: allSessions, isLoading: sessionsLoading } =
+    useBadmintonSessions();
 
   const [session, setSession] = useState<any>(null);
   const [sessionPlayers, setSessionPlayers] = useState<string[]>([]);
@@ -113,11 +114,6 @@ const TransactionForm = ({
   const [isFriendly, setIsFriendly] = useState(false);
   const transactionType = watch("type");
   const winningTeam = watch("winningTeam");
-
-  // Watch the team player fields
-  const team1Player1 = watch("team1Player1");
-  const team2Player1 = watch("team2Player1");
-
   const payer = watch("payer");
   const receiver = watch("receiver");
 
@@ -132,8 +128,7 @@ const TransactionForm = ({
       setValue("receiver", team2, { shouldValidate: true });
     }
   };
-  
-  // useEffect that watches winningTeam as well as the team fields
+
   React.useEffect(() => {
     updatePayerReceiver();
   }, [winningTeam, watch("team1Player1"), watch("team2Player1")]);
@@ -145,8 +140,6 @@ const TransactionForm = ({
     const requiredSession = allSessions.find((s: any) => s.id === sessionId);
     setSession(requiredSession);
 
-    // Instead of making a separate axios call,
-    // deduplicate players from all sessions available via the hook.
     const dedupePlayers = Array.from(
       new Set(allSessions.flatMap((s: any) => s.players || []))
     );
@@ -251,80 +244,90 @@ const TransactionForm = ({
 
       {transactionType === "MATCH" && (
         <>
-        {playersLoading? (
-          <Loader />
-        )
-        :(  <fieldset className="border p-4 rounded-lg">
-            <legend className="text-lg font-medium flex items-center gap-2">
-              <Users className="w-6 h-6 text-primary" /> Match Details
-            </legend>
-            <div className="grid grid-cols-[2fr_1fr_2fr] items-center w-full">
-              {/* Team 1 */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Team 1</Label>
-                <Input
-                  {...register("team1Player1")}
-                  value={name}
-                  disabled
-                  className="bg-gray-100 cursor-not-allowed"
-                />
-                <FuzzyCreatableSelect
-                  placeholder="Teammate's name"
-                  value={watch("team1Player2") || null}
-                  onChange={(newValue) =>
-                    setValue("team1Player2", newValue, { shouldValidate: true })
-                  }
-                  sessionPlayers={sessionPlayers}
-                  onAddPlayer={addPlayerToSession}
-                  exclude={[
-                    name,
-                    watch("team1Player2"),
-                    watch("team2Player1"),
-                    watch("team2Player2"),
-                  ]}
-                />
+          {playersLoading ? (
+            <Loader />
+          ) : (
+            <fieldset className="border p-4 rounded-lg">
+              <legend className="text-lg font-medium flex items-center gap-2">
+                <Users className="w-6 h-6 text-primary" /> Match Details
+              </legend>
+              <div className="grid grid-cols-[2fr_1fr_2fr] items-center w-full">
+                {/* Team 1 */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Team 1</Label>
+                  <Input
+                    {...register("team1Player1")}
+                    value={name}
+                    disabled
+                    className="bg-gray-100 cursor-not-allowed"
+                  />
+                  <FuzzyCreatableSelect
+                    placeholder="Teammate's name"
+                    value={watch("team1Player2") || null}
+                    onChange={(newValue) =>
+                      setValue("team1Player2", newValue, {
+                        shouldValidate: true,
+                      })
+                    }
+                    sessionPlayers={sessionPlayers}
+                    onAddPlayer={addPlayerToSession}
+                    exclude={[
+                      name,
+                      watch("team1Player2"),
+                      watch("team2Player1"),
+                      watch("team2Player2"),
+                    ]}
+                  />
+                </div>
+                <div className="text-center">
+                  <p className="text-xl font-bold">VS</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Team 2</Label>
+                  <FuzzyCreatableSelect
+                    placeholder="Opponent's name"
+                    value={watch("team2Player1") || null}
+                    onChange={(newValue) =>
+                      setValue("team2Player1", newValue, {
+                        shouldValidate: true,
+                      })
+                    }
+                    sessionPlayers={sessionPlayers}
+                    onAddPlayer={addPlayerToSession}
+                    exclude={[
+                      name,
+                      watch("team1Player2"),
+                      watch("team2Player1"),
+                      watch("team2Player2"),
+                    ]}
+                  />
+                  {errors.team2Player1 && (
+                    <p className="text-red-500 text-xs">
+                      {errors.team2Player1.message}
+                    </p>
+                  )}
+                  <FuzzyCreatableSelect
+                    placeholder="Opponent's name"
+                    value={watch("team2Player2") || null}
+                    onChange={(newValue) =>
+                      setValue("team2Player2", newValue, {
+                        shouldValidate: true,
+                      })
+                    }
+                    sessionPlayers={sessionPlayers}
+                    onAddPlayer={addPlayerToSession}
+                    exclude={[
+                      name,
+                      watch("team1Player2"),
+                      watch("team2Player1"),
+                      watch("team2Player2"),
+                    ]}
+                  />
+                </div>
               </div>
-              <div className="text-center">
-                <p className="text-xl font-bold">VS</p>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Team 2</Label>
-                <FuzzyCreatableSelect
-                  placeholder="Opponent's name"
-                  value={watch("team2Player1") || null}
-                  onChange={(newValue) =>
-                    setValue("team2Player1", newValue, { shouldValidate: true })
-                  }
-                  sessionPlayers={sessionPlayers}
-                  onAddPlayer={addPlayerToSession}
-                  exclude={[
-                    name,
-                    watch("team1Player2"),
-                    watch("team2Player1"),
-                    watch("team2Player2"),
-                  ]}
-                />
-                <FuzzyCreatableSelect
-                  placeholder="Opponent's name"
-                  value={watch("team2Player2") || null}
-                  onChange={(newValue) =>
-                    setValue("team2Player2", newValue, { shouldValidate: true })
-                  }
-                  sessionPlayers={sessionPlayers}
-                  onAddPlayer={addPlayerToSession}
-                  exclude={[
-                    name,
-                    watch("team1Player2"),
-                    watch("team2Player1"),
-                    watch("team2Player2"),
-                  ]}
-                />
-              </div>
-            </div>
-          </fieldset>
-)}
+            </fieldset>
+          )}
 
-        
           <div className="flex flex-col w-full gap-2">
             <Label className="text-sm font-medium text-left w-full">
               Did you win the match?
