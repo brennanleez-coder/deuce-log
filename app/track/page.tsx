@@ -43,7 +43,7 @@ function Home() {
               <AllTimeStats
                 userName={session?.user?.name}
                 totalSessionFees={aggregateSessionFees}
-                transactions={sessions.flatMap((s) => s.transactions)}
+                transactions={sessions.flatMap((s) => s.transactions ?? [])}
                 loading={isLoading}
               />
             )}
