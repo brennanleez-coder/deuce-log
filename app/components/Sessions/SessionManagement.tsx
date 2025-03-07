@@ -3,31 +3,44 @@
 import React, { useState, useEffect } from "react";
 import { useUser } from "@/hooks/useUser";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, ArrowUpDown, Table as TableIcon, Grid, Plus } from "lucide-react";
 import { ClipLoader } from "react-spinners";
-
 import { useBadmintonSessions } from "@/hooks/useBadmintonSessions";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useRouter } from "next/navigation";
 import Loader from "@/components/FullScreenLoader";
 import SessionForm from "@/app/components/Sessions/SessionForm";
-
 import SessionListTable from "@/app/components/Sessions/SessionListTable";
 import SessionListCards from "@/app/components/Sessions/SessionListCards";
 
 const ITEMS_PER_PAGE = 5;
 type ViewMode = "table" | "cards";
 
-export default function SessionManagement({loading, sessions, createSession, deleteSession}) {
-  if (!sessions
-    || !createSession
-    || !deleteSession) {
+export default function SessionManagement({
+  loading,
+  sessions,
+  createSession,
+  deleteSession,
+}: {
+  loading: boolean;
+  sessions: any[];
+  createSession: { mutateAsync: Function };
+  deleteSession: { mutateAsync: Function };
+}) {
+  if (!sessions || !createSession || !deleteSession) {
     return null;
   }
   const { userId } = useUser();
+  const router = useRouter();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -37,7 +50,6 @@ export default function SessionManagement({loading, sessions, createSession, del
   const [viewMode, setViewMode] = useState<ViewMode>("cards");
 
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
-  const router = useRouter();
 
   // Handle local storage for view mode
   useEffect(() => {
@@ -52,11 +64,16 @@ export default function SessionManagement({loading, sessions, createSession, del
   }, [viewMode]);
 
   // Session actions
-  const handleSessionSelect = (sessionId: string) => router.push(`/session/${sessionId}`);
-  const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {
+  const handleSessionSelect = (sessionId: string) =>
+    router.push(`/session/${sessionId}`);
+
+  const handleDeleteSession = async (
+    sessionId: string,
+    e: React.MouseEvent
+  ) => {
     e.stopPropagation();
     try {
-      await deleteSession(sessionId);
+      await deleteSession.mutateAsync(sessionId);
     } catch (error) {
       console.error("Error deleting session:", error);
     }
@@ -85,7 +102,8 @@ export default function SessionManagement({loading, sessions, createSession, del
   const paginatedSessions = filteredSessions.slice(0, currentPage * ITEMS_PER_PAGE);
 
   // Toggle asc/desc
-  const toggleSortOrder = () => setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+  const toggleSortOrder = () =>
+    setSortOrder(sortOrder === "asc" ? "desc" : "asc");
 
   // Create session
   const handleSubmit = async (values: any) => {
@@ -95,14 +113,18 @@ export default function SessionManagement({loading, sessions, createSession, del
     try {
       setIsLoading(true);
       const playersArray = values.players
-        ? values.players.split(",").map((p: string) => p.trim()).filter(Boolean)
+        ? values.players
+            .split(",")
+            .map((p: string) => p.trim())
+            .filter(Boolean)
         : [];
 
-      const newSession = await createSession(
-        values.name,
-        parseFloat(values.courtFee),
-        playersArray
-      );
+      // Call the mutation's mutateAsync function
+      const newSession = await createSession.mutateAsync({
+        name: values.name,
+        courtFee: parseFloat(values.courtFee),
+        players: playersArray,
+      });
       setIsModalOpen(false);
 
       if (newSession?.id) {
@@ -124,13 +146,19 @@ export default function SessionManagement({loading, sessions, createSession, del
           <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
             <DialogTrigger asChild>
               <Button className="flex items-center gap-2" disabled={isLoading}>
-                {isLoading ? <ClipLoader size={16} color="#fff" /> : <Plus size={16} />}
+                {isLoading ? (
+                  <ClipLoader size={16} color="#fff" />
+                ) : (
+                  <Plus size={16} />
+                )}
                 {isLoading ? "Creating..." : "New Session"}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-lg rounded-lg">
               <DialogHeader>
-                <DialogTitle className="text-gray-800">Create New Session</DialogTitle>
+                <DialogTitle className="text-gray-800">
+                  Create New Session
+                </DialogTitle>
               </DialogHeader>
               <SessionForm onSubmit={handleSubmit} isLoading={isLoading} />
             </DialogContent>
@@ -155,16 +183,28 @@ export default function SessionManagement({loading, sessions, createSession, del
 
           {/* Sort / View Toggles */}
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={toggleSortOrder} className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={toggleSortOrder}
+              className="flex items-center gap-2"
+            >
               Sort by Date <ArrowUpDown className="w-4 h-4" />
             </Button>
             {viewMode === "table" ? (
-              <Button variant="outline" onClick={() => setViewMode("cards")} className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setViewMode("cards")}
+                className="flex items-center gap-2"
+              >
                 <Grid className="w-4 h-4" />
                 Card View
               </Button>
             ) : (
-              <Button variant="outline" onClick={() => setViewMode("table")} className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setViewMode("table")}
+                className="flex items-center gap-2"
+              >
                 <TableIcon className="w-4 h-4" />
                 Table View
               </Button>
@@ -178,7 +218,9 @@ export default function SessionManagement({loading, sessions, createSession, del
             <Loader />
           </div>
         ) : sessions.length === 0 ? (
-          <div className="text-gray-500 text-center py-6">No sessions created yet.</div>
+          <div className="text-gray-500 text-center py-6">
+            No sessions created yet.
+          </div>
         ) : (
           <>
             {/* Render Table or Cards */}
@@ -201,7 +243,10 @@ export default function SessionManagement({loading, sessions, createSession, del
             {/* Load More */}
             {paginatedSessions.length < filteredSessions.length && (
               <div className="flex justify-center mt-6">
-                <Button variant="outline" onClick={() => setCurrentPage((p) => p + 1)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                >
                   Load More
                 </Button>
               </div>
