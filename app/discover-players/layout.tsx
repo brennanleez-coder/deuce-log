@@ -1,5 +1,4 @@
-"use client";
-
+'use client';
 import React from "react";
 import { SessionProvider } from "next-auth/react";
 import AuthHeader from "@/app/components/AuthHeader";
@@ -12,22 +11,22 @@ export default function TrackLayout({
 }) {
   return (
     <SessionProvider>
-      {/* Auth Header Animation */}
-      <motion.div
+      {/* Header with Fade-In Animation */}
+      <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="fixed top-0 left-0 w-full z-50 bg-white shadow-md"
+        // className="fixed top-0 left-0 right-0 bg-white z-50 shadow-sm"
       >
         <AuthHeader />
-      </motion.div>
+      </motion.header>
 
-      {/* Page Content Animation - Added Padding to Prevent Overlap */}
+      {/* Main Content with Scale & Slide-Up Animation */}
       <motion.main
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, ease: "easeOut", delay: 0.2 }}
-        className="min-h-screen p-4 md:p-6 pt-[72px]" // 👈 Added padding to push content down
+        initial={{ opacity: 0, y: 10, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.5, ease: "easeOut", delay: 0.3 }}
+        className=" min-h-screen p-4 md:p-6"
       >
         {children}
       </motion.main>

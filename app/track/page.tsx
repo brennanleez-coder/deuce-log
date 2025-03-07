@@ -36,7 +36,7 @@ function Home() {
   );
   console.log(sessions);
   return (
-    <main className="min-h-screen text-gray-900 p-4 font-sans">
+    <main className="min-h-screen text-gray-900 p-4 font-sans pt-16">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row gap-6">
           <div className="flex flex-col flex-1 gap-y-6">

@@ -106,7 +106,7 @@ const ManagePlayersPage = () => {
   );
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen w-full flex flex-col items-center pt-16">
       {/* Container */}
       <div className="w-full max-w-2xl">
         <div className="flex items-center justify-between mb-6">

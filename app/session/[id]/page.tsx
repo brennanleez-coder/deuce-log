@@ -98,7 +98,7 @@ export default function SessionPage({ params }: { params: { id: string } }) {
   
 
   return (
-    <main className="min-h-screen bg-white font-sans">
+    <main className="min-h-screen bg-white font-sans pt-16">
       {showConfetti && (
         <Confetti
           width={width}
