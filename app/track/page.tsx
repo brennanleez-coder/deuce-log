@@ -6,9 +6,10 @@ import withAuth from "@/hooks/hoc/withAuth";
 import { useState, useEffect, useRef } from "react";
 import AllTimeStats from "@/app/components/Stats/AllTimeStats";
 import { useBadmintonSessions } from "@/hooks/useBadmintonSessions";
+import { useUser } from "@/hooks/useUser";
 
 function Home() {
-  const { data: session } = useSession();
+  const {name} = useUser()
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -41,7 +42,7 @@ function Home() {
           <div className="flex flex-col flex-1 gap-y-6">
             {sessions && (
               <AllTimeStats
-                userName={session?.user?.name}
+                userName={name}
                 totalSessionFees={aggregateSessionFees}
                 transactions={sessions.flatMap((s) => s.transactions ?? [])}
                 loading={isLoading}
