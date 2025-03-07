@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, ArrowUpDown, Table as TableIcon, Grid, Plus } from "lucide-react";
 import { ClipLoader } from "react-spinners";
-import { useBadmintonSessions } from "@/hooks/useBadmintonSessions";
+import { toast } from "sonner";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useRouter } from "next/navigation";
 import Loader from "@/components/FullScreenLoader";
@@ -74,8 +74,10 @@ export default function SessionManagement({
     e.stopPropagation();
     try {
       await deleteSession.mutateAsync(sessionId);
+      toast.success("Session deleted successfully!");
     } catch (error) {
       console.error("Error deleting session:", error);
+      toast.error("Error deleting session!");
     }
   };
 
@@ -126,12 +128,13 @@ export default function SessionManagement({
         players: playersArray,
       });
       setIsModalOpen(false);
-
+      toast.success("Session created successfully!");
       if (newSession?.id) {
         router.push(`/session/${newSession.id}`);
       }
     } catch (error) {
       console.error("Error creating session:", error);
+      toast.error("Error creating session!");
     } finally {
       setIsLoading(false);
     }
