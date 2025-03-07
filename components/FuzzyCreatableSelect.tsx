@@ -23,42 +23,33 @@ const FuzzyCreatableSelect: React.FC<FuzzyCreatableSelectProps> = ({
   onChange,
   sessionPlayers,
   onAddPlayer,
-  exclude = [], // Default to empty array if not provided
+  exclude = [],
 }) => {
-  /**
-   * 1) Filter out excluded players
-   *    We’ll do a case-insensitive comparison so that "John" is excluded
-   *    if "john" is in the exclude array, and vice versa.
-   */
+  // 1) Filter out excluded players (case-insensitive)
   const lowercasedExclude = exclude.map((ex) => ex.toLowerCase());
   const filteredPlayers = sessionPlayers.filter(
     (p) => !lowercasedExclude.includes(p.toLowerCase())
   );
+  // 2) Sort the filtered players alphabetically
+  const sortedPlayers = filteredPlayers.sort((a, b) => a.localeCompare(b));
 
-  /**
-   * 2) Convert filtered session players into react-select’s { label, value } format
-   */
-  const options = filteredPlayers.map((p) => ({ label: p, value: p }));
+  // 3) Convert sorted players into react-select options
+  const options = sortedPlayers.map((p) => ({ label: p, value: p }));
 
-  /**
-   * 3) Fuzzy filter function for react-select
-   */
+  // 4) Fuzzy filter function for react-select
   const fuzzyFilterOption = (
     option: { label: string; value: string },
     input: string
   ) => {
     if (!input) return true; // show all if no input
-    // Use fuzzysort to compare user input to the option label
     const result = fuzzysort.go(input, [option.label], {
       limit: 1,
-      threshold: -10000, // tune as desired
+      threshold: -10000,
     });
     return result.length > 0;
   };
 
-  /**
-   * 4) Handle creating a new player
-   */
+  // 5) Handle creating a new player
   const handleCreateOption = (inputValue: string) => {
     const normalized = inputValue.trim();
     if (!normalized) return;
@@ -72,30 +63,26 @@ const FuzzyCreatableSelect: React.FC<FuzzyCreatableSelectProps> = ({
       return;
     }
 
-    // Add the new player to session
     onAddPlayer(normalized);
-
-    // Immediately select the newly added player
     onChange(normalized);
   };
 
   return (
     <div className="space-y-1">
-      {label && <label className="text-sm font-medium text-gray-700">{label}</label>}
-
+      {label && (
+        <label className="text-sm font-medium text-gray-700">{label}</label>
+      )}
       <CreatableSelect
-        // The currently selected value
         value={value ? { label: value, value: value } : null}
-        // The session players as options (minus excluded)
         options={options}
-        // Fuzzy filter
         filterOption={fuzzyFilterOption}
-        // Called when user picks an existing option
         onChange={(selectedOption) => {
-          if (!selectedOption) return;
+          if (!selectedOption) {
+            onChange(""); // Clear the input when x is pressed
+            return;
+          }
           onChange(selectedOption.value);
         }}
-        // Called when user types a new name and chooses to add it
         onCreateOption={handleCreateOption}
         formatCreateLabel={(inputVal) => `Add new player: "${inputVal}"`}
         placeholder={placeholder || "Search or add a player..."}
