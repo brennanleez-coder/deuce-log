@@ -22,7 +22,8 @@ export const useBadmintonSessionStats = (
   userName: string | null
 ): SessionStats => {
   return useMemo(() => {
-    if (!transactions || transactions.length === 0 || !userName) {
+    // Return early if no transactions or userName
+    if (!transactions?.length || !userName) {
       return {
         matchesPlayed: 0,
         netAmount: 0,
@@ -39,72 +40,70 @@ export const useBadmintonSessionStats = (
       };
     }
 
-    const netAmount = transactions.reduce((acc, t) => {
-      const winningTeam = t.team1[0] === t.payer ? "team2" : "team1";
-      if (winningTeam === "team1") {
-        if (t.team1.includes(userName)) return acc + t.amount;
-        else if (t.team2.includes(userName)) return acc - t.amount;
-      } else {
-        if (t.team2.includes(userName)) return acc + t.amount;
-        else if (t.team1.includes(userName)) return acc - t.amount;
-      }
-      return acc;
-    }, 0);
-    const wins = transactions.filter((t) => {
-      const winningTeam = t.team1[0] === t.payer ? "team2" : "team1";
-      return winningTeam === "team1"
-        ? t.team1.includes(userName)
-        : t.team2.includes(userName);
-    });
-
-    const losses = transactions.filter((t) => {
-      const winningTeam = t.team1[0] === t.payer ? "team2" : "team1";
-      return winningTeam === "team1"
-        ? t.team2.includes(userName)
-        : t.team1.includes(userName);
-    });
-
-    // Opponent stats
+    let netAmount = 0;
+    let winCount = 0;
+    let lossCount = 0;
+    let totalWinsAmount = 0;
+    let totalLossesAmount = 0;
+    const wins: Transaction[] = [];
+    const losses: Transaction[] = [];
     const opponentStats: Record<string, { wins: number; losses: number }> = {};
 
-    transactions.forEach((t) => {
+    for (const t of transactions) {
       const userInTeam1 = t.team1.includes(userName);
       const userInTeam2 = t.team2.includes(userName);
 
-      if (!userInTeam1 && !userInTeam2) return;
+      // Skip transactions where the user is not involved
+      if (!userInTeam1 && !userInTeam2) continue;
 
+      // Determine winning team
       const winningTeam = t.team1[0] === t.payer ? "team2" : "team1";
       const userIsWinner =
         (userInTeam1 && winningTeam === "team1") ||
         (userInTeam2 && winningTeam === "team2");
 
-      const opponents = userInTeam1 ? t.team2 : t.team1;
+      // Calculate net earnings
+      if (userIsWinner) {
+        netAmount += t.amount;
+        winCount++;
+        totalWinsAmount += t.amount;
+        wins.push(t);
+      } else {
+        netAmount -= t.amount;
+        lossCount++;
+        totalLossesAmount += t.amount;
+        losses.push(t);
+      }
 
-      opponents.forEach((opponent) => {
+      // Track opponent stats
+      const opponents = userInTeam1 ? t.team2 : t.team1;
+      for (const opponent of opponents) {
         if (!opponentStats[opponent]) {
           opponentStats[opponent] = { wins: 0, losses: 0 };
         }
         if (userIsWinner) {
-          opponentStats[opponent].wins += 1;
+          opponentStats[opponent].wins++;
         } else {
-          opponentStats[opponent].losses += 1;
+          opponentStats[opponent].losses++;
         }
-      });
-    });
+      }
+    }
 
+    // Find toughest opponents (who have beaten the user the most)
     const toughestOpponents = Object.entries(opponentStats)
       .filter(([_, stats]) => stats.losses > stats.wins)
-      .sort((a, b) => b[1].losses - a[1].wins)
+      .sort((a, b) => b[1].losses - a[1].losses)
       .slice(0, 2)
       .map(([name, stats]) => ({ name, wins: stats.wins, losses: stats.losses }));
 
+    // Find most defeated opponents (who the user has beaten the most)
     const mostDefeatedOpponents = Object.entries(opponentStats)
       .filter(([_, stats]) => stats.wins > stats.losses)
-      .sort((a, b) => b[1].wins - a[1].losses)
+      .sort((a, b) => b[1].wins - a[1].wins)
       .slice(0, 2)
       .map(([name, stats]) => ({ name, wins: stats.wins, losses: stats.losses }));
 
-    // Ensure at least one "toughest opponent" appears if the user has a single loss
+    // Ensure at least one "toughest opponent" and "most defeated opponent" is present
     if (toughestOpponents.length === 0) {
       const singleLossOpponent = Object.entries(opponentStats).find(
         ([_, stats]) => stats.losses > 0
@@ -116,7 +115,7 @@ export const useBadmintonSessionStats = (
     }
     if (mostDefeatedOpponents.length === 0) {
       const singleWinOpponent = Object.entries(opponentStats).find(
-        ([_, stats]) => stats.losses > 0
+        ([_, stats]) => stats.wins > 0
       );
       if (singleWinOpponent) {
         const [name, stats] = singleWinOpponent;
@@ -124,18 +123,16 @@ export const useBadmintonSessionStats = (
       }
     }
 
-    const { bestPartners, worstPartners } = getBestAndWorstPartners(
-      transactions,
-      userName
-    );
+    // Get best and worst partners
+    const { bestPartners, worstPartners } = getBestAndWorstPartners(transactions, userName);
 
     return {
       matchesPlayed: transactions.length,
       netAmount,
-      winCount: wins.length,
-      lossCount: losses.length,
-      totalWinsAmount: wins.reduce((acc, t) => acc + t.amount, 0),
-      totalLossesAmount: losses.reduce((acc, t) => acc + t.amount, 0),
+      winCount,
+      lossCount,
+      totalWinsAmount,
+      totalLossesAmount,
       wins,
       losses,
       bestPartners,
