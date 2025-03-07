@@ -121,23 +121,26 @@ const TransactionForm = ({
   const payer = watch("payer");
   const receiver = watch("receiver");
 
-  React.useEffect(() => {
-    if (winningTeam) {
-      if (winningTeam === "team1") {
-        // If Team 1 wins, set payer as Team 2's player1 and receiver as Team 1's player1.
-        setValue("payer", team2Player1, { shouldValidate: true });
-        setValue("receiver", team1Player1, { shouldValidate: true });
-      } else {
-        setValue("payer", team1Player1, { shouldValidate: true });
-        setValue("receiver", team2Player1, { shouldValidate: true });
-      }
+  const updatePayerReceiver = () => {
+    const team1 = getValues("team1Player1");
+    const team2 = getValues("team2Player1");
+    if (winningTeam === "team1") {
+      setValue("payer", team2, { shouldValidate: true });
+      setValue("receiver", team1, { shouldValidate: true });
+    } else {
+      setValue("payer", team1, { shouldValidate: true });
+      setValue("receiver", team2, { shouldValidate: true });
     }
-  }, [winningTeam, team1Player1, team2Player1, setValue]);
-
+  };
+  
+  // useEffect that watches winningTeam as well as the team fields
+  React.useEffect(() => {
+    updatePayerReceiver();
+  }, [winningTeam, watch("team1Player1"), watch("team2Player1")]);
 
   React.useEffect(() => {
     if (!userId || !sessionId || sessionsLoading) return;
-
+    setPlayersLoading(true);
     // Find the required session (if needed)
     const requiredSession = allSessions.find((s: any) => s.id === sessionId);
     setSession(requiredSession);
@@ -148,6 +151,7 @@ const TransactionForm = ({
       new Set(allSessions.flatMap((s: any) => s.players || []))
     );
     setSessionPlayers(dedupePlayers);
+    setPlayersLoading(false);
   }, [userId, sessionId, allSessions, sessionsLoading]);
 
   React.useEffect(() => {
