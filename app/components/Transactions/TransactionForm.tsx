@@ -214,7 +214,6 @@ const TransactionForm = ({
     }
   };
 
-  // if (playersLoading) return <Loader />;
   return (
     <form
       onSubmit={handleSubmit(handleFormSubmit)}
@@ -275,7 +274,7 @@ const TransactionForm = ({
                   onAddPlayer={addPlayerToSession}
                   exclude={[
                     name,
-                    watch("team1Player1"),
+                    watch("team1Player2"),
                     watch("team2Player1"),
                     watch("team2Player2"),
                   ]}
@@ -296,7 +295,7 @@ const TransactionForm = ({
                   onAddPlayer={addPlayerToSession}
                   exclude={[
                     name,
-                    watch("team1Player1"),
+                    watch("team1Player2"),
                     watch("team2Player1"),
                     watch("team2Player2"),
                   ]}
@@ -311,7 +310,7 @@ const TransactionForm = ({
                   onAddPlayer={addPlayerToSession}
                   exclude={[
                     name,
-                    watch("team1Player1"),
+                    watch("team1Player2"),
                     watch("team2Player1"),
                     watch("team2Player2"),
                   ]}
