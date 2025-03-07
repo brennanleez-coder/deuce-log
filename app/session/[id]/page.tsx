@@ -89,11 +89,7 @@ export default function SessionPage({ params }: { params: { id: string } }) {
           duration: 5000,
         });
       }
-  
-      // Fire the API request **without blocking the interactions**
       const transactionPromise = addTransaction(transaction);
-  
-      // Optionally await the result to catch errors (doesn't block UI interactions)
       await transactionPromise;
     } catch (error) {
       toast.error("Failed to add match. Please try again.");
@@ -102,7 +98,7 @@ export default function SessionPage({ params }: { params: { id: string } }) {
   
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-white to-gray-100 font-sans">
+    <main className="min-h-screen bg-white font-sans">
       {showConfetti && (
         <Confetti
           width={width}

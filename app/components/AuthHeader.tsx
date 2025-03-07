@@ -6,20 +6,11 @@ import Link from "next/link";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 
 function AuthHeader() {
   const { data: session } = useSession();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [bugReport, setBugReport] = useState("");
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -37,13 +28,6 @@ function AuthHeader() {
   const handleLogout = () => {
     localStorage.removeItem("userLoggedIn"); // Remove session flag on logout
     signOut({ callbackUrl: "/" });
-  };
-
-  const sendBugReport = () => {
-    const email = "brennanlee95@gmail.com";
-    const subject = encodeURIComponent("DeuceLog: Bug Report");
-    const body = encodeURIComponent(`Bug Description:\n\n${bugReport}`);
-    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
   };
 
   return (
@@ -86,7 +70,7 @@ function AuthHeader() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -5 }}
                 transition={{ duration: 0.2 }}
-                className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-md shadow-lg py-2 z-50"
+                className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-2 z-50"
               >
                 <Link href="https://bustling-ricotta-c3a.notion.site/1aed2a8ea01a80409b92e93ec4136077?pvs=105">
                   <Button
@@ -94,6 +78,16 @@ function AuthHeader() {
                     variant="ghost"
                   >
                     Report a bug
+                  </Button>
+                </Link>
+
+                {/* Manage Players Button */}
+                <Link href="/manage-players">
+                  <Button
+                    className="block w-full text-left text-gray-700 px-4 py-2"
+                    variant="ghost"
+                  >
+                    Manage Players
                   </Button>
                 </Link>
 
@@ -110,10 +104,7 @@ function AuthHeader() {
         </div>
       ) : (
         <Link href="/auth/login">
-          <Button
-            size="sm"
-            className="bg-blue-600 text-white hover:bg-blue-700"
-          >
+          <Button size="sm" className="bg-blue-600 text-white hover:bg-blue-700">
             Login
           </Button>
         </Link>

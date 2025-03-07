@@ -100,7 +100,7 @@ const TransactionForm = ({
             bettor: name,
             bookmaker: "",
             bettorWon: false,
-            winningTeam: "team2",
+            winningTeam: "",
           },
   });
 
@@ -111,7 +111,6 @@ const TransactionForm = ({
   const [session, setSession] = useState<any>(null);
   const [sessionPlayers, setSessionPlayers] = useState<string[]>([]);
   const [playersLoading, setPlayersLoading] = useState(false);
-  const [isFriendly, setIsFriendly] = useState(false);
   const transactionType = watch("type");
   const winningTeam = watch("winningTeam");
   const payer = watch("payer");
@@ -443,7 +442,6 @@ const TransactionForm = ({
           // defaultValue={0}
           {...register("amount", { valueAsNumber: true })}
           placeholder="Enter amount"
-          disabled={isFriendly}
         />
         {errors.amount && (
           <p className="text-red-500">{errors.amount.message}</p>

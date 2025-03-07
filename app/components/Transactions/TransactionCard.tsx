@@ -14,6 +14,7 @@ import TransactionForm from "@/app/components/Transactions/TransactionForm";
 import { useUser } from "@/hooks/useUser";
 import { useTransactions } from "@/hooks/useTransactions";
 import { formatDistanceToNow } from "date-fns";
+import { toast } from "sonner";
 
 interface TransactionCardProps {
   transaction: Transaction;
@@ -41,8 +42,10 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
         transactionId: currentTransaction.id,
         ...formData,
       });
+      toast.success(`Match against ${updatedTransaction.team2[0] || ""}, ${updatedTransaction.team2[1] || ""} updated!`);
     } catch (error) {
       console.error("Error updating transaction:", error);
+      toast.error("Error updating match. Please try again.");
       // **Rollback on failure**
       setCurrentTransaction(transaction);
     }
