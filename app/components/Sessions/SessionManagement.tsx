@@ -120,7 +120,7 @@ export default function SessionManagement({
             .map((p: string) => p.trim())
             .filter(Boolean)
         : [];
-
+  
       // Call the mutation's mutateAsync function
       const newSession = await createSession.mutateAsync({
         name: values.name,
@@ -128,10 +128,16 @@ export default function SessionManagement({
         players: playersArray,
       });
       setIsModalOpen(false);
-      toast.success("Session created successfully!");
-      if (newSession?.id) {
-        router.push(`/session/${newSession.id}`);
-      }
+      // Instead of auto-routing, show an interactive toast.
+      toast.success("Session created! Click to view.", {
+        action: {
+          label: "View Session",
+          onClick: () => {
+            router.push(`/session/${newSession.id}`);
+          },
+        },
+      });
+      
     } catch (error) {
       console.error("Error creating session:", error);
       toast.error("Error creating session!");
@@ -139,6 +145,7 @@ export default function SessionManagement({
       setIsLoading(false);
     }
   };
+  
 
   return (
     <Card className="bg-white border border-gray-200 shadow-md rounded-xl">

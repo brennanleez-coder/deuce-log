@@ -2,6 +2,7 @@ import { useSession } from "next-auth/react";
 import axios from "axios";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { BadmintonSession } from "@/types/types";
+import { useUser } from "./useUser";
 
 /**
  * A React Query hook that:
@@ -10,9 +11,9 @@ import { BadmintonSession } from "@/types/types";
  *    mutations with optimistic updates using v5 syntax
  */
 export function useBadmintonSessions() {
-  const { data: session } = useSession();
+  const {userId} = useUser()
   const queryClient = useQueryClient();
-  const userId = session?.user?.id;
+  
 
   // ---- FETCH ALL SESSIONS ----
   const {
