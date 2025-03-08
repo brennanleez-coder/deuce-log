@@ -145,7 +145,7 @@ export default function TransactionsList({
     <section className="bg-white p-6 rounded-lg border border-gray-200 shadow-md">
       <div className="flex justify-between items-center mb-4 ">
         <h2 className="text-lg font-semibold">Matches</h2>
-        {!shared && (
+        {shared && (
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
               <Button

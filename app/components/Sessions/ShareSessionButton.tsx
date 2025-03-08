@@ -21,8 +21,7 @@ export default function ShareSessionButton({ sessionId }: { sessionId: string })
       if (!res.ok) toast.error(data.error || "Failed to generate link");
 
       setShareableLink(data.shareableLink);
-      toast.success("Shareable link generated!");
-      copyToClipboard();
+      toast.success("Shareable link generated! Link copied to clipboard");
     } catch (error) {
       toast.error(error.message);
     } finally {
