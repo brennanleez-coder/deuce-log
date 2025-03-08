@@ -218,6 +218,7 @@ export default function SessionPage({ params }: { params: { id: string } }) {
           lossCount={lossCount}
           totalWinsAmount={totalWinsAmount}
           totalLossesAmount={totalLossesAmount}
+          showAddButton
         />
       </div>
     </main>

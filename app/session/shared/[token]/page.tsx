@@ -40,6 +40,7 @@ export default function SharedSessionPage({
       }
       return data.session;
     },
+    refetchInterval: 1000 * 60,
     onError: (err: any) => {
       toast.error(err.message);
     },
