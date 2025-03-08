@@ -11,6 +11,12 @@ export const config = {
     "/discover-players",
     "/track",
     "/manage-players",
-    "/session/:path*",  // Ensures dynamic session ID routes are protected
+    "/session/:path*",
+    "/api/transactions",
+    "/api/transactions/:path*",
+    "/api/badminton-sessions",
+    "/api/badminton-sessions/:path*",
+    "/api/users",
+    "/api/users/:path*",
   ],
 };
