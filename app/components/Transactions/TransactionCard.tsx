@@ -18,9 +18,10 @@ import { toast } from "sonner";
 
 interface TransactionCardProps {
   transaction: Transaction;
+  sharing: boolean;
 }
 
-export default function TransactionCard({ transaction }: TransactionCardProps) {
+export default function TransactionCard({ transaction, sharing = false}: TransactionCardProps) {
   if (!transaction) return null;
 
   const { userId, name } = useUser();
@@ -186,7 +187,7 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
       </div>
 
       <div className="flex justify-between items-center border-t pt-3 mt-3">
-        <div className="flex items-center justify-center gap-2 w-[150px] h-9">
+        {!sharing && (<div className="flex items-center justify-center gap-2 w-[150px] h-9">
           <Button
             onClick={handleTogglePaid}
             disabled={isMarkingPaid}
@@ -233,7 +234,7 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
               </>
             )}
           </Button>
-        </div>
+        </div>)}
 
         {/* Amount */}
         <div className="flex items-center gap-2">

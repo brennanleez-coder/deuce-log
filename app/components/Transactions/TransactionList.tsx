@@ -51,7 +51,7 @@ export default function TransactionsList({
   userId = "defaultUserId", // Placeholder value, pass real value from parent/context
   name = "Default Name", // Placeholder value
   sessionId = "defaultSessionId", // Placeholder value
-  showAddButton = false,
+  sharing = true,
 }: TransactionsListProps) {
   // State for Dialog open/close
   const [isOpen, setIsOpen] = useState(false);
@@ -145,7 +145,7 @@ export default function TransactionsList({
     <section className="bg-white p-6 rounded-lg border border-gray-200 shadow-md">
       <div className="flex justify-between items-center mb-4 ">
         <h2 className="text-lg font-semibold">Matches</h2>
-        {showAddButton && (
+        {!sharing && (
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
               <Button
@@ -275,6 +275,7 @@ export default function TransactionsList({
                     <TransactionCard
                       key={transaction.id}
                       transaction={transaction}
+                      sharing={sharing}
                     />
                   ))}
                 </ul>
@@ -297,6 +298,7 @@ export default function TransactionsList({
                     <TransactionCard
                       key={transaction.id}
                       transaction={transaction}
+                      sharing={sharing}
                     />
                   ))}
                 </ul>
