@@ -52,6 +52,7 @@
     "fuse.js": "^7.1.0",
     "fuzzysort": "^3.1.0",
     "input-otp": "1.4.1",
+    "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.454.0",
     "next": "14.2.16",
     "next-auth": "^4.24.11",

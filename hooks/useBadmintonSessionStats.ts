@@ -1,3 +1,147 @@
+// import { useMemo } from "react";
+// import { Transaction } from "@/types/types";
+// import { getBestAndWorstPartners } from "@/lib/utils";
+
+// interface SessionStats {
+//   matchesPlayed: number;
+//   netAmount: number;
+//   winCount: number;
+//   lossCount: number;
+//   totalWinsAmount: number;
+//   totalLossesAmount: number;
+//   wins: Transaction[];
+//   losses: Transaction[];
+//   bestPartners: { name: string; wins: number; losses: number }[] | null;
+//   worstPartners: { name: string; wins: number; losses: number }[] | null;
+//   toughestOpponents: { name: string; wins: number; losses: number }[] | null;
+//   mostDefeatedOpponents: { name: string; wins: number; losses: number }[] | null;
+// }
+
+// export const useBadmintonSessionStats = (
+//   transactions: Transaction[],
+//   userName: string | null
+// ): SessionStats => {
+//   return useMemo(() => {
+//     // Return early if no transactions or userName
+//     if (!transactions?.length || !userName) {
+//       return {
+//         matchesPlayed: 0,
+//         netAmount: 0,
+//         winCount: 0,
+//         lossCount: 0,
+//         totalWinsAmount: 0,
+//         totalLossesAmount: 0,
+//         wins: [],
+//         losses: [],
+//         bestPartners: null,
+//         worstPartners: null,
+//         toughestOpponents: null,
+//         mostDefeatedOpponents: null,
+//       };
+//     }
+
+//     let netAmount = 0;
+//     let winCount = 0;
+//     let lossCount = 0;
+//     let totalWinsAmount = 0;
+//     let totalLossesAmount = 0;
+//     const wins: Transaction[] = [];
+//     const losses: Transaction[] = [];
+//     const opponentStats: Record<string, { wins: number; losses: number }> = {};
+
+//     for (const t of transactions) {
+//       const userInTeam1 = t.team1.includes(userName);
+//       const userInTeam2 = t.team2.includes(userName);
+
+//       // Skip transactions where the user is not involved
+//       if (!userInTeam1 && !userInTeam2) continue;
+
+//       // Determine winning team
+//       const winningTeam = t.team1[0] === t.payer ? "team2" : "team1";
+//       const userIsWinner =
+//         (userInTeam1 && winningTeam === "team1") ||
+//         (userInTeam2 && winningTeam === "team2");
+
+//       // Calculate net earnings
+//       if (userIsWinner) {
+//         netAmount += t.amount;
+//         winCount++;
+//         totalWinsAmount += t.amount;
+//         wins.push(t);
+//       } else {
+//         netAmount -= t.amount;
+//         lossCount++;
+//         totalLossesAmount += t.amount;
+//         losses.push(t);
+//       }
+
+//       // Track opponent stats
+//       const opponents = userInTeam1 ? t.team2 : t.team1;
+//       for (const opponent of opponents) {
+//         if (!opponentStats[opponent]) {
+//           opponentStats[opponent] = { wins: 0, losses: 0 };
+//         }
+//         if (userIsWinner) {
+//           opponentStats[opponent].wins++;
+//         } else {
+//           opponentStats[opponent].losses++;
+//         }
+//       }
+//     }
+
+//     // Find toughest opponents (who have beaten the user the most)
+//     const toughestOpponents = Object.entries(opponentStats)
+//       .filter(([_, stats]) => stats.losses > stats.wins)
+//       .sort((a, b) => b[1].losses - a[1].losses)
+//       .slice(0, 2)
+//       .map(([name, stats]) => ({ name, wins: stats.wins, losses: stats.losses }));
+
+//     // Find most defeated opponents (who the user has beaten the most)
+//     const mostDefeatedOpponents = Object.entries(opponentStats)
+//       .filter(([_, stats]) => stats.wins > stats.losses)
+//       .sort((a, b) => b[1].wins - a[1].wins)
+//       .slice(0, 2)
+//       .map(([name, stats]) => ({ name, wins: stats.wins, losses: stats.losses }));
+
+//     // Ensure at least one "toughest opponent" and "most defeated opponent" is present
+//     if (toughestOpponents.length === 0) {
+//       const singleLossOpponent = Object.entries(opponentStats).find(
+//         ([_, stats]) => stats.losses > 0
+//       );
+//       if (singleLossOpponent) {
+//         const [name, stats] = singleLossOpponent;
+//         toughestOpponents.push({ name, wins: stats.wins, losses: stats.losses });
+//       }
+//     }
+//     if (mostDefeatedOpponents.length === 0) {
+//       const singleWinOpponent = Object.entries(opponentStats).find(
+//         ([_, stats]) => stats.wins > 0
+//       );
+//       if (singleWinOpponent) {
+//         const [name, stats] = singleWinOpponent;
+//         mostDefeatedOpponents.push({ name, wins: stats.wins, losses: stats.losses });
+//       }
+//     }
+
+//     // Get best and worst partners
+//     const { bestPartners, worstPartners } = getBestAndWorstPartners(transactions, userName);
+
+//     return {
+//       matchesPlayed: transactions.length,
+//       netAmount,
+//       winCount,
+//       lossCount,
+//       totalWinsAmount,
+//       totalLossesAmount,
+//       wins,
+//       losses,
+//       bestPartners,
+//       worstPartners,
+//       toughestOpponents,
+//       mostDefeatedOpponents,
+//     };
+//   }, [transactions, userName]);
+// };
 import { useMemo } from "react";
 import { Transaction } from "@/types/types";
 import { getBestAndWorstPartners } from "@/lib/utils";
@@ -22,7 +166,7 @@ export const useBadmintonSessionStats = (
   userName: string | null
 ): SessionStats => {
   return useMemo(() => {
-    // Return early if no transactions or userName
+    // Return default stats if there are no transactions or no userName.
     if (!transactions?.length || !userName) {
       return {
         matchesPlayed: 0,
@@ -40,6 +184,7 @@ export const useBadmintonSessionStats = (
       };
     }
 
+    // Initialize accumulators.
     let netAmount = 0;
     let winCount = 0;
     let lossCount = 0;
@@ -49,20 +194,21 @@ export const useBadmintonSessionStats = (
     const losses: Transaction[] = [];
     const opponentStats: Record<string, { wins: number; losses: number }> = {};
 
-    for (const t of transactions) {
+    // Process each transaction.
+    transactions.forEach((t) => {
       const userInTeam1 = t.team1.includes(userName);
       const userInTeam2 = t.team2.includes(userName);
 
-      // Skip transactions where the user is not involved
-      if (!userInTeam1 && !userInTeam2) continue;
+      // Skip transactions where the user is not involved.
+      if (!userInTeam1 && !userInTeam2) return;
 
-      // Determine winning team
+      // Determine winning team based on your business logic.
       const winningTeam = t.team1[0] === t.payer ? "team2" : "team1";
       const userIsWinner =
         (userInTeam1 && winningTeam === "team1") ||
         (userInTeam2 && winningTeam === "team2");
 
-      // Calculate net earnings
+      // Update stats based on whether the user won.
       if (userIsWinner) {
         netAmount += t.amount;
         winCount++;
@@ -75,9 +221,9 @@ export const useBadmintonSessionStats = (
         losses.push(t);
       }
 
-      // Track opponent stats
+      // Determine opponents (the team the user is not in).
       const opponents = userInTeam1 ? t.team2 : t.team1;
-      for (const opponent of opponents) {
+      opponents.forEach((opponent) => {
         if (!opponentStats[opponent]) {
           opponentStats[opponent] = { wins: 0, losses: 0 };
         }
@@ -86,44 +232,51 @@ export const useBadmintonSessionStats = (
         } else {
           opponentStats[opponent].losses++;
         }
-      }
-    }
+      });
+    });
 
-    // Find toughest opponents (who have beaten the user the most)
-    const toughestOpponents = Object.entries(opponentStats)
-      .filter(([_, stats]) => stats.losses > stats.wins)
-      .sort((a, b) => b[1].losses - a[1].losses)
-      .slice(0, 2)
-      .map(([name, stats]) => ({ name, wins: stats.wins, losses: stats.losses }));
+    // Helper function to pick top opponents based on filter and sort functions.
+    const pickOpponents = (
+      filterFn: (stats: { wins: number; losses: number }) => boolean,
+      sortFn: (a: { wins: number; losses: number }, b: { wins: number; losses: number }) => number,
+      limit: number = 2
+    ) => {
+      return Object.entries(opponentStats)
+        .filter(([_, stats]) => filterFn(stats))
+        .sort((a, b) => sortFn(a[1], b[1]))
+        .slice(0, limit)
+        .map(([name, stats]) => ({ name, wins: stats.wins, losses: stats.losses }));
+    };
 
-    // Find most defeated opponents (who the user has beaten the most)
-    const mostDefeatedOpponents = Object.entries(opponentStats)
-      .filter(([_, stats]) => stats.wins > stats.losses)
-      .sort((a, b) => b[1].wins - a[1].wins)
-      .slice(0, 2)
-      .map(([name, stats]) => ({ name, wins: stats.wins, losses: stats.losses }));
+    // Determine toughest opponents (those with more losses than wins).
+    const toughestOpponents = pickOpponents(
+      (stats) => stats.losses > stats.wins,
+      (a, b) => b.losses - a.losses
+    );
 
-    // Ensure at least one "toughest opponent" and "most defeated opponent" is present
+    // Determine most defeated opponents (those with more wins than losses).
+    const mostDefeatedOpponents = pickOpponents(
+      (stats) => stats.wins > stats.losses,
+      (a, b) => b.wins - a.wins
+    );
+
+    // Fallback: Ensure at least one opponent is returned if none match the criteria.
     if (toughestOpponents.length === 0) {
-      const singleLossOpponent = Object.entries(opponentStats).find(
-        ([_, stats]) => stats.losses > 0
-      );
-      if (singleLossOpponent) {
-        const [name, stats] = singleLossOpponent;
+      const fallback = Object.entries(opponentStats).find(([_, stats]) => stats.losses > 0);
+      if (fallback) {
+        const [name, stats] = fallback;
         toughestOpponents.push({ name, wins: stats.wins, losses: stats.losses });
       }
     }
     if (mostDefeatedOpponents.length === 0) {
-      const singleWinOpponent = Object.entries(opponentStats).find(
-        ([_, stats]) => stats.wins > 0
-      );
-      if (singleWinOpponent) {
-        const [name, stats] = singleWinOpponent;
+      const fallback = Object.entries(opponentStats).find(([_, stats]) => stats.wins > 0);
+      if (fallback) {
+        const [name, stats] = fallback;
         mostDefeatedOpponents.push({ name, wins: stats.wins, losses: stats.losses });
       }
     }
 
-    // Get best and worst partners
+    // Get best and worst partners from the helper function.
     const { bestPartners, worstPartners } = getBestAndWorstPartners(transactions, userName);
 
     return {

@@ -27,6 +27,7 @@ import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import Confetti from "react-confetti";
 import { useWindowSize } from "react-use";
+import ShareSessionButton from "@/app/components/Sessions/ShareSessionButton";
 
 export default function SessionPage({ params }: { params: { id: string } }) {
   const { width, height } = useWindowSize();
@@ -125,6 +126,7 @@ export default function SessionPage({ params }: { params: { id: string } }) {
             currentCourtFee={session?.courtFee}
             currentPlayers={session?.players}
           />
+          <ShareSessionButton sessionId={session?.id} />
         </header>
 
         {/* Session Metrics Card */}
@@ -164,7 +166,7 @@ export default function SessionPage({ params }: { params: { id: string } }) {
                 name={mostDefeatedOpponents?.[0]?.name || "N/A"}
                 wins={mostDefeatedOpponents?.[0]?.wins || 0}
                 losses={mostDefeatedOpponents?.[0]?.losses || 0}
-                label="Most Defeated Opponent"
+                label="Most Defeated"
                 icon={<ThumbsUp className="w-6 h-6 text-green-500" />}
               />
             </div>
