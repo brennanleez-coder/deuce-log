@@ -15,6 +15,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import TransactionForm from "@/app/components/Transactions/TransactionForm";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
 
 type TransactionsListProps = {
   addTransaction: (transaction: Transaction) => void;
@@ -56,14 +63,14 @@ export default function TransactionsList({
   const [friendlyFilter, setFriendlyFilter] = useState<"all" | "friendly">(
     "all"
   );
+  const [layout, setLayout] = useState<"columns" | "swipe">("columns"); // 🆕 Layout toggle
+
   const friendlyOption = friendlyFilter === "friendly" ? true : undefined;
 
   const handleSortToggle = (field: "timestamp" | "amount") => {
     if (sortBy === field) {
-      // If clicked again, flip asc/desc
       setOrder((prev) => (prev === "asc" ? "desc" : "asc"));
     } else {
-      // Switch field, default to ascending
       setSortBy(field);
       setOrder("asc");
     }
@@ -104,11 +111,9 @@ export default function TransactionsList({
     [filteredTransactions.losses]
   );
 
-  // Decide how to label the friendly button
   const friendlyButtonLabel =
     friendlyFilter === "friendly" ? "All" : "Friendly Only";
 
-  // Format the headers conditionally
   const winsHeader =
     friendlyFilter === "friendly"
       ? `Wins (${filteredWinsCount}/${winCount})`
@@ -166,57 +171,86 @@ export default function TransactionsList({
 
       {transactions.length !== 0 && (
         <>
-          {/* Controls */}
-          <div className="mb-4 flex flex-wrap gap-4 items-center">
+          <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             {/* Search Input */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full md:w-auto">
               <Search className="w-5 h-5 text-gray-500" />
               <Input
                 type="text"
-                placeholder="Search by player, partner, or opponent..."
+                placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="max-w-xs border border-gray-300 px-4 py-2 rounded-md focus:ring-2 focus:ring-blue-500"
+                className="w-full md:max-w-xs border border-gray-300 px-4 py-2 rounded-md focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
-            {/* Friendly Toggle Button */}
-            <Button variant="outline" onClick={handleFriendlyToggle}>
-              {friendlyButtonLabel}
-            </Button>
+            {/* Filter & Sorting Options */}
+            <div className="flex items-center gap-2 w-full md:w-auto">
+              <Button
+                variant="outline"
+                onClick={handleFriendlyToggle}
+                className="w-full md:w-auto"
+              >
+                {friendlyFilter === "friendly"
+                  ? "All Matches"
+                  : "Friendly Only"}
+              </Button>
 
-            {/* Timestamp Sort Button */}
-            <Button
-              variant="outline"
-              onClick={() => handleSortToggle("timestamp")}
-            >
-              Timestamp
-              {sortBy === "timestamp" &&
-                (order === "asc" ? (
-                  <ArrowUp className="ml-2 h-4 w-4" />
-                ) : (
-                  <ArrowDown className="ml-2 h-4 w-4" />
-                ))}
-            </Button>
+              {/* Sorting Dropdown (Mobile) */}
+              <div className="w-full md:hidden">
+                <Select
+                  value={sortBy}
+                  onValueChange={(value) =>
+                    setSortBy(value as "timestamp" | "amount")
+                  }
+                >
+                  <SelectTrigger className="w-full border-gray-300">
+                    <SelectValue placeholder="Sort By" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="timestamp">Date</SelectItem>
+                    <SelectItem value="amount">Amount</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            {/* Amount Sort Button */}
-            <Button
-              variant="outline"
-              onClick={() => handleSortToggle("amount")}
-            >
-              Amount
-              {sortBy === "amount" &&
-                (order === "asc" ? (
-                  <ArrowUp className="ml-2 h-4 w-4" />
-                ) : (
-                  <ArrowDown className="ml-2 h-4 w-4" />
-                ))}
-            </Button>
+              {/* Sorting Buttons (Desktop) */}
+              <div className="hidden md:flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => handleSortToggle("timestamp")}
+                >
+                  Timestamp
+                  {sortBy === "timestamp" &&
+                    (order === "asc" ? (
+                      <ArrowUp className="ml-2 h-4 w-4" />
+                    ) : (
+                      <ArrowDown className="ml-2 h-4 w-4" />
+                    ))}
+                </Button>
 
-            {/* Clear Filters Button */}
-            <Button variant="outline" onClick={handleClearFilters}>
-              Clear Filters
-            </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => handleSortToggle("amount")}
+                >
+                  Amount
+                  {sortBy === "amount" &&
+                    (order === "asc" ? (
+                      <ArrowUp className="ml-2 h-4 w-4" />
+                    ) : (
+                      <ArrowDown className="ml-2 h-4 w-4" />
+                    ))}
+                </Button>
+              </div>
+
+              <Button
+                variant="outline"
+                onClick={handleClearFilters}
+                className="w-full md:w-auto"
+              >
+                Clear Filters
+              </Button>
+            </div>
           </div>
 
           {/* Transaction Lists */}

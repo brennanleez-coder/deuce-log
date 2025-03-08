@@ -98,7 +98,7 @@ export async function PUT(req: Request) {
 
     // Begin transaction
     const updatedSession = await prisma.$transaction(async (tx) => {
-      // Fetch all transactions for the session where the player appears
+      // Fetch all transactions where the player appears
       const transactionsToUpdate = await tx.transaction.findMany({
         where: {
           sessionId,
@@ -111,29 +111,32 @@ export async function PUT(req: Request) {
         },
       });
 
-      // Update transactions individually
+      // Ensure unique renaming by transforming the fetched transactions first
+      const updatedTransactions = transactionsToUpdate.map((transaction) => ({
+        id: transaction.id,
+        team1: transaction.team1.map((p) =>
+          p === oldPlayerName ? newPlayerName : p
+        ),
+        team2: transaction.team2.map((p) =>
+          p === oldPlayerName ? newPlayerName : p
+        ),
+        payer: transaction.payer === oldPlayerName ? newPlayerName : transaction.payer,
+        receiver: transaction.receiver === oldPlayerName ? newPlayerName : transaction.receiver,
+      }));
+
+      // Apply updates one-by-one to prevent duplication
       await Promise.all(
-        transactionsToUpdate.map(async (transaction) => {
-          await tx.transaction.update({
-            where: { id: transaction.id },
+        updatedTransactions.map((updatedTransaction) =>
+          tx.transaction.update({
+            where: { id: updatedTransaction.id },
             data: {
-              team1: transaction.team1.map((p) =>
-                p === oldPlayerName ? newPlayerName : p
-              ),
-              team2: transaction.team2.map((p) =>
-                p === oldPlayerName ? newPlayerName : p
-              ),
-              payer:
-                transaction.payer === oldPlayerName
-                  ? newPlayerName
-                  : transaction.payer,
-              receiver:
-                transaction.receiver === oldPlayerName
-                  ? newPlayerName
-                  : transaction.receiver,
+              team1: updatedTransaction.team1,
+              team2: updatedTransaction.team2,
+              payer: updatedTransaction.payer,
+              receiver: updatedTransaction.receiver,
             },
-          });
-        })
+          })
+        )
       );
 
       // Update the session with the new player name in the players array
@@ -161,3 +164,4 @@ export async function PUT(req: Request) {
     );
   }
 }
+

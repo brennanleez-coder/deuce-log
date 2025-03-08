@@ -16,15 +16,23 @@ const fetchUsers = async () => {
   return res.json();
 };
 
+const getBadgeForUser = (index: number, email: string) => {
+  if (email === "brennanlee95@gmail.com") {
+    return { text: "🏆 Founder", className: "bg-yellow-500 text-white" };
+  } else if (index >= 2 && index <= 5) {
+    return { text: "⭐ Core Member", className: "bg-blue-500 text-white" };
+  } else if (index >= 6 && index <= 10) {
+    return { text: "✨ Trusted Member", className: "bg-purple-500 text-white" };
+  } else {
+    return { text: "🔵 Community Member", className: "bg-gray-400 text-white" };
+  }
+};
+
 export default function DiscoverPlayers() {
   const router = useRouter();
   const { userId } = useUser();
 
-  const {
-    data: users,
-    isLoading,
-    isError,
-  } = useQuery({
+  const { data: users, isLoading, isError } = useQuery({
     queryKey: ["users"],
     queryFn: fetchUsers,
   });
@@ -83,8 +91,7 @@ export default function DiscoverPlayers() {
             className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
           >
             {users.map((user: any, index: number) => {
-              const isFounder = user.email === "brennanlee95@gmail.com";
-              const userNumber = index + 1;
+              const badge = getBadgeForUser(index + 1, user.email);
 
               return (
                 <motion.div
@@ -113,15 +120,7 @@ export default function DiscoverPlayers() {
 
                   {/* Badges Section */}
                   <div className="mt-2 flex gap-2">
-                    {isFounder ? (
-                      <Badge className="bg-yellow-500 text-white">
-                        🏆 Founder
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-blue-500 text-white">
-                        User #{userNumber}
-                      </Badge>
-                    )}
+                    <Badge className={badge.className}>{badge.text}</Badge>
                   </div>
                 </motion.div>
               );

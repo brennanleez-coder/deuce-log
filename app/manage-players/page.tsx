@@ -37,7 +37,7 @@ const ManagePlayersPage = () => {
     const dedupePlayers = Array.from(
       new Set(allSessions.flatMap((s: any) => s.players || []))
     );
-    setPlayers(dedupePlayers.filter(p => p !== name));
+    setPlayers(dedupePlayers.filter((p) => p !== name));
   }, [userId, allSessions, sessionsLoading]);
 
   if (sessionsLoading) {
@@ -106,7 +106,17 @@ const ManagePlayersPage = () => {
   );
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center pt-16">
+    <div className="min-h-screen w-full flex flex-col items-center pt-16 relative">
+      {/* Full-Screen Loader (Blocks UI when loading) */}
+      {loading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg flex flex-col items-center">
+            <Loader2 className="w-10 h-10 animate-spin text-blue-500 mb-2" />
+            <p className="text-sm text-gray-600">Updating player name...</p>
+          </div>
+        </div>
+      )}
+
       {/* Container */}
       <div className="w-full max-w-2xl">
         <div className="flex items-center justify-between mb-6">
@@ -114,6 +124,7 @@ const ManagePlayersPage = () => {
             variant="ghost"
             className="flex items-center gap-2 mb-4"
             onClick={() => router.back()}
+            disabled={loading} // Prevents navigation during API call
           >
             <ArrowLeft className="w-5 h-5" />
             <span>Back</span>
@@ -132,6 +143,7 @@ const ManagePlayersPage = () => {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="mb-4"
+          disabled={loading} // Disable search input while loading
         />
 
         {/* Players Table */}
@@ -158,6 +170,7 @@ const ManagePlayersPage = () => {
                             handleRenamePlayer(player, newName)
                           }
                           className="border-gray-300 w-full"
+                          disabled={loading} // Disable input when loading
                         />
                       ) : (
                         <span className="truncate block">{player}</span>
@@ -182,6 +195,7 @@ const ManagePlayersPage = () => {
                             size="icon"
                             variant="ghost"
                             onClick={() => setEditingPlayer(null)}
+                            disabled={loading}
                           >
                             <X className="w-5 h-5 text-red-500" />
                           </Button>
@@ -194,6 +208,7 @@ const ManagePlayersPage = () => {
                             setEditingPlayer(player);
                             setNewName(player);
                           }}
+                          disabled={loading}
                         >
                           <Pencil className="w-4 h-4 text-gray-500" />
                         </Button>
@@ -203,10 +218,7 @@ const ManagePlayersPage = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell
-                    colSpan={2}
-                    className="text-center text-gray-500 py-4"
-                  >
+                  <TableCell colSpan={2} className="text-center text-gray-500 py-4">
                     No players found.
                   </TableCell>
                 </TableRow>
@@ -214,11 +226,6 @@ const ManagePlayersPage = () => {
             </TableBody>
           </Table>
         </div>
-
-        {/* Total Players */}
-        <p className="text-gray-600 mt-4 text-sm text-center">
-          Total Players: <span className="font-semibold">{players.length}</span>
-        </p>
       </div>
     </div>
   );

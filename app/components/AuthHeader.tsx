@@ -16,10 +16,7 @@ function AuthHeader() {
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setDropdownOpen(false);
       }
     }
@@ -32,36 +29,39 @@ function AuthHeader() {
     signOut({ callbackUrl: "/" });
   };
 
+  const navLinks = [
+    { name: "Home", path: "/track" },
+    { name: "Discover", path: "/discover-players" },
+  ];
+
   return (
     <header className="fixed top-0 left-0 right-0 bg-white shadow-md z-50">
       <div className="flex items-center justify-between px-4 md:px-16 py-4">
         {/* Logo */}
         <Link href="/">
-          <h1 className="text-lg md:text-2xl font-bold text-blue-600">
-            Deuce Log
-          </h1>
+          <h1 className="text-lg md:text-2xl font-bold text-blue-600">Deuce Log</h1>
         </Link>
 
-        {/* Navigation Links (Desktop & Mobile) */}
-        <nav className="flex space-x-6">
-          {["/track", "/discover-players"].map((route, index) => (
+        <motion.nav key="nav-bar" className="flex space-x-6 relative">
+          {navLinks.map((link) => (
             <Link
-              key={index}
-              href={route}
-              className={`relative font-medium text-gray-700 hover:text-blue-600 ${
-                pathname === route ? "text-blue-600" : ""
+              key={link.path}
+              href={link.path}
+              className={`relative font-medium text-gray-700 hover:text-blue-600 transition ${
+                pathname === link.path ? "text-blue-600 font-semibold" : ""
               }`}
             >
-              {route === "/track" ? "Home" : "Discover"}
-              {pathname === route && (
+              {link.name}
+              {pathname === link.path && (
                 <motion.div
-                  layoutId="underline"
+                  layoutId="activeNav"
                   className="absolute left-0 right-0 -bottom-1 h-1 bg-blue-600 rounded-full"
+                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
                 />
               )}
             </Link>
           ))}
-        </nav>
+        </motion.nav>
 
         {/* User Profile Dropdown */}
         {session?.user && (
@@ -75,14 +75,9 @@ function AuthHeader() {
               </span>
               <Avatar className="h-9 w-9 cursor-pointer">
                 {session.user.image ? (
-                  <AvatarImage
-                    src={session.user.image}
-                    alt={session.user.name || "user"}
-                  />
+                  <AvatarImage src={session.user.image} alt={session.user.name || "user"} />
                 ) : (
-                  <AvatarFallback>
-                    {session.user.name ? session.user.name.charAt(0) : "?"}
-                  </AvatarFallback>
+                  <AvatarFallback>{session.user.name ? session.user.name.charAt(0) : "?"}</AvatarFallback>
                 )}
               </Avatar>
             </div>
@@ -97,23 +92,17 @@ function AuthHeader() {
                   transition={{ duration: 0.2 }}
                   className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-2 z-50"
                 >
-                  <Link href="https://bustling-ricotta-c3a.notion.site/1aed2a8ea01a80409b92e93ec4136077?pvs=105">
-                    <Button className="block w-full text-left px-4 py-2" variant="ghost">
-                      Report a Bug
-                    </Button>
-                  </Link>
-
                   <Link href="/manage-players">
                     <Button className="block w-full text-left px-4 py-2" variant="ghost">
                       Manage Players
                     </Button>
                   </Link>
-
-                  <Button
-                    onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2"
-                    variant="ghost"
-                  >
+                  <Link href="https://bustling-ricotta-c3a.notion.site/1aed2a8ea01a80409b92e93ec4136077?pvs=105">
+                    <Button className="block w-full text-left px-4 py-2" variant="ghost">
+                      Report a Bug
+                    </Button>
+                  </Link>
+                  <Button onClick={handleLogout} className="block w-full text-left px-4 py-2" variant="ghost">
                     Logout
                   </Button>
                 </motion.div>

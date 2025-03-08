@@ -21,13 +21,11 @@ export default function TrackLayout({
       >
         <AuthHeader />
       </motion.div>
-
-      {/* Page Content Animation - Added Padding to Prevent Overlap */}
       <motion.main
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, ease: "easeOut", delay: 0.2 }}
-        className="min-h-screen p-4 md:p-6 pt-[72px]" // 👈 Added padding to push content down
+        className="min-h-screen p-4 md:p-6"
       >
         {children}
       </motion.main>
