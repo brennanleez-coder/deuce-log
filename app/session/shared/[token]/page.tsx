@@ -17,6 +17,7 @@ import Loader from "@/components/FullScreenLoader";
 import BestWorstPartnerCard from "@/app/components/Stats/BestWorstPartnerCard";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
+import TransactionList from "@/app/components/Transactions/TransactionList";
 
 export default function SharedSessionPage({
   params,
@@ -50,6 +51,10 @@ export default function SharedSessionPage({
     winCount,
     lossCount,
     netAmount,
+    totalWinsAmount,
+    totalLossesAmount,
+    wins,
+    losses,
     bestPartners,
     worstPartners,
     toughestOpponents,
@@ -67,7 +72,6 @@ export default function SharedSessionPage({
   return (
     <div className="max-w-3xl mx-auto p-6 pt-16">
       <h1 className="text-2xl font-bold">Session: {session.name}</h1>
-      <p className="text-gray-600">Players: {session.players.join(", ")}</p>
       <div className="flex flex-col gap-4 mt-6">
         <SessionMetrics
           matchesPlayed={matchesPlayed}
@@ -141,6 +145,18 @@ export default function SharedSessionPage({
             </Dialog>
           </div>
         </div>
+        <TransactionList
+          userId={session?.user?.id}
+          name={session?.user?.name}
+          sessionId={session?.id}
+          transactions={session?.transactions}
+          wins={wins}
+          losses={losses}
+          winCount={winCount}
+          lossCount={lossCount}
+          totalWinsAmount={totalWinsAmount}
+          totalLossesAmount={totalLossesAmount}
+        />
       </div>
     </div>
   );

@@ -96,7 +96,6 @@ export default function SessionPage({ params }: { params: { id: string } }) {
       toast.error("Failed to add match. Please try again.");
     }
   };
-  
 
   return (
     <main className="min-h-screen bg-white font-sans pt-16">
@@ -120,13 +119,15 @@ export default function SessionPage({ params }: { params: { id: string } }) {
             <span className="text-sm">Back</span>
           </Button>
           <h1 className="text-2xl font-bold text-gray-900">{session?.name}</h1>
-          <EditSessionModal
-            sessionId={session?.id}
-            currentName={session?.name}
-            currentCourtFee={session?.courtFee}
-            currentPlayers={session?.players}
-          />
-          <ShareSessionButton sessionId={session?.id} />
+          <div className="flex items-center gap-4">
+            <EditSessionModal
+              sessionId={session?.id}
+              currentName={session?.name}
+              currentCourtFee={session?.courtFee}
+              currentPlayers={session?.players}
+            />
+            <ShareSessionButton sessionId={session?.id} />
+          </div>
         </header>
 
         {/* Session Metrics Card */}

@@ -18,10 +18,11 @@ export default function ShareSessionButton({ sessionId }: { sessionId: string })
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to generate link");
+      if (!res.ok) toast.error(data.error || "Failed to generate link");
 
       setShareableLink(data.shareableLink);
       toast.success("Shareable link generated!");
+      copyToClipboard();
     } catch (error) {
       toast.error(error.message);
     } finally {

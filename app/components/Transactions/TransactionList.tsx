@@ -36,10 +36,11 @@ type TransactionsListProps = {
   userId?: string;
   name?: string;
   sessionId?: string;
+  shared?: boolean;
 };
 
 export default function TransactionsList({
-  addTransaction,
+  addTransaction = () => {},
   transactions,
   wins,
   losses,
@@ -50,6 +51,7 @@ export default function TransactionsList({
   userId = "defaultUserId", // Placeholder value, pass real value from parent/context
   name = "Default Name", // Placeholder value
   sessionId = "defaultSessionId", // Placeholder value
+  shared = false,
 }: TransactionsListProps) {
   // State for Dialog open/close
   const [isOpen, setIsOpen] = useState(false);
@@ -143,30 +145,32 @@ export default function TransactionsList({
     <section className="bg-white p-6 rounded-lg border border-gray-200 shadow-md">
       <div className="flex justify-between items-center mb-4 ">
         <h2 className="text-lg font-semibold">Matches</h2>
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogTrigger asChild>
-            <Button
-              onClick={() => setIsOpen(true)}
-              className="flex items-center gap-2"
-              variant="outline"
-            >
-              <Plus className="w-5 h-5" />
-              <span className="text-sm">Add</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Add Match Transaction</DialogTitle>
-            </DialogHeader>
-            <TransactionForm
-              userId={userId}
-              name={name}
-              sessionId={sessionId}
-              onSubmit={handleSubmit}
-              isEditing={false}
-            />
-          </DialogContent>
-        </Dialog>
+        {!shared && (
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+              <Button
+                onClick={() => setIsOpen(true)}
+                className="flex items-center gap-2"
+                variant="outline"
+              >
+                <Plus className="w-5 h-5" />
+                <span className="text-sm">Add</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Add Match Transaction</DialogTitle>
+              </DialogHeader>
+              <TransactionForm
+                userId={userId}
+                name={name}
+                sessionId={sessionId}
+                onSubmit={handleSubmit}
+                isEditing={false}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       {transactions.length !== 0 && (

@@ -26,7 +26,7 @@ export default function EditSessionModal({
   currentCourtFee,
   currentPlayers,
 }: EditSessionProps) {
-  const { editSession, } = useBadmintonSessions();
+  const { editSession } = useBadmintonSessions();
   const [name, setName] = useState(currentName);
   const [courtFee, setCourtFee] = useState(currentCourtFee);
   const [isLoading, setIsLoading] = useState(false);
@@ -45,11 +45,8 @@ export default function EditSessionModal({
       courtFee,
     };
 
-    // Update UI before API call
-    editSession(updatedSession);
-
     try {
-      await editSession(updatedSession);
+      await editSession.mutateAsync(updatedSession);
       setIsOpen(false);
     } catch (error: any) {
       console.error("Error saving session:", error.message);
@@ -85,9 +82,15 @@ export default function EditSessionModal({
             />
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setIsOpen(false)}>
+              Cancel
+            </Button>
             <Button onClick={handleSave} disabled={isLoading}>
-              {isLoading ? <ClipLoader size={16} color="white" /> : "Save Changes"}
+              {isLoading ? (
+                <ClipLoader size={16} color="white" />
+              ) : (
+                "Save Changes"
+              )}
             </Button>
           </div>
         </div>

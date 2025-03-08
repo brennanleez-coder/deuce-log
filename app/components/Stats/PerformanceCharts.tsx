@@ -46,10 +46,11 @@ const PerformanceCharts: React.FC<LineChartProps> = ({ data }) => {
   const winLossMap: Record<string, { wins: number; losses: number }> = {};
 
   data.forEach((match) => {
-    const date = new Date(match.timestamp).toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "2-digit",
-    });
+    // const date = new Date(match.timestamp).toLocaleDateString("en-GB", {
+    //   day: "2-digit",
+    //   month: "2-digit",
+    // });
+    const date = new Date(match.timestamp).toISOString().slice(0, 10);
 
     const netAmount = match.receiver === name ? match.amount : -match.amount;
 
@@ -132,7 +133,15 @@ const PerformanceCharts: React.FC<LineChartProps> = ({ data }) => {
         {chartType === "netAmount" ? (
           <LineChart data={cumulativeNetData}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
+            <XAxis
+              dataKey="date"
+              tickFormatter={(date) =>
+                new Date(date).toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "2-digit",
+                })
+              }
+            />
             <YAxis />
             <Tooltip />
             <Line
@@ -145,7 +154,15 @@ const PerformanceCharts: React.FC<LineChartProps> = ({ data }) => {
         ) : (
           <LineChart data={aggregatedWinLossData}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
+            <XAxis
+              dataKey="date"
+              tickFormatter={(date) =>
+                new Date(date).toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "2-digit",
+                })
+              }
+            />
             <YAxis />
             <Tooltip />
             <Line
