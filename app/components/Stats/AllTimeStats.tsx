@@ -12,11 +12,7 @@ import {
   Medal,
   Users,
 } from "lucide-react";
-import { useTransactions } from "@/hooks/useTransactions";
-import { useUser } from "@/hooks/useUser";
 import Loader from "@/components/FullScreenLoader";
-import { getHeadToHeadStats, getPartnerStats } from "@/lib/utils";
-import HeadToHeadTable from "./HeadToHeadTable";
 import {
   Dialog,
   DialogContent,
@@ -25,8 +21,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import BestWorstPartnerCard from "./BestWorstPartnerCard";
 import StatsCard from "./StatsCard";
 import PartnerStats from "./PartnerStats";
 import PerformanceCharts from "./PerformanceCharts";

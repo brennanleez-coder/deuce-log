@@ -73,7 +73,7 @@ export default function SharedSessionPage({
   return (
     <div className="max-w-5xl mx-auto p-6 pt-16 w-full">
       <div className="flex flex-col items-center justify-between">
-        <h1 className="text-2xl font-bold">Session: {session.name}</h1>
+        <h1 className="text-2xl font-bold">Session: {session.name} shared by {session?.user?.name}</h1>
         {/* add timestamp */}
         <p className="text-gray-500 text-sm">
           {new Date(session.createdAt).toLocaleString()}
