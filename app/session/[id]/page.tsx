@@ -80,8 +80,7 @@ export default function SessionPage({ params }: { params: { id: string } }) {
         setShowConfetti(true);
         setTimeout(() => setShowConfetti(false), 5500); // Confetti lasts 5.5s
         toast.success(
-          `🎉 You won against ${transaction.team2[0] || ""}, ${
-            transaction.team2[1] || ""
+          `🎉 You won against ${transaction.team2[0] || ""}, ${transaction.team2[1] || ""
           }!`
         );
       } else {
@@ -119,18 +118,19 @@ export default function SessionPage({ params }: { params: { id: string } }) {
             <span className="text-sm">Back</span>
           </Button>
           <h1 className="text-2xl font-bold text-gray-900">{session?.name}</h1>
-          <div className="flex items-center gap-4">
-            <EditSessionModal
-              sessionId={session?.id}
-              currentName={session?.name}
-              currentCourtFee={session?.courtFee}
-              currentPlayers={session?.players}
-            />
-            <ShareSessionButton sessionId={session?.id} />
-          </div>
+
         </header>
 
         {/* Session Metrics Card */}
+        <div className="flex items-center gap-4">
+          <EditSessionModal
+            sessionId={session?.id}
+            currentName={session?.name}
+            currentCourtFee={session?.courtFee}
+            currentPlayers={session?.players}
+          />
+          <ShareSessionButton sessionId={session?.id} />
+        </div>
         <div className="flex flex-col gap-4">
           <SessionMetrics
             matchesPlayed={matchesPlayed}
