@@ -9,10 +9,11 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Loader from "@/components/FullScreenLoader";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 const fetchUsers = async () => {
   const res = await fetch("/api/users");
-  if (!res.ok) throw new Error("Failed to fetch users");
+  if (!res.ok) toast.error("Failed to fetch users.");
   return res.json();
 };
 
