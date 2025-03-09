@@ -108,7 +108,7 @@ export default function SessionPage({ params }: { params: { id: string } }) {
       )}
 
       <div className="flex flex-col gap-y-4 max-w-5xl mx-auto">
-        <header className="flex items-center justify-between mb-6">
+        <header className="flex items-center justify-between">
           <Button
             variant="ghost"
             onClick={() => router.push("/track")}
