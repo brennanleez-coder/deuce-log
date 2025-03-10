@@ -52,15 +52,16 @@ export default function DiscoverPlayers() {
           transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
           className="relative flex items-center justify-center mb-6"
         >
-          {/* Back Button (left-aligned) */}
-         // <Button
-           // variant="ghost"
-           // onClick={() => router.back()}
-          //  className="absolute left-0 flex items-center gap-2"
-        //  >
-        //    <ArrowLeft className="w-5 h-5" />
-         //   <span className="text-sm">Back</span>
-       //   </Button>
+          {/* Back Button 
+          <Button
+            variant="ghost"
+            onClick={() => router.back()}
+            className="absolute left-0 flex items-center gap-2"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span className="text-sm">Back</span>
+          </Button>
+          */}
 
           {/* Centered Title */}
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
