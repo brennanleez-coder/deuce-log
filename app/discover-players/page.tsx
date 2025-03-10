@@ -19,7 +19,7 @@ const fetchUsers = async () => {
 
 const getBadgeForUser = (index: number, email: string) => {
   if (email === "brennanlee95@gmail.com") {
-    return { text: "🏆 Founder", className: "bg-yellow-500 text-white" };
+    return { text: "🏆 First Member", className: "bg-yellow-500 text-white" };
   } else if (index >= 2 && index <= 5) {
     return { text: "⭐ Core Member", className: "bg-blue-500 text-white" };
   } else if (index >= 6 && index <= 10) {
