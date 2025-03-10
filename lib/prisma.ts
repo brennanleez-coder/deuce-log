@@ -7,7 +7,7 @@ export const prisma =
   new PrismaClient({
     datasources: {
       db: {
-        url: process.env.DATABASE_URL, // Ensure this is set correctly
+        url: process.env.DATABASE_URL + "&pool_max_conns=5", // Ensure this is set correctly
       },
     },
     log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],

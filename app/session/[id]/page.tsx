@@ -108,18 +108,21 @@ export default function SessionPage({ params }: { params: { id: string } }) {
       )}
 
       <div className="flex flex-col gap-y-4 max-w-5xl mx-auto">
-        <header className="flex items-center justify-between">
+        <header className="relative flex items-center justify-center">
+          {/* Left-aligned back button */}
           <Button
             variant="ghost"
             onClick={() => router.push("/track")}
-            className="flex items-center gap-2"
+            className="absolute left-0 flex items-center gap-2"
           >
             <ArrowLeft className="w-5 h-5" />
             <span className="text-sm">Back</span>
           </Button>
-          <h1 className="text-2xl font-bold text-gray-900">{session?.name}</h1>
 
+          {/* Centered session name */}
+          <h1 className="text-2xl font-bold text-gray-900">{session?.name}</h1>
         </header>
+
 
         {/* Session Metrics Card */}
         <div className="flex items-center gap-4">
