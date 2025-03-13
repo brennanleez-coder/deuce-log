@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DollarSign, Trophy, User, Users, Coins } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Transaction } from "@/types/types";
@@ -22,6 +22,7 @@ import FuzzyCreatableSelect from "@/components/FuzzyCreatableSelect";
 import Loader from "@/components/FullScreenLoader";
 import { toast } from "sonner";
 import { useBadmintonSessions } from "@/hooks/useBadmintonSessions";
+import SideBetsPopover from "./MatchSideBetForm";
 
 const transactionSchema = z.object({
   sessionId: z.string().min(1, "Session ID is required"),
@@ -90,7 +91,7 @@ const TransactionForm = ({
         : {
             sessionId,
             type: "MATCH",
-            amount: 0,
+            amount: "",
             team1Player1: name,
             team1Player2: "",
             team2Player1: "",
@@ -246,85 +247,84 @@ const TransactionForm = ({
           {playersLoading ? (
             <Loader />
           ) : (
-            <fieldset className="border p-4 rounded-lg">
-              <legend className="text-lg font-medium flex items-center gap-2">
-                <Users className="w-6 h-6 text-primary" /> Match Details
-              </legend>
-              <div className="grid grid-cols-[2fr_1fr_2fr] items-center w-full">
-                {/* Team 1 */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Team 1</Label>
-                  <Input
-                    {...register("team1Player1")}
-                    value={name}
-                    disabled
-                    className="bg-gray-100 cursor-not-allowed"
-                  />
-                  <FuzzyCreatableSelect
-                    placeholder="Teammate's name"
-                    value={watch("team1Player2") || null}
-                    onChange={(newValue) =>
-                      setValue("team1Player2", newValue, {
-                        shouldValidate: true,
-                      })
-                    }
-                    sessionPlayers={sessionPlayers}
-                    onAddPlayer={addPlayerToSession}
-                    exclude={[
-                      name,
-                      watch("team1Player2"),
-                      watch("team2Player1"),
-                      watch("team2Player2"),
-                    ]}
-                  />
+            <>
+              <fieldset className="border p-4 rounded-lg">
+                <legend className="text-lg font-medium flex items-center gap-2">
+                  <Users className="w-6 h-6 text-primary" /> Match Details
+                </legend>
+                <div className="grid grid-cols-[2fr_1fr_2fr] items-center  gap-x-2 w-full">
+                  <div className="space-y-2">
+                    <Input
+                      {...register("team1Player1")}
+                      value={name}
+                      disabled
+                      className="bg-gray-100 cursor-not-allowed"
+                    />
+                    <FuzzyCreatableSelect
+                      placeholder="Teammate's name"
+                      value={watch("team1Player2") || null}
+                      onChange={(newValue) =>
+                        setValue("team1Player2", newValue, {
+                          shouldValidate: true,
+                        })
+                      }
+                      sessionPlayers={sessionPlayers}
+                      onAddPlayer={addPlayerToSession}
+                      exclude={[
+                        name,
+                        watch("team1Player2"),
+                        watch("team2Player1"),
+                        watch("team2Player2"),
+                      ]}
+                    />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-bold">VS</p>
+                  </div>
+                  <div className="space-y-2">
+                    <FuzzyCreatableSelect
+                      placeholder="Opponent's name"
+                      value={watch("team2Player1") || null}
+                      onChange={(newValue) =>
+                        setValue("team2Player1", newValue, {
+                          shouldValidate: true,
+                        })
+                      }
+                      sessionPlayers={sessionPlayers}
+                      onAddPlayer={addPlayerToSession}
+                      exclude={[
+                        name,
+                        watch("team1Player2"),
+                        watch("team2Player1"),
+                        watch("team2Player2"),
+                      ]}
+                    />
+                    {errors.team2Player1 && (
+                      <p className="text-red-500 text-xs">
+                        {errors.team2Player1.message}
+                      </p>
+                    )}
+                    <FuzzyCreatableSelect
+                      placeholder="Opponent's name"
+                      value={watch("team2Player2") || null}
+                      onChange={(newValue) =>
+                        setValue("team2Player2", newValue, {
+                          shouldValidate: true,
+                        })
+                      }
+                      sessionPlayers={sessionPlayers}
+                      onAddPlayer={addPlayerToSession}
+                      exclude={[
+                        name,
+                        watch("team1Player2"),
+                        watch("team2Player1"),
+                        watch("team2Player2"),
+                      ]}
+                    />
+                  </div>
                 </div>
-                <div className="text-center">
-                  <p className="text-xl font-bold">VS</p>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Team 2</Label>
-                  <FuzzyCreatableSelect
-                    placeholder="Opponent's name"
-                    value={watch("team2Player1") || null}
-                    onChange={(newValue) =>
-                      setValue("team2Player1", newValue, {
-                        shouldValidate: true,
-                      })
-                    }
-                    sessionPlayers={sessionPlayers}
-                    onAddPlayer={addPlayerToSession}
-                    exclude={[
-                      name,
-                      watch("team1Player2"),
-                      watch("team2Player1"),
-                      watch("team2Player2"),
-                    ]}
-                  />
-                  {errors.team2Player1 && (
-                    <p className="text-red-500 text-xs">
-                      {errors.team2Player1.message}
-                    </p>
-                  )}
-                  <FuzzyCreatableSelect
-                    placeholder="Opponent's name"
-                    value={watch("team2Player2") || null}
-                    onChange={(newValue) =>
-                      setValue("team2Player2", newValue, {
-                        shouldValidate: true,
-                      })
-                    }
-                    sessionPlayers={sessionPlayers}
-                    onAddPlayer={addPlayerToSession}
-                    exclude={[
-                      name,
-                      watch("team1Player2"),
-                      watch("team2Player1"),
-                      watch("team2Player2"),
-                    ]}
-                  />
-                </div>
-              </div>
-            </fieldset>
+              </fieldset>
+            </>
           )}
 
           <div className="flex flex-col w-full gap-2">
@@ -433,6 +433,8 @@ const TransactionForm = ({
           </div>
         </>
       )}
+      {*<SideBetsPopover />*}
+
       <div className="space-y-2">
         <Label className="text-sm font-medium flex items-center gap-2">
           <DollarSign className="w-5 h-5 text-primary" /> Amount ($)
