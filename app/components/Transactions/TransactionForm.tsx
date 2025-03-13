@@ -433,7 +433,7 @@ const TransactionForm = ({
           </div>
         </>
       )}
-      {*<SideBetsPopover />*}
+      
 
       <div className="space-y-2">
         <Label className="text-sm font-medium flex items-center gap-2">
