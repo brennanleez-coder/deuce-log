@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,8 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DollarSign, Trophy, User, Users, Coins } from "lucide-react";
-import { useForm, FormProvider } from "react-hook-form";
+import { DollarSign, Trophy, User, Users } from "lucide-react";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Transaction } from "@/types/types";
@@ -82,16 +82,20 @@ const TransactionForm = ({
             team2Player2: transaction.team2[1] || "",
             payer: transaction.payer || "",
             receiver: transaction.receiver || "",
-            bettor: transaction.bettor || name, // Default bettor to the logged-in user
+            bettor: transaction.bettor || name,
             bookmaker: transaction.bookmaker || "",
-            bettorWon: transaction.bettorWon ?? false, // Ensure boolean default
+            bettorWon: transaction.bettorWon ?? false,
             winningTeam:
-              transaction.receiver === transaction.team1[0] ? "team1" : "team2", // ✅ Fixed
+              // If needed, you can refine how you decide which "team" won
+              transaction.receiver &&
+              transaction.team1.includes(transaction.receiver)
+                ? "team1"
+                : "team2",
           }
         : {
             sessionId,
             type: "MATCH",
-            amount: "",
+            amount: 0,
             team1Player1: name,
             team1Player2: "",
             team2Player1: "",
@@ -112,31 +116,83 @@ const TransactionForm = ({
   const [session, setSession] = useState<any>(null);
   const [sessionPlayers, setSessionPlayers] = useState<string[]>([]);
   const [playersLoading, setPlayersLoading] = useState(false);
+
+  // Watch relevant fields
   const transactionType = watch("type");
   const winningTeam = watch("winningTeam");
+  const team1Player1 = watch("team1Player1");
+  const team1Player2 = watch("team1Player2");
+  const team2Player1 = watch("team2Player1");
+  const team2Player2 = watch("team2Player2");
   const payer = watch("payer");
   const receiver = watch("receiver");
 
-  const updatePayerReceiver = () => {
-    const team1 = getValues("team1Player1");
-    const team2 = getValues("team2Player1");
+  // Get losing-team options for payer, winning-team options for receiver.
+  const payerOptions = useMemo(() => {
+    if (transactionType !== "MATCH") return [];
     if (winningTeam === "team1") {
-      setValue("payer", team2, { shouldValidate: true });
-      setValue("receiver", team1, { shouldValidate: true });
-    } else {
-      setValue("payer", team1, { shouldValidate: true });
-      setValue("receiver", team2, { shouldValidate: true });
+      // team2 is losing
+      return [team2Player1, team2Player2].filter(Boolean);
+    } else if (winningTeam === "team2") {
+      // team1 is losing
+      return [team1Player1, team1Player2].filter(Boolean);
     }
-  };
+    return [];
+  }, [
+    transactionType,
+    winningTeam,
+    team1Player1,
+    team1Player2,
+    team2Player1,
+    team2Player2,
+  ]);
 
-  React.useEffect(() => {
-    updatePayerReceiver();
-  }, [winningTeam, watch("team1Player1"), watch("team2Player1")]);
+  const receiverOptions = useMemo(() => {
+    if (transactionType !== "MATCH") return [];
+    if (winningTeam === "team1") {
+      // team1 is winning
+      return [team1Player1, team1Player2].filter(Boolean);
+    } else if (winningTeam === "team2") {
+      // team2 is winning
+      return [team2Player1, team2Player2].filter(Boolean);
+    }
+    return [];
+  }, [
+    transactionType,
+    winningTeam,
+    team1Player1,
+    team1Player2,
+    team2Player1,
+    team2Player2,
+  ]);
 
-  React.useEffect(() => {
+  // Whenever winningTeam or one of the team players changes,
+  // ensure "payer" & "receiver" remain valid (or set a default).
+  useEffect(() => {
+    if (transactionType === "MATCH" && winningTeam) {
+      // If the current payer is not in the new payerOptions, default to first
+      if (payerOptions.length > 0 && !payerOptions.includes(payer)) {
+        setValue("payer", payerOptions[0]);
+      }
+      // If the current receiver is not in the new receiverOptions, default to first
+      if (receiverOptions.length > 0 && !receiverOptions.includes(receiver)) {
+        setValue("receiver", receiverOptions[0]);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    winningTeam,
+    team1Player1,
+    team1Player2,
+    team2Player1,
+    team2Player2,
+    payerOptions,
+    receiverOptions,
+  ]);
+
+  useEffect(() => {
     if (!userId || !sessionId || sessionsLoading) return;
     setPlayersLoading(true);
-    // Find the required session (if needed)
     const requiredSession = allSessions.find((s: any) => s.id === sessionId);
     setSession(requiredSession);
 
@@ -147,24 +203,19 @@ const TransactionForm = ({
     setPlayersLoading(false);
   }, [userId, sessionId, allSessions, sessionsLoading]);
 
-  React.useEffect(() => {
-    if (!isEditing && sessionPlayers.length) {
-      setValue("payer", sessionPlayers[2], { shouldValidate: true });
-      setValue("receiver", sessionPlayers[0], { shouldValidate: true });
-    }
-  }, [isEditing, sessionPlayers, setValue]);
+  // Optional: if you want a default initial payer/receiver when NOT editing,
+  // you can do so here. This is up to your business logic.
+  // (You might not need this if your useEffect above handles defaults properly.)
 
   const addPlayerToSession = async (newPlayerName: string) => {
     try {
       const updated = [...sessionPlayers, newPlayerName];
-
       await axios.put(`/api/badminton-sessions/${sessionId}`, {
         name: session?.name,
         courtFee: session?.courtFee,
         players: updated,
       });
-
-      setSessionPlayers(updated); // local state
+      setSessionPlayers(updated);
     } catch (error) {
       console.error("Error adding player:", error);
       toast.error("Failed to add player to session.");
@@ -173,37 +224,33 @@ const TransactionForm = ({
 
   const handleWinningTeamChange = (team: "team1" | "team2") => {
     setValue("winningTeam", team, { shouldValidate: true });
-    setValue(
-      "payer",
-      team === "team1" ? getValues("team2Player1") : getValues("team1Player1"),
-      { shouldValidate: true }
-    );
-    setValue(
-      "receiver",
-      team === "team1" ? getValues("team1Player1") : getValues("team2Player1"),
-      { shouldValidate: true }
-    );
   };
 
   const handleFormSubmit = async (data: TransactionFormData) => {
-    if (!userId)
-      return console.error("User ID is required to add a transaction");
+    if (!userId) {
+      console.error("User ID is required to add a transaction");
+      return;
+    }
     setLoading(true);
+
+    // Trim strings
     Object.keys(data).forEach((key) => {
       if (typeof data[key] === "string") data[key] = data[key].trim();
     });
-    const payload = {
+
+    const payload: Partial<Transaction> = {
       sessionId,
       userId,
       ...data,
       ...(data.type === "MATCH" && {
+        // for the final transaction, assemble the team arrays
         team1: [data.team1Player1, data.team1Player2].filter(Boolean),
         team2: [data.team2Player1, data.team2Player2].filter(Boolean),
       }),
     };
-    console.log("payload", payload);
+
     try {
-      await onSubmit(payload);
+      await onSubmit(payload as Transaction);
     } catch (error: any) {
       toast.error("Failed to add match.");
     } finally {
@@ -239,6 +286,7 @@ const TransactionForm = ({
               Match
             </Label>
           </div>
+          {/* If you plan to allow "SIDEBET", you'd add a second radio option here */}
         </RadioGroup>
       </div>
 
@@ -252,17 +300,18 @@ const TransactionForm = ({
                 <legend className="text-lg font-medium flex items-center gap-2">
                   <Users className="w-6 h-6 text-primary" /> Match Details
                 </legend>
-                <div className="grid grid-cols-[2fr_1fr_2fr] items-center  gap-x-2 w-full">
+                <div className="grid grid-cols-[2fr_1fr_2fr] items-center gap-x-2 w-full">
+                  {/* TEAM 1 */}
                   <div className="space-y-2">
                     <Input
                       {...register("team1Player1")}
-                      value={name}
+                      value={team1Player1}
                       disabled
                       className="bg-gray-100 cursor-not-allowed"
                     />
                     <FuzzyCreatableSelect
                       placeholder="Teammate's name"
-                      value={watch("team1Player2") || null}
+                      value={team1Player2 || null}
                       onChange={(newValue) =>
                         setValue("team1Player2", newValue, {
                           shouldValidate: true,
@@ -271,20 +320,23 @@ const TransactionForm = ({
                       sessionPlayers={sessionPlayers}
                       onAddPlayer={addPlayerToSession}
                       exclude={[
-                        name,
-                        watch("team1Player2"),
-                        watch("team2Player1"),
-                        watch("team2Player2"),
+                        team1Player1,
+                        team1Player2,
+                        team2Player1,
+                        team2Player2,
                       ]}
                     />
                   </div>
+
                   <div className="text-center">
                     <p className="text-sm font-bold">VS</p>
                   </div>
+
+                  {/* TEAM 2 */}
                   <div className="space-y-2">
                     <FuzzyCreatableSelect
                       placeholder="Opponent's name"
-                      value={watch("team2Player1") || null}
+                      value={team2Player1 || null}
                       onChange={(newValue) =>
                         setValue("team2Player1", newValue, {
                           shouldValidate: true,
@@ -293,10 +345,10 @@ const TransactionForm = ({
                       sessionPlayers={sessionPlayers}
                       onAddPlayer={addPlayerToSession}
                       exclude={[
-                        name,
-                        watch("team1Player2"),
-                        watch("team2Player1"),
-                        watch("team2Player2"),
+                        team1Player1,
+                        team1Player2,
+                        team2Player1,
+                        team2Player2,
                       ]}
                     />
                     {errors.team2Player1 && (
@@ -306,7 +358,7 @@ const TransactionForm = ({
                     )}
                     <FuzzyCreatableSelect
                       placeholder="Opponent's name"
-                      value={watch("team2Player2") || null}
+                      value={team2Player2 || null}
                       onChange={(newValue) =>
                         setValue("team2Player2", newValue, {
                           shouldValidate: true,
@@ -315,10 +367,10 @@ const TransactionForm = ({
                       sessionPlayers={sessionPlayers}
                       onAddPlayer={addPlayerToSession}
                       exclude={[
-                        name,
-                        watch("team1Player2"),
-                        watch("team2Player1"),
-                        watch("team2Player2"),
+                        team1Player1,
+                        team1Player2,
+                        team2Player1,
+                        team2Player2,
                       ]}
                     />
                   </div>
@@ -327,6 +379,7 @@ const TransactionForm = ({
             </>
           )}
 
+          {/* WINNING TEAM */}
           <div className="flex flex-col w-full gap-2">
             <Label className="text-sm font-medium text-left w-full">
               Did you win the match?
@@ -342,11 +395,11 @@ const TransactionForm = ({
                   htmlFor="won"
                   onClick={() => handleWinningTeamChange("team1")}
                   className={`flex items-center justify-center w-full h-10 border-2 rounded-lg cursor-pointer transition
-        ${
-          winningTeam === "team1"
-            ? "bg-blue-500 text-white border-blue-600"
-            : "border-gray-300 hover:bg-gray-200"
-        }`}
+                    ${
+                      winningTeam === "team1"
+                        ? "bg-blue-500 text-white border-blue-600"
+                        : "border-gray-300 hover:bg-gray-200"
+                    }`}
                 >
                   Yes
                 </Label>
@@ -358,11 +411,11 @@ const TransactionForm = ({
                   htmlFor="lost"
                   onClick={() => handleWinningTeamChange("team2")}
                   className={`flex items-center justify-center w-full h-10 border-2 rounded-lg cursor-pointer transition
-        ${
-          winningTeam === "team2"
-            ? "bg-red-500 text-white border-red-600"
-            : "border-gray-300 hover:bg-gray-200"
-        }`}
+                    ${
+                      winningTeam === "team2"
+                        ? "bg-red-500 text-white border-red-600"
+                        : "border-gray-300 hover:bg-gray-200"
+                    }`}
                 >
                   No
                 </Label>
@@ -375,53 +428,45 @@ const TransactionForm = ({
             )}
           </div>
 
+          {/* PAYER / RECEIVER SELECTS */}
           <div className="grid grid-cols-2 gap-4">
+            {/* PAYER (Losing Team) */}
             <div className="space-y-2">
               <Label className="text-sm font-medium flex items-center gap-2">
                 <User className="w-5 h-5 text-primary" /> Payer (Loser)
               </Label>
               <Select
-                value={payer}
+                value={payer || ""}
                 onValueChange={(value) => setValue("payer", value)}
               >
                 <SelectTrigger className="bg-red-100 border border-red-500">
                   <SelectValue placeholder="Select payer" />
                 </SelectTrigger>
                 <SelectContent>
-                  {[
-                    winningTeam === "team1"
-                      ? getValues("team2Player1")
-                      : getValues("team1Player1"),
-                  ]
-                    .filter(Boolean)
-                    .map((player) => (
-                      <SelectItem key={player} value={player}>
-                        {player}
-                      </SelectItem>
-                    ))}
+                  {payerOptions.map((player) => (
+                    <SelectItem key={player} value={player}>
+                      {player}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
+
+            {/* RECEIVER (Winning Team) */}
             <div className="space-y-2">
               <Label className="text-sm font-medium flex items-center gap-2">
                 <User className="w-5 h-5 text-primary" /> Receiver (Winner)
               </Label>
               <Select
-                value={receiver}
+                value={receiver || ""}
                 onValueChange={(value) => setValue("receiver", value)}
               >
                 <SelectTrigger className="bg-green-100 border border-green-500">
                   <SelectValue placeholder="Select receiver" />
                 </SelectTrigger>
                 <SelectContent>
-                  {[
-                    winningTeam === "team1"
-                      ? getValues("team1Player1")
-                      : getValues("team2Player1"),
-                  ]
-                    .filter(
-                      (player) => Boolean(player) && player !== watch("payer")
-                    )
+                  {receiverOptions
+                    .filter((player) => player !== payer)
                     .map((player) => (
                       <SelectItem key={player} value={player}>
                         {player}
@@ -433,15 +478,14 @@ const TransactionForm = ({
           </div>
         </>
       )}
-      
 
+      {/* AMOUNT */}
       <div className="space-y-2">
         <Label className="text-sm font-medium flex items-center gap-2">
           <DollarSign className="w-5 h-5 text-primary" /> Amount ($)
         </Label>
         <Input
           type="number"
-          // defaultValue={0}
           {...register("amount", { valueAsNumber: true })}
           placeholder="Enter amount"
         />
@@ -449,6 +493,7 @@ const TransactionForm = ({
           <p className="text-red-500">{errors.amount.message}</p>
         )}
       </div>
+
       <div className="flex justify-end">
         <Button type="submit" variant="outline" disabled={loading}>
           {isEditing ? "Update Match" : "Add Match"}
