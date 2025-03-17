@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import SessionManagement from "../components/Sessions/SessionManagement";
 import withAuth from "@/hooks/hoc/withAuth";
-import { useState, useEffect, useRef } from "react";
 import AllTimeStats from "@/app/components/Stats/AllTimeStats";
 import { useBadmintonSessions } from "@/hooks/useBadmintonSessions";
 import { useUser } from "@/hooks/useUser";
 import { useBadmintonSessionStats } from "@/hooks/useBadmintonSessionStats";
+import Loader from "@/components/FullScreenLoader";
 
 import {
   PieChart,
@@ -39,35 +39,40 @@ function Home() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [dropdownRef]);
+
   const { sessions, isLoading, createSession, editSession, deleteSession } =
     useBadmintonSessions();
+
+  // If sessions haven’t loaded, we might not have anything to render yet.
+  // You can also handle loading inside your custom hooks or parent components,
+  // but here's a simple approach for the chart area:
   const aggregateSessionFees = sessions.reduce(
     (acc, session) => acc + session.courtFee,
     0
   );
-  console.log(sessions);
 
+  // For example, if you have stats that can also be loading:
   const { winCount, lossCount } = useBadmintonSessionStats(
     sessions.flatMap((s) => s.transactions ?? []),
     name
   );
 
   const winLossPieData = useMemo(() => {
-    if (winCount === 0 && lossCount === 0) {
+    if (!sessions.length || (winCount === 0 && lossCount === 0)) {
       return [];
     }
     return [
       { name: "Wins", value: winCount },
       { name: "Losses", value: lossCount },
     ];
-  }, [winCount, lossCount]);
+  }, [winCount, lossCount, sessions]);
 
   const partnerPieData = useMemo(() => {
-    // Map to count # of times the user teams up with each partner
+    if (!sessions.length) return [];
+
     const partnerCount: Record<string, number> = {};
-    if (sessions.transactions === 0) {
-      return [];
-    }
+
+    // Aggregate match counts per partner
     sessions
       .flatMap((s) => s.transactions ?? [])
       .forEach((match) => {
@@ -75,14 +80,12 @@ function Home() {
         const userInTeam2 = match.team2.includes(name as string);
 
         if (userInTeam1) {
-          // Everyone in team1 except the user is a partner
           match.team1.forEach((member) => {
             if (member !== name) {
               partnerCount[member] = (partnerCount[member] || 0) + 1;
             }
           });
         } else if (userInTeam2) {
-          // Everyone in team2 except the user is a partner
           match.team2.forEach((member) => {
             if (member !== name) {
               partnerCount[member] = (partnerCount[member] || 0) + 1;
@@ -91,11 +94,33 @@ function Home() {
         }
       });
 
-    // Convert the map into an array suitable for Pie
-    return Object.entries(partnerCount).map(([partner, count]) => ({
-      name: partner,
-      value: count,
-    }));
+    // Split into "above threshold" vs. "others"
+    const threshold = 5; // More than 5 => individual slice
+    const aboveThreshold: { name: string; value: number }[] = [];
+    let othersSum = 0;
+    const othersDetails: { name: string; value: number }[] = [];
+
+    Object.entries(partnerCount).forEach(([partner, count]) => {
+      if (count > threshold) {
+        aboveThreshold.push({ name: partner, value: count });
+      } else {
+        othersSum += count;
+        othersDetails.push({ name: partner, value: count });
+      }
+    });
+
+    // Build final array
+    const finalData = [...aboveThreshold];
+    if (othersSum > 0) {
+      finalData.push({
+        name: "Others",
+        value: othersSum,
+        isOthers: true,
+        details: othersDetails, // could be used in a custom tooltip
+      });
+    }
+
+    return finalData;
   }, [sessions, name]);
 
   return (
@@ -111,39 +136,48 @@ function Home() {
                 loading={isLoading}
               />
             )}
+
             <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* 1) Win/Loss Pie */}
               <div className="w-full p-4 md:p-6 border rounded-md">
                 <h2 className="text-lg md:text-xl font-semibold text-center mb-4">
                   Overall Win/Loss
                 </h2>
-                {winLossPieData.length === 0 ? (
+                {isLoading ? (
+                  <div className="flex justify-center items-center py-6">
+                  <Loader />
+                </div>
+                ) : winLossPieData.length === 0 ? (
                   <p className="text-center text-gray-500">No data available</p>
                 ) : (
-                  <ResponsiveContainer width="100%" height={220}>
-                    <PieChart>
-                      <Pie
-                        dataKey="value"
-                        nameKey="name"
-                        data={winLossPieData}
-                        label
-                        outerRadius={80}
+                  <div className="w-full h-64 sm:h-72">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart
+                        margin={{ top: 10, right: 10, left: 10, bottom: 10 }}
                       >
-                        {winLossPieData.map((entry, index) => {
-                          // Define the colors you'd like to cycle through
-                          const COLORS = ["#8884d8", "#82ca9d"];
-                          return (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={COLORS[index % COLORS.length]}
-                            />
-                          );
-                        })}
-                      </Pie>
-                      <Tooltip />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
+                        <Pie
+                          dataKey="value"
+                          nameKey="name"
+                          data={winLossPieData}
+                          label
+                          outerRadius="60%"
+                        >
+                          {winLossPieData.map((entry, index) => {
+                            // Define the colors you'd like to cycle through
+                            const COLORS = ["#8884d8", "#82ca9d"];
+                            return (
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={COLORS[index % COLORS.length]}
+                              />
+                            );
+                          })}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
                 )}
               </div>
 
@@ -152,40 +186,48 @@ function Home() {
                 <h2 className="text-lg md:text-xl font-semibold text-center mb-4">
                   Partner Distribution
                 </h2>
-                {partnerPieData.length === 0 ? (
+                {isLoading ? (
+                  <div className="flex justify-center items-center py-6">
+                  <Loader />
+                </div>
+                ) : partnerPieData.length === 0 ? (
                   <p className="text-center text-gray-500">No data available</p>
                 ) : (
-                  <ResponsiveContainer width="100%" height={220}>
-                    <PieChart>
-                      <Pie
-                        dataKey="value"
-                        nameKey="name"
-                        data={partnerPieData}
-                        label
-                        outerRadius={80}
+                  <div className="w-full h-64 sm:h-72">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart
+                        margin={{ top: 10, right: 10, left: 10, bottom: 10 }}
                       >
-                        {partnerPieData.map((entry, index) => {
-                          // Use a bigger palette if you have more potential slices
-                          const COLORS = [
-                            "#0088FE",
-                            "#00C49F",
-                            "#FFBB28",
-                            "#FF8042",
-                            "#A28AE5",
-                            "#FF5FAA",
-                          ];
-                          return (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={COLORS[index % COLORS.length]}
-                            />
-                          );
-                        })}
-                      </Pie>
-                      <Tooltip />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
+                        <Pie
+                          dataKey="value"
+                          nameKey="name"
+                          data={partnerPieData}
+                          label
+                          outerRadius="60%"
+                        >
+                          {partnerPieData.map((entry, index) => {
+                            // Use a bigger palette if you have more potential slices
+                            const COLORS = [
+                              "#0088FE",
+                              "#00C49F",
+                              "#FFBB28",
+                              "#FF8042",
+                              "#A28AE5",
+                              "#FF5FAA",
+                            ];
+                            return (
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={COLORS[index % COLORS.length]}
+                              />
+                            );
+                          })}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
                 )}
               </div>
             </div>
