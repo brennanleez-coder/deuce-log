@@ -31,6 +31,7 @@ interface AllTimeStatsProps {
   totalSessionFees: number;
   transactions: Transaction[];
   loading: boolean;
+  showGraphs?: boolean;
 }
 
 export default function AllTimeStats({
@@ -38,6 +39,7 @@ export default function AllTimeStats({
   totalSessionFees,
   transactions,
   loading,
+  showGraphs = true
 }: AllTimeStatsProps) {
   if (!transactions) return null;
   if (!userName) return null;
@@ -123,7 +125,7 @@ export default function AllTimeStats({
             />
           </CardContent>
 
-          <PerformanceCharts data={transactions} />
+          {showGraphs && (<PerformanceCharts data={transactions} />)}
         </>
       )}
 

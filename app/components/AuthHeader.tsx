@@ -31,6 +31,7 @@ function AuthHeader() {
 
   const navLinks = [
     { name: "Home", path: "/track" },
+    { name: "Stats", path: "/stats" },
     { name: "Discover", path: "/discover-players" },
   ];
 

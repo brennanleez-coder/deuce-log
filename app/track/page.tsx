@@ -46,6 +46,7 @@ function Home() {
                 totalSessionFees={aggregateSessionFees}
                 transactions={sessions.flatMap((s) => s.transactions ?? [])}
                 loading={isLoading}
+                showGraphs={false}
               />
             )}
 
