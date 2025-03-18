@@ -38,7 +38,7 @@ export default function HeadToHeadStats({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-5  max-h-[80vh] overflow-y-auto">
+    <div className="bg-white rounded-lg p-5 max-h-[80vh] overflow-y-auto">
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
@@ -50,7 +50,7 @@ export default function HeadToHeadStats({
             className="overflow-hidden"
           >
             {/* Partner Performance */}
-            <div className="flex flex-col items-center bg-white rounded-xl shadow-md p-6 border border-gray-200 max-h-[80vh] overflow-y-auto">
+            <div className="border-b pb-4 mb-4 flex flex-col items-center">
 
               <h4 className="text-lg font-semibold text-gray-900 text-center mb-6">
                 Opponent Podium 🏆
