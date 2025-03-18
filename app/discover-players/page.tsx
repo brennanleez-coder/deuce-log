@@ -37,6 +37,7 @@ export default function DiscoverPlayers() {
     queryKey: ["users"],
     queryFn: fetchUsers,
   });
+  console.log(users);
 
   return (
     <motion.main
@@ -52,33 +53,18 @@ export default function DiscoverPlayers() {
           transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
           className="relative flex items-center justify-center mb-6"
         >
-          {/* Back Button 
-          <Button
-            variant="ghost"
-            onClick={() => router.back()}
-            className="absolute left-0 flex items-center gap-2"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="text-sm">Back</span>
-          </Button>
-          */}
-
-          {/* Centered Title */}
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <Users className="w-6 h-6 text-blue-500" />
             Discover Players
           </h1>
         </motion.header>
 
-        {/* Loading State */}
         {isLoading && <Loader fullScreen />}
 
-        {/* Error State */}
         {isError && (
           <p className="text-red-500 text-center">Failed to load players.</p>
         )}
 
-        {/* Players List */}
         {!isLoading && !isError && users.length > 0 ? (
           <motion.div
             initial="hidden"
@@ -118,9 +104,15 @@ export default function DiscoverPlayers() {
                   <h2 className="mt-3 font-semibold text-lg text-gray-900 text-center">
                     {user.name || "Unknown"}
                   </h2>
-                  <p className="text-sm text-gray-500">{user.email}</p>
-
-                  {/* Badges Section */}
+                  {/* Display the number of matches and sessions */}
+                  <div className="mt-2 flex flex-col items-center gap-1 text-sm text-gray-600">
+                    <span>
+                      Sessions: {user?.badmintonSessions}
+                    </span>
+                    <span>
+                      Matches: {user?.transactions}
+                    </span>
+                  </div>
                   <div className="mt-2 flex gap-2">
                     <Badge className={badge.className}>{badge.text}</Badge>
                   </div>

@@ -11,10 +11,23 @@ export async function GET() {
         email: true,
         image: true,
         emailVerified: true,
+        badmintonSessions: true,
+        transactions: true
       },
     });
 
-    return NextResponse.json(users, { status: 200 });
+    const redactedUsers = users.map((user) => {
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+        badmintonSessions: user.badmintonSessions.length,
+        transactions: user.transactions.length
+      };
+    });
+
+    return NextResponse.json(redactedUsers, { status: 200 });
   } catch (error) {
     console.error("Error fetching users:", error);
     return NextResponse.json(
