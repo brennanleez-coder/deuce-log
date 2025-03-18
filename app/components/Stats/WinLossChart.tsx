@@ -70,7 +70,7 @@ const WinLossChart: React.FC<WinLossChartProps> = ({ data }) => {
   if (aggregatedWinLossData.length === 0) {
     return (
       <div className="w-full p-4 md:p-6">
-        <h2 className="text-lg md:text-xl font-semibold text-center mb-4">
+        <h2 className="text-lg md:text-xl text-slate-600 font-semibold text-center mb-4">
           Wins & Losses Over Time
         </h2>
         <p className="text-center text-gray-500">No data available</p>

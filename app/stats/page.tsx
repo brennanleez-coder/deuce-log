@@ -141,7 +141,7 @@ function Home() {
 
               <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="w-full p-4 md:p-6 rounded-md">
-                  <h2 className="text-lg md:text-xl font-semibold text-center mb-4">
+                  <h2 className="text-lg md:text-xl text-slate-600 font-semibold text-center mb-4">
                     Overall Win/Loss
                   </h2>
                   {isLoading ? (
@@ -185,7 +185,7 @@ function Home() {
                 </div>
 
                 <div className="w-full p-4 md:p-6 rounded-md">
-                  <h2 className="text-lg md:text-xl font-semibold text-center mb-4">
+                  <h2 className="text-lg md:text-xl text-slate-600 font-semibold text-center mb-4">
                     Partner Distribution
                   </h2>
                   {isLoading ? (

@@ -7,9 +7,10 @@ import { useState, useEffect, useRef } from "react";
 import AllTimeStats from "@/app/components/Stats/AllTimeStats";
 import { useBadmintonSessions } from "@/hooks/useBadmintonSessions";
 import { useUser } from "@/hooks/useUser";
+import { Card, CardTitle } from "@/components/ui/card";
 
 function Home() {
-  const {name} = useUser()
+  const { name } = useUser();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -40,15 +41,20 @@ function Home() {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row gap-6">
           <div className="flex flex-col flex-1 gap-y-6">
-            {sessions && (
-              <AllTimeStats
-                userName={name}
-                totalSessionFees={aggregateSessionFees}
-                transactions={sessions.flatMap((s) => s.transactions ?? [])}
-                loading={isLoading}
-                showGraphs={false}
-              />
-            )}
+            <Card className="flex flex-col gap-y-4 p-4 ">
+              <CardTitle>
+                <h2 className="text-xl font-bold text-slate-600 text-center">All-Time Stats</h2>
+              </CardTitle>
+              {sessions && (
+                <AllTimeStats
+                  userName={name}
+                  totalSessionFees={aggregateSessionFees}
+                  transactions={sessions.flatMap((s) => s.transactions ?? [])}
+                  loading={isLoading}
+                  showGraphs={false}
+                />
+              )}
+            </Card>
 
             <SessionManagement
               loading={isLoading}

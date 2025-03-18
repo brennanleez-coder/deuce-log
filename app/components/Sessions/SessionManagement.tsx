@@ -150,7 +150,7 @@ export default function SessionManagement({
   return (
     <Card className="bg-white border border-gray-200 shadow-md rounded-xl">
       <CardHeader className="bg-gray-50 rounded-t-xl px-6 py-4 flex items-center justify-between">
-        <CardTitle className="flex w-full items-center gap-3 justify-between text-xl font-bold text-gray-800">
+        <CardTitle className="flex w-full items-center gap-3 justify-between text-xl font-bold text-slate-600">
           Sessions
           {/* New Session Dialog */}
           <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>

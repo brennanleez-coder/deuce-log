@@ -22,7 +22,7 @@ const PerformanceCharts: React.FC<PerformanceChartsProps> = ({ data }) => {
   return (
     <div className="w-full p-4 md:p-6">
       {/* Overall title */}
-      <h2 className="text-lg md:text-xl font-semibold text-center mb-4">
+      <h2 className="text-lg md:text-xl text-slate-600 font-semibold text-center mb-4">
         Match Stats Over Time
       </h2>
 
