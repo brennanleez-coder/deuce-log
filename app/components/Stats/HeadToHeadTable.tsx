@@ -73,7 +73,7 @@ export default function HeadToHeadTable({
                     <td className="p-3 font-medium text-gray-800 whitespace-nowrap">
                       {opponent}
                     </td>
-                    <td className="p-3 text-gray-700">{`${totalWins}W / ${totalLosses}L`}</td>
+                    <td className="p-3 text-gray-700">{`${totalWins} / ${totalLosses}`}</td>
                     <td className="p-3">
                       <div className="flex justify-center gap-2">
                         {lastX.map((result, i) => (

@@ -34,19 +34,19 @@ export default function LoginPage() {
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: "easeOut" }}
-        className="w-full max-w-sm p-6  bg-white rounded-2xl shadow-xl text-center border"
+        className="w-full max-w-sm p-6 bg-white rounded-2xl shadow-xl text-center border"
       >
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
-          Welcome to <span className="text-blue-600">Deuce log</span>
+        <h2 className="text-2xl md:text-3xl font-bold text-slate-600">
+          Welcome to <span className="text-slate-600">Deuce Log</span>
         </h2>
-        <p className="mt-2 text-sm text-gray-600">
+        <p className="mt-2 text-md text-slate-500">
           A minimalist tool to gain performance insights.
         </p>
         
         <div className="mt-6">
           <Button
             size="lg"
-            className="w-full flex items-center justify-center gap-2 bg-white text-gray-900 hover:bg-gray-50 border border-gray-300 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 bg-white text-slate-500 hover:bg-gray-50 border border-gray-300 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleSignIn}
             disabled={loading}
           >

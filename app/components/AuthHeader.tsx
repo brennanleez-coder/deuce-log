@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown } from "lucide-react";
 
 function AuthHeader() {
   const { data: session } = useSession();
@@ -16,7 +17,10 @@ function AuthHeader() {
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setDropdownOpen(false);
       }
     }
@@ -40,7 +44,9 @@ function AuthHeader() {
       <div className="flex items-center justify-between px-4 md:px-16 py-4">
         {/* Logo */}
         <Link href="/">
-          <h1 className="text-lg md:text-2xl font-bold text-blue-600">Deuce Log</h1>
+          <h1 className="text-lg md:text-2xl font-bold text-slate-600">
+            Deuce Log
+          </h1>
         </Link>
 
         <motion.nav key="nav-bar" className="flex space-x-6 relative">
@@ -72,15 +78,27 @@ function AuthHeader() {
               onClick={() => setDropdownOpen((prev) => !prev)}
             >
               <span className="text-gray-800 font-light hidden sm:inline">
-                {session.user.name ? `Welcome, ${session.user.name}` : "Welcome"}
+                {session.user.name
+                  ? `Welcome, ${session.user.name}`
+                  : "Welcome"}
               </span>
               <Avatar className="h-9 w-9 cursor-pointer">
                 {session.user.image ? (
-                  <AvatarImage src={session.user.image} alt={session.user.name || "user"} />
+                  <AvatarImage
+                    src={session.user.image}
+                    alt={session.user.name || "user"}
+                  />
                 ) : (
-                  <AvatarFallback>{session.user.name ? session.user.name.charAt(0) : "?"}</AvatarFallback>
+                  <AvatarFallback>
+                    {session.user.name ? session.user.name.charAt(0) : "?"}
+                  </AvatarFallback>
                 )}
               </Avatar>
+              <ChevronDown
+                className={`transition-transform duration-200 ${
+                  dropdownOpen ? "rotate-180" : "rotate-0"
+                }`}
+              />
             </div>
 
             {/* Animated Dropdown Menu */}
@@ -94,16 +112,26 @@ function AuthHeader() {
                   className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-2 z-50"
                 >
                   <Link href="/manage-players">
-                    <Button className="block w-full text-left px-4 py-2" variant="ghost">
+                    <Button
+                      className="block w-full text-left px-4 py-2"
+                      variant="ghost"
+                    >
                       Manage Players
                     </Button>
                   </Link>
                   <Link href="https://bustling-ricotta-c3a.notion.site/1aed2a8ea01a80409b92e93ec4136077?pvs=105">
-                    <Button className="block w-full text-left px-4 py-2" variant="ghost">
+                    <Button
+                      className="block w-full text-left px-4 py-2"
+                      variant="ghost"
+                    >
                       Report a Bug
                     </Button>
                   </Link>
-                  <Button onClick={handleLogout} className="block w-full text-left px-4 py-2" variant="ghost">
+                  <Button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2"
+                    variant="ghost"
+                  >
                     Logout
                   </Button>
                 </motion.div>
