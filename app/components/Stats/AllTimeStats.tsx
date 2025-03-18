@@ -73,13 +73,45 @@ export default function AllTimeStats({
   const displayedLossCount = includeFriendly ? lossCount : nfLossCount;
 
   return (
-    <Card className="bg-white border border-gray-200 shadow-md rounded-xl p-4">
-      <CardHeader>
-        <CardTitle className="text-xl font-bold text-gray-800 text-center">
-          All-Time Stats
-        </CardTitle>
-      </CardHeader>
-
+    <>
+      <div className="flex justify-center gap-x-2 mb-4">
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="px-4 py-2">
+              H2H Stats
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold">
+                Head-to-Head Stats
+              </DialogTitle>
+            </DialogHeader>
+            <div className="max-h-[500px] overflow-y-auto p-4">
+              {/* <HeadToHeadTable statsArray={h2hStatsArray} showLastX={5} /> */}
+              <HeadToHeadStats
+                transactions={transactions}
+                userName={userName}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="px-4 py-2">
+              <Users className="w-5 h-5" /> Partner Stats
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-3xl w-full">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold">
+                Partner Stats
+              </DialogTitle>
+            </DialogHeader>
+            <PartnerStats transactions={transactions} userName={userName} />
+          </DialogContent>
+        </Dialog>
+      </div>
       {loading ? (
         <div className="flex justify-center items-center py-6">
           <Loader />
@@ -128,45 +160,6 @@ export default function AllTimeStats({
           {showGraphs && (<PerformanceCharts data={transactions} />)}
         </>
       )}
-
-      <div className="flex justify-center gap-x-2">
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline" className="px-4 py-2">
-              H2H Stats
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-bold">
-                Head-to-Head Stats
-              </DialogTitle>
-            </DialogHeader>
-            <div className="max-h-[500px] overflow-y-auto p-4">
-              {/* <HeadToHeadTable statsArray={h2hStatsArray} showLastX={5} /> */}
-              <HeadToHeadStats
-                transactions={transactions}
-                userName={userName}
-              />
-            </div>
-          </DialogContent>
-        </Dialog>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline" className="px-4 py-2">
-              <Users className="w-5 h-5" /> Partner Stats
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-3xl w-full">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-bold">
-                Partner Stats
-              </DialogTitle>
-            </DialogHeader>
-            <PartnerStats transactions={transactions} userName={userName} />
-          </DialogContent>
-        </Dialog>
-      </div>
-    </Card>
+    </>
   );
 }

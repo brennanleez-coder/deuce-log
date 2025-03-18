@@ -9,6 +9,7 @@ import { useBadmintonSessions } from "@/hooks/useBadmintonSessions";
 import { useUser } from "@/hooks/useUser";
 import { useBadmintonSessionStats } from "@/hooks/useBadmintonSessionStats";
 import Loader from "@/components/FullScreenLoader";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 
 import {
   PieChart,
@@ -43,15 +44,11 @@ function Home() {
   const { sessions, isLoading, createSession, editSession, deleteSession } =
     useBadmintonSessions();
 
-  // If sessions haven’t loaded, we might not have anything to render yet.
-  // You can also handle loading inside your custom hooks or parent components,
-  // but here's a simple approach for the chart area:
   const aggregateSessionFees = sessions.reduce(
     (acc, session) => acc + session.courtFee,
     0
   );
 
-  // For example, if you have stats that can also be loading:
   const { winCount, lossCount } = useBadmintonSessionStats(
     sessions.flatMap((s) => s.transactions ?? []),
     name
@@ -72,7 +69,6 @@ function Home() {
 
     const partnerCount: Record<string, number> = {};
 
-    // Aggregate match counts per partner
     sessions
       .flatMap((s) => s.transactions ?? [])
       .forEach((match) => {
@@ -116,7 +112,7 @@ function Home() {
         name: "Others",
         value: othersSum,
         isOthers: true,
-        details: othersDetails, // could be used in a custom tooltip
+        details: othersDetails.map(p => `${p.partner} - ${p.count}`).join(", "),
       });
     }
 
@@ -128,109 +124,118 @@ function Home() {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row gap-6">
           <div className="flex flex-col flex-1 gap-y-6">
-            {sessions && (
-              <AllTimeStats
-                userName={name}
-                totalSessionFees={aggregateSessionFees}
-                transactions={sessions.flatMap((s) => s.transactions ?? [])}
-                loading={isLoading}
-              />
-            )}
+            <Card className="bg-white border border-gray-200 shadow-md rounded-xl p-4">
+              <CardHeader>
+                <CardTitle className="text-xl font-bold text-gray-800 text-center">
+                  All-Time Stats
+                </CardTitle>
+              </CardHeader>
+              {sessions && (
+                <AllTimeStats
+                  userName={name}
+                  totalSessionFees={aggregateSessionFees}
+                  transactions={sessions.flatMap((s) => s.transactions ?? [])}
+                  loading={isLoading}
+                />
+              )}
 
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* 1) Win/Loss Pie */}
-              <div className="w-full p-4 md:p-6 border rounded-md">
-                <h2 className="text-lg md:text-xl font-semibold text-center mb-4">
-                  Overall Win/Loss
-                </h2>
-                {isLoading ? (
-                  <div className="flex justify-center items-center py-6">
-                  <Loader />
-                </div>
-                ) : winLossPieData.length === 0 ? (
-                  <p className="text-center text-gray-500">No data available</p>
-                ) : (
-                  <div className="w-full h-64 sm:h-72">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart
-                        margin={{ top: 10, right: 10, left: 10, bottom: 10 }}
-                      >
-                        <Pie
-                          dataKey="value"
-                          nameKey="name"
-                          data={winLossPieData}
-                          label
-                          outerRadius="60%"
+              <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="w-full p-4 md:p-6 rounded-md">
+                  <h2 className="text-lg md:text-xl font-semibold text-center mb-4">
+                    Overall Win/Loss
+                  </h2>
+                  {isLoading ? (
+                    <div className="flex justify-center items-center py-6">
+                      <Loader />
+                    </div>
+                  ) : winLossPieData.length === 0 ? (
+                    <p className="text-center text-gray-500">
+                      No data available
+                    </p>
+                  ) : (
+                    <div className="w-full h-64 sm:h-72">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart
+                          margin={{ top: 10, right: 10, left: 10, bottom: 10 }}
                         >
-                          {winLossPieData.map((entry, index) => {
-                            // Define the colors you'd like to cycle through
-                            const COLORS = ["#8884d8", "#82ca9d"];
-                            return (
-                              <Cell
-                                key={`cell-${index}`}
-                                fill={COLORS[index % COLORS.length]}
-                              />
-                            );
-                          })}
-                        </Pie>
-                        <Tooltip />
-                        <Legend />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </div>
+                          <Pie
+                            dataKey="value"
+                            nameKey="name"
+                            data={winLossPieData}
+                            label
+                            outerRadius="60%"
+                          >
+                            {winLossPieData.map((entry, index) => {
+                              // Define the colors you'd like to cycle through
+                              const COLORS = ["#8884d8", "#82ca9d"];
+                              return (
+                                <Cell
+                                  key={`cell-${index}`}
+                                  fill={COLORS[index % COLORS.length]}
+                                />
+                              );
+                            })}
+                          </Pie>
+                          <Tooltip />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </div>
 
-              {/* 2) Partner Distribution Pie */}
-              <div className="w-full p-4 md:p-6 border rounded-md">
-                <h2 className="text-lg md:text-xl font-semibold text-center mb-4">
-                  Partner Distribution
-                </h2>
-                {isLoading ? (
-                  <div className="flex justify-center items-center py-6">
-                  <Loader />
-                </div>
-                ) : partnerPieData.length === 0 ? (
-                  <p className="text-center text-gray-500">No data available</p>
-                ) : (
-                  <div className="w-full h-64 sm:h-72">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart
-                        margin={{ top: 10, right: 10, left: 10, bottom: 10 }}
-                      >
-                        <Pie
-                          dataKey="value"
-                          nameKey="name"
-                          data={partnerPieData}
-                          label
-                          outerRadius="60%"
+                <div className="w-full p-4 md:p-6 rounded-md">
+                  <h2 className="text-lg md:text-xl font-semibold text-center mb-4">
+                    Partner Distribution
+                  </h2>
+                  {isLoading ? (
+                    <div className="flex justify-center items-center py-6">
+                      <Loader />
+                    </div>
+                  ) : partnerPieData.length === 0 ? (
+                    <p className="text-center text-gray-500">
+                      No data available
+                    </p>
+                  ) : (
+                    <div className="w-full h-64 sm:h-72">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart
+                          margin={{ top: 10, right: 10, left: 10, bottom: 10 }}
                         >
-                          {partnerPieData.map((entry, index) => {
-                            // Use a bigger palette if you have more potential slices
-                            const COLORS = [
-                              "#0088FE",
-                              "#00C49F",
-                              "#FFBB28",
-                              "#FF8042",
-                              "#A28AE5",
-                              "#FF5FAA",
-                            ];
-                            return (
-                              <Cell
-                                key={`cell-${index}`}
-                                fill={COLORS[index % COLORS.length]}
-                              />
-                            );
-                          })}
-                        </Pie>
-                        <Tooltip />
-                        <Legend />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
+                          <Pie
+                            dataKey="value"
+                            nameKey="name"
+                            data={partnerPieData}
+                            label
+                            outerRadius="60%"
+                          >
+                            {partnerPieData.map((entry, index) => {
+                              // Use a bigger palette if you have more potential slices
+                              const COLORS = [
+                                "#0088FE",
+                                "#00C49F",
+                                "#FFBB28",
+                                "#FF8042",
+                                "#A28AE5",
+                                "#FF5FAA",
+                              ];
+                              return (
+                                <Cell
+                                  key={`cell-${index}`}
+                                  fill={COLORS[index % COLORS.length]}
+                                />
+                              );
+                            })}
+                          </Pie>
+                          <Tooltip />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            </Card>
           </div>
         </div>
       </div>

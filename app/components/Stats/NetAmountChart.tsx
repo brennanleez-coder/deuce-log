@@ -55,6 +55,13 @@ const NetAmountChart: React.FC<NetAmountChartProps> = ({ data }) => {
     return { ...entry, cumulativeNet };
   });
 
+  // Determine stroke color based on final cumulative net amount
+  const finalNet =
+    cumulativeNetData.length > 0
+      ? cumulativeNetData[cumulativeNetData.length - 1].cumulativeNet
+      : 0;
+  const strokeColor = finalNet < 0 ? "#f87171" : "#4f46e5";
+
   // Handle empty data scenario
   if (cumulativeNetData.length === 0) {
     return (
@@ -89,7 +96,7 @@ const NetAmountChart: React.FC<NetAmountChartProps> = ({ data }) => {
           <Line
             type="monotone"
             dataKey="cumulativeNet"
-            stroke="#4f46e5" // Keep it simple; no subplots or fancy themes
+            stroke={strokeColor}
             strokeWidth={2}
             name="Net Amount"
           />
