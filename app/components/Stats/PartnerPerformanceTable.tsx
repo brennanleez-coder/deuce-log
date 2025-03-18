@@ -21,7 +21,6 @@ export default function PartnerPerformanceTable({
   const [searchQuery, setSearchQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null); // Prevent auto-focus on render
 
-  // Configure Fuse.js for fuzzy search
   const fuse = useMemo(
     () =>
       new Fuse(partnerStats, {
@@ -31,7 +30,6 @@ export default function PartnerPerformanceTable({
     [partnerStats]
   );
 
-  // Get filtered results
   const filteredStats = useMemo(() => {
     if (!searchQuery) return partnerStats;
     return fuse.search(searchQuery).map((result) => result.item);
@@ -41,7 +39,6 @@ export default function PartnerPerformanceTable({
 
   return (
     <div className="w-full">
-      {/* Search Input */}
       <div className="sticky top-0 bg-white z-10 py-3">
         <Input
           ref={inputRef}
@@ -53,7 +50,6 @@ export default function PartnerPerformanceTable({
         />
       </div>
 
-      {/* Table Wrapper with Scroll */}
       <div className="overflow-auto max-h-[400px] border border-gray-200 rounded-md shadow-sm mt-3">
         <table className="w-full border-collapse text-sm text-center">
           <thead className="bg-gray-100 sticky top-0">
@@ -70,7 +66,7 @@ export default function PartnerPerformanceTable({
               return (
                 <tr key={partner} className="border-b hover:bg-gray-50 transition">
                   <td className="p-3 font-medium text-gray-800 whitespace-nowrap">{partner}</td>
-                  <td className="p-3 text-gray-700">{`${totalWins}W / ${totalLosses}L`}</td>
+                  <td className="p-3 text-gray-700">{`${totalWins} / ${totalLosses}`}</td>
                   <td className="p-3">
                     <div className="flex justify-center gap-2">
                       {lastX.map((result, i) => (
@@ -95,7 +91,6 @@ export default function PartnerPerformanceTable({
         </table>
       </div>
 
-      {/* No Results Found */}
       {filteredStats.length === 0 && (
         <div className="text-gray-500 text-center py-4">No partners found.</div>
       )}

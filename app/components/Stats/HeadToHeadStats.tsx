@@ -31,15 +31,14 @@ export default function HeadToHeadStats({
 
   if (statsArray.length === 0) {
     return (
-      <div className="bg-white p-4 rounded-lg shadow-md mt-4">
-        <h3 className="text-lg font-semibold mb-2">Head-to-Head Stats</h3>
+      <div className="bg-white rounded-lg mt-4">
         <p className="text-gray-500">No head-to-head data available.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-5">
+    <div className="bg-white rounded-lg shadow-md p-5  max-h-[80vh] overflow-y-auto">
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
@@ -51,7 +50,7 @@ export default function HeadToHeadStats({
             className="overflow-hidden"
           >
             {/* Partner Performance */}
-            <div className="border-b pb-4 mb-4 flex flex-col items-center">
+            <div className="flex flex-col items-center bg-white rounded-xl shadow-md p-6 border border-gray-200 max-h-[80vh] overflow-y-auto">
 
               <h4 className="text-lg font-semibold text-gray-900 text-center mb-6">
                 Opponent Podium 🏆
