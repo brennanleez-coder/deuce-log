@@ -75,7 +75,7 @@ const NetAmountChart: React.FC<NetAmountChartProps> = ({ data }) => {
   }
 
   return (
-    <div className="w-full p-4 md:p-6 border rounded-md">
+    <div className="w-full p-4 md:p-6 rounded-md">
       <h2 className="text-lg md:text-xl font-semibold text-center mb-4">
         Cumulative Net Amount
       </h2>
