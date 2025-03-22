@@ -74,23 +74,36 @@ model Transaction {
   amount       Float
   team1        String[]
   team2        String[]
-  timestamp    DateTime @default(now())
-  paid         Boolean @default(false)
+  timestamp    DateTime  @default(now())
+  paid         Boolean   @default(false)
   paidBy       String?
+  // Indicates whether this match/transaction is currently live
+  goLive       Boolean   @default(false)
+  // Optional field to store when the match was switched to live
+  liveAt       DateTime?
+  // Optional field to store the cutoff time for placing bets
+  betsExpireAt DateTime?
+
   session      BadmintonSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Match Transaction Fields
-  payer        String? // Someone from team1 or team2
-  receiver     String? // Someone from team1 or team2
+  payer      String?
+  receiver   String?
 
   // SideBet Transaction Fields
-  bettor       String? // Player who placed the bet
-  bookmaker    String? // Player who took the bet
-  bettorWon    Boolean?
+  bettor     String?
+  bookmaker  String?
+  bettorWon  Boolean?
 
-  settlement   Settlement? @relation("TransactionSettlement") // One-to-One Relation
+  settlement Settlement? @relation("TransactionSettlement")
 }
+
+enum TransactionType {
+  MATCH
+  SIDEBET
+}
+
 
 model Settlement {
   id        String   @id @default(uuid())
@@ -101,9 +114,4 @@ model Settlement {
 
   transactionId String      @unique
   transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade, name: "TransactionSettlement") // One-to-One Relation
-}
-
-enum TransactionType {
-  MATCH
-  SIDEBET
 }
