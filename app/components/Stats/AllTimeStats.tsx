@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useBadmintonSessionStats } from "@/hooks/useBadmintonSessionStats";
-import { Transaction } from "@/types/types";
+import { Transaction } from "@prisma/client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   Gamepad2,

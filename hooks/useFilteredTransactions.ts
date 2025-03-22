@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import Fuse from "fuse.js";
-import { Transaction } from "@/types/types";
+import { Transaction } from "@prisma/client";
 
 type FilterOptions = {
   sortBy?: "timestamp" | "amount";

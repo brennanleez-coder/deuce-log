@@ -6,7 +6,7 @@ import { Search, ArrowUp, ArrowDown, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import TransactionCard from "@/app/components/Transactions/TransactionCard";
 import { useFilteredTransactions } from "@/hooks/useFilteredTransactions";
-import { Transaction } from "@/types/types";
+import { Transaction } from "@prisma/client";
 import {
   Dialog,
   DialogContent,

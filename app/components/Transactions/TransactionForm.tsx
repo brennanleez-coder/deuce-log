@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { useBadmintonSessions } from "@/hooks/useBadmintonSessions";
 
 import { transactionSchema, TransactionFormData } from "@/schema/transactionSchema";
-import { Transaction } from "@/types/types";
+import { Transaction } from "@prisma/client";
 
 import MatchDetailsFieldset from "./MatchDetailsFieldSet";
 import WinningTeamSelector from "./WinningTeamSelector";

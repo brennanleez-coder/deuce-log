@@ -1,179 +1,227 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
-import axios from "axios";
-import { useAllBadmintonSessionStats } from "@/hooks/useAllBadmintonSessionStats";
-import { useUser } from "@/hooks/useUser";
+import React, { useState, useMemo } from "react";
 import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/components/ui/table";
+  addDays,
+  endOfMonth,
+  endOfWeek,
+  format,
+  parseISO,
+  startOfMonth,
+  startOfWeek,
+  isSameMonth,
+  addMonths,
+} from "date-fns";
+
 import {
-  AlertDialog,
-  AlertDialogTrigger,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
+import { useAllBadmintonSessionStats } from "@/hooks/useAllBadmintonSessionStats";
+import { BadmintonSession } from "@prisma/client";
+
 type Session = {
   id: string;
   name: string;
   courtFee: number;
-  createdAt: string;
+  createdAt: string; // e.g. "2025-03-21T18:49:53.080Z"
 };
-
-interface SessionListTableProps {
-  sessions: Session[];
-  handleSessionSelect: (sessionId: string) => void;
-  handleDeleteSession: (sessionId: string, e: React.MouseEvent) => void;
-  formatDate: (date: string) => string;
+interface CalendarViewWithDialogProps {
+  sessions: BadmintonSession[];
+  handleDeleteSession?: (sessionId: string) => void;
 }
-
-export default function SessionListTable({
+export default function CalendarViewWithDialog({
   sessions,
-  handleSessionSelect,
   handleDeleteSession,
-  formatDate,
-}: SessionListTableProps) {
-  const { name, userId } = useUser();
-  const [sessionStats, setSessionStats] = useState({});
-  const [loading, setLoading] = useState(true);
+}: CalendarViewWithDialogProps) {
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const sessionStats = useAllBadmintonSessionStats(sessions.flatMap(s => s.transactions), name);
 
-  useEffect(() => {
-    if (!userId) return;
+  // Move to previous/next month
+  function goToPreviousMonth() {
+    setCurrentMonth((prev) => addMonths(prev, -1));
+  }
+  function goToNextMonth() {
+    setCurrentMonth((prev) => addMonths(prev, 1));
+  }
 
-    const fetchTransactions = async () => {
-      try {
-        const { data } = await axios.get("/api/transactions", {
-          params: { userId },
-        });
-        if (data.length !== 0) {
-          const sessionStats = useAllBadmintonSessionStats(data, name);
-          setSessionStats(sessionStats);
-        }
-      } catch (error) {
-        console.error("Error fetching transactions:", error);
-      } finally {
-        setLoading(false);
-      }
+  // Compute the displayed range for the calendar
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(currentMonth);
+  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 }); // Monday
+  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+
+  // Generate the array of days to render
+  const daysInCalendar = useMemo(() => {
+    const days: Date[] = [];
+    let d = calendarStart;
+    while (d <= calendarEnd) {
+      days.push(d);
+      d = addDays(d, 1);
+    }
+    return days;
+  }, [calendarStart, calendarEnd]);
+
+  // Group sessions by date
+  const sessionsByDay = useMemo(() => {
+    const map: Record<string, BadmintonSession[]> = {};
+    sessions.forEach((sess) => {
+      const dateKey = format(parseISO(sess.createdAt), "yyyy-MM-dd");
+      if (!map[dateKey]) map[dateKey] = [];
+      map[dateKey].push(sess);
+    });
+    return map;
+  }, [sessions]);
+
+  function handleSessionClick(session: Session) {
+    setSelectedSession(session);
+    setIsDialogOpen(true);
+  }
+
+  const renderDialogContent = () => {
+    if (!selectedSession) return null;
+    const stats = sessionStats[selectedSession.id] || {
+      matchesPlayed: 0,
+      netAmount: 0,
+      winCount: 0,
+      lossCount: 0,
     };
 
-    fetchTransactions();
-  }, [userId]);
+    const dateStr = format(parseISO(selectedSession.createdAt), "PPpp");
+    const totalMatches = stats.matchesPlayed;
+    const winRate =
+      totalMatches > 0
+        ? ((stats.winCount / totalMatches) * 100).toFixed(1) + "%"
+        : "N/A";
+
+    return (
+      <div className="space-y-2 text-sm">
+        <p>
+          <span className="font-medium">Session Name:</span> {selectedSession.name}
+        </p>
+        <p>
+          <span className="font-medium">Created At:</span> {dateStr}
+        </p>
+        <p>
+          <span className="font-medium">Court Fee:</span> $
+          {selectedSession.courtFee.toFixed(2)}
+        </p>
+        <p>
+          <span className="font-medium">Total Matches:</span> {totalMatches}
+        </p>
+        <p>
+          <span className="font-medium">Win Rate:</span> {winRate}
+        </p>
+        <p>
+          <span className="font-medium">Net Earnings:</span>{" "}
+          <span
+            className={
+              stats.netAmount >= 0 ? "text-green-600 font-semibold" : "text-red-600 font-semibold"
+            }
+          >
+            ${stats.netAmount.toFixed(2)}
+          </span>
+        </p>
+      </div>
+    );
+  };
 
   return (
-    <div className="w-full overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-gray-50">
-            <TableHead className="text-left">Session</TableHead>
-            <TableHead className="text-left">Date</TableHead>
-            <TableHead className="text-center">Court Fee</TableHead>
-            <TableHead className="text-center">Total Matches</TableHead>
-            <TableHead className="text-center">Win Rate</TableHead>
-            <TableHead className="text-center">Net Earnings</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sessions.map((session) => {
-            const stats = sessionStats[session.id] || {
-              matchesPlayed: 0,
-              netAmount: 0,
-              winCount: 0,
-              lossCount: 0,
-            };
+    <div className="hidden sm:block">
+      {/* Month navigation */}
+      <div className="flex items-center justify-between mb-3">
+        <Button variant="outline" onClick={goToPreviousMonth}>
+          &larr; Prev
+        </Button>
+        <h2 className="text-lg font-semibold text-gray-700">
+          {format(currentMonth, "MMMM yyyy")}
+        </h2>
+        <Button variant="outline" onClick={goToNextMonth}>
+          Next &rarr;
+        </Button>
+      </div>
 
-            return (
-              <TableRow
-                key={session.id}
-                onClick={() => handleSessionSelect(session.id)}
-                className="cursor-pointer hover:bg-gray-100 transition"
+      {/* Weekday headers */}
+      <div className="grid grid-cols-7 gap-2">
+        {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((dayName) => (
+          <div
+            key={dayName}
+            className="text-center font-medium text-gray-600 border-b pb-1"
+          >
+            {dayName}
+          </div>
+        ))}
+      </div>
+
+      {/* Calendar days */}
+      <div className="grid grid-cols-7 gap-2 mt-2">
+        {daysInCalendar.map((day) => {
+          const dayKey = format(day, "yyyy-MM-dd");
+          const daySessions = sessionsByDay[dayKey] || [];
+          const isInCurrentMonth = isSameMonth(day, currentMonth);
+
+          return (
+            <div
+              key={dayKey}
+              className={`border min-h-[80px] p-2 rounded-md ${
+                isInCurrentMonth ? "bg-white" : "bg-gray-50 text-gray-400"
+              }`}
+            >
+              <div className="text-sm font-semibold mb-1">
+                {format(day, "d")}
+              </div>
+
+              {daySessions.map((sess) => (
+                <p
+                  key={sess.id}
+                  className="text-xs text-blue-600 truncate cursor-pointer hover:underline"
+                  onClick={() => handleSessionClick(sess)}
+                >
+                  {sess.name}
+                </p>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Dialog - Show full session details */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{selectedSession?.name || "Session Details"}</DialogTitle>
+            <DialogDescription>{renderDialogContent()}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            {/* If you want to replicate the "Delete" action: */}
+            {selectedSession && handleDeleteSession && (
+              <Button
+                variant="destructive"
+                className="flex items-center gap-2"
+                onClick={() => {
+                  handleDeleteSession(selectedSession.id);
+                  setIsDialogOpen(false);
+                }}
               >
-                <TableCell className="font-medium">{session.name}</TableCell>
-                <TableCell>{formatDate(session.createdAt)}</TableCell>
-                <TableCell className="text-center">
-                  ${session.courtFee.toFixed(2)}
-                </TableCell>
-                <TableCell className="text-center">
-                  {stats?.matchesPlayed}
-                </TableCell>
-                <TableCell
-                  className={`text-center font-semibold ${
-                    stats?.matchesPlayed > 0
-                      ? stats?.winCount > stats?.lossCount
-                        ? "text-green-600"
-                        : "text-red-600"
-                      : "text-gray-500"
-                  }`}
-                >
-                  {`${((stats?.winCount / stats?.matchesPlayed) * 100).toFixed(
-                    1
-                  )}%`}
-                </TableCell>
-                <TableCell
-                  className={`text-center font-semibold ${
-                    stats?.netAmount >= 0 ? "text-green-600" : "text-red-600"
-                  }`}
-                >
-                  ${stats?.netAmount.toFixed(2)}
-                </TableCell>
-                <TableCell className="text-right">
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent
-                      className="max-w-md"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Session?</AlertDialogTitle>
-                      </AlertDialogHeader>
-                      <p className="text-gray-600 px-4">
-                        Are you sure you want to delete{" "}
-                        <strong>{session.name}</strong>? This action cannot be
-                        undone.
-                      </p>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={(e) => handleDeleteSession(session.id, e)}
-                          className="bg-red-600 hover:bg-red-700"
-                        >
-                          Yes, Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-
-      {/* Show loading message while fetching transactions */}
-      {loading && (
-        <div className="text-gray-500 text-center py-4">
-          Loading sessions...
-        </div>
-      )}
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </Button>
+            )}
+            <DialogClose asChild>
+              <Button variant="outline">Close</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

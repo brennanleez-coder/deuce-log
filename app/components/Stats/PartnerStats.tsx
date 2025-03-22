@@ -3,7 +3,7 @@
 import React from "react";
 import { Medal } from "lucide-react";
 import { useBadmintonSessionStats } from "@/hooks/useBadmintonSessionStats";
-import { Transaction } from "@/types/types";
+import { Transaction } from "@prisma/client";
 
 import BestWorstPartnerCard from "@/app/components/Stats/BestWorstPartnerCard";
 import PartnerPerformanceTable from "@/app/components/Stats/PartnerPerformanceTable";

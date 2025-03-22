@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { CheckCircle, Users, DollarSign, Pencil, Check } from "lucide-react";
-import { Transaction } from "@/types/types";
+import { Transaction } from "@prisma/client";
 import {
   Dialog,
   DialogContent,

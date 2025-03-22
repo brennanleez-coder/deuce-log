@@ -1,13 +1,10 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { Transaction } from "@prisma/client";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
-
-// utils/getHeadToHeadStats.ts
-
-import { Transaction } from "@/types/types";
 
 export type EncounterResult = "W" | "L";
 
@@ -22,7 +19,6 @@ export function getHeadToHeadStats(
   transactions: Transaction[],
   userName: string
 ): OpponentRecord[] {
-  // A map of opponentName -> { totalWins, totalLosses, encounters[] }
   const opponentStats: Record<
     string,
     { totalWins: number; totalLosses: number; encounters: EncounterResult[] }

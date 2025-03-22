@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Users, UserX, Flame, ThumbsUp } from "lucide-react";
-import { Transaction } from "@/types/types";
+import { Transaction } from "@prisma/client";
 import { useBadmintonSessionStats } from "@/hooks/useBadmintonSessionStats";
 import {
   Dialog,

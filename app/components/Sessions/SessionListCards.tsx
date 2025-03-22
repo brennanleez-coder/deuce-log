@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { useAllBadmintonSessionStats } from "@/hooks/useAllBadmintonSessionStats";
 import { useUser } from "@/hooks/useUser";
 import { Card } from "@/components/ui/card";
@@ -47,32 +46,8 @@ export default function SessionListCards({
   formatDate,
 }: SessionListCardsProps) {
   const { name, userId } = useUser();
-  const [sessionStats, setSessionStats] = useState<Record<string, any>>({});
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!userId) return;
-
-    const fetchTransactions = async () => {
-      try {
-        const { data } = await axios.get("/api/transactions", {
-          params: { userId },
-        });
-
-        if (data.length !== 0) {
-          const sessionStats = useAllBadmintonSessionStats(data, name);
-          setSessionStats(sessionStats);
-        }
-      } catch (error) {
-        console.error("Error fetching transactions:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTransactions();
-  }, [userId]);
-
+  const sessionStats = useAllBadmintonSessionStats(sessions.flatMap(s => s.transactions), name);
+  const [loading, setLoading] = useState(false);
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {sessions.map((session) => {

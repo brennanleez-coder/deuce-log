@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Transaction } from "@/types/types";
+import { Transaction } from "@prisma/client";
 import { getBestAndWorstPartners } from "@/lib/utils";
 
 interface SessionStats {

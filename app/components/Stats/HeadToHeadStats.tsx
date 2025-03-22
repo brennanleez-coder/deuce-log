@@ -6,7 +6,7 @@ import { Medal } from "lucide-react";
 
 import { getHeadToHeadStats, getBestAndWorstPartners } from "@/lib/utils";
 import HeadToHeadTable from "./HeadToHeadTable";
-import { Transaction } from "@/types/types";
+import { Transaction } from "@prisma/client";
 
 import BestWorstPartnerCard from "@/app/components/Stats/BestWorstPartnerCard";
 import { useBadmintonSessionStats } from "@/hooks/useBadmintonSessionStats";

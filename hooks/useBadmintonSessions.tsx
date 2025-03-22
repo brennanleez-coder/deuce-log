@@ -1,21 +1,14 @@
 import { useSession } from "next-auth/react";
 import axios from "axios";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { BadmintonSession } from "@/types/types";
+import { BadmintonSession } from "@prisma/client";
 import { useUser } from "./useUser";
 
-/**
- * A React Query hook that:
- * 1) Fetches sessions for the logged-in user
- * 2) Provides createSession, editSession, and deleteSession 
- *    mutations with optimistic updates using v5 syntax
- */
 export function useBadmintonSessions() {
   const {userId} = useUser()
   const queryClient = useQueryClient();
   
 
-  // ---- FETCH ALL SESSIONS ----
   const {
     data: sessions = [],
     isLoading,

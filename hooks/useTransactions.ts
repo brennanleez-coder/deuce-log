@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
-import { useSession } from "next-auth/react";
-import { Transaction } from "@/types/types";
+import { Transaction } from "@prisma/client";
 import { useUser } from "./useUser";
 
 interface EditTransactionParams {
