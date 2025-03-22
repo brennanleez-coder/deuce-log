@@ -236,7 +236,7 @@ export default function SessionManagement({
             {/* Render Table or Cards */}
             {viewMode === "table" ? (
               <SessionListTable
-                sessions={sessions}
+                sessions={paginatedSessions}
                 handleSessionSelect={handleSessionSelect}
                 handleDeleteSession={handleDeleteSession}
                 formatDate={formatDate}
