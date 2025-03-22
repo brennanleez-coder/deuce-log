@@ -210,7 +210,8 @@ export default function SessionManagement({
                 Card View
               </Button>
             ) : (
-              <Button
+              <div className="hidden md:block">
+                <Button
                 variant="outline"
                 onClick={() => setViewMode("table")}
                 className="flex items-center gap-2"
@@ -218,6 +219,7 @@ export default function SessionManagement({
                 <TableIcon className="w-4 h-4" />
                 Table View
               </Button>
+                </div>
             )}
           </div>
         </div>
