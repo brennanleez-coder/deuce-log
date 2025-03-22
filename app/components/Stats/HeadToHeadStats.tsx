@@ -38,7 +38,7 @@ export default function HeadToHeadStats({
   }
 
   return (
-    <div className="bg-white rounded-lg p-5 max-h-[80vh] overflow-y-auto">
+    <div className="bg-white rounded-lg p-5 w-full">
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
@@ -51,7 +51,6 @@ export default function HeadToHeadStats({
           >
             {/* Partner Performance */}
             <div className="border-b pb-4 mb-4 flex flex-col items-center">
-
               <h4 className="text-lg font-semibold text-gray-900 text-center mb-6">
                 Opponent Podium 🏆
               </h4>
@@ -61,7 +60,7 @@ export default function HeadToHeadStats({
                 {/* Toughest Opponents - Rivals */}
                 <div className="flex flex-col items-center gap-4">
                   <h5 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                    Most Challenging Opponents
+                    Most Challenging
                   </h5>
                   {toughestOpponents?.map((opponent, index) => (
                     <div
@@ -80,7 +79,7 @@ export default function HeadToHeadStats({
                 {/* Most Beaten Opponents */}
                 <div className="flex flex-col items-center gap-4">
                   <h5 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                    Most Defeated Opponents
+                    Most Defeated
                   </h5>
                   {mostDefeatedOpponents?.map((opponent, index) => (
                     <div

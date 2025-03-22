@@ -116,8 +116,7 @@ const StreakCard: React.FC<StreakCardProps> = ({ name, sessions }) => {
       <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-center text-slate-600">
         {streak.currentStreakType === "none" ? (
           <div className="col-span-full text-slate-500">
-            No matches found for <span className="font-semibold">{name}</span>{" "}
-            yet.
+            No matches found.
           </div>
         ) : (
           <>

@@ -4,6 +4,7 @@ import { ReactNode } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { NumberTicker } from "@/components/magicui/number-ticker";
+
 interface StatsCardProps {
   icon: ReactNode;
   value: string | number;
@@ -24,7 +25,7 @@ export default function StatsCard({
   const renderValue = () => {
     if (typeof value === "number") {
       return (
-        <div className={`mt-2 ${valueClassName}`}>
+        <div className={`mt-2 text-xl sm:text-2xl font-bold ${valueClassName}`}>
           <NumberTicker
             value={value}
             duration={1500}
@@ -40,30 +41,21 @@ export default function StatsCard({
         </div>
       );
     } else if (typeof value === "string") {
-      // Check if value matches the pattern "digitsW / digitsL"
       const winLossRegex = /^(\d+)W\s*\/\s*(\d+)L$/;
       const match = value.match(winLossRegex);
       if (match) {
         const winCount = parseInt(match[1], 10);
         const lossCount = parseInt(match[2], 10);
         return (
-          <div className={`mt-2 ${valueClassName} flex items-center space-x-1`}>
-            <NumberTicker
-              value={winCount}
-              duration={1500}
-              format={(num: number) => num.toLocaleString()}
-            />
-            <span>W /</span>
-            <NumberTicker
-              value={lossCount}
-              duration={1500}
-              format={(num: number) => num.toLocaleString()}
-            />
-            <span>L</span>
+          <div
+            className={`text-xl sm:text-2xl font-bold ${valueClassName} flex items-center justify-center gap-x-3`}
+          >
+            <NumberTicker value={winCount} duration={1500} />
+            <span className="text-sm text-gray-500"> /</span>
+            <NumberTicker value={lossCount} duration={1500} />
           </div>
         );
       }
-      // Fallback: display string value as text
       return (
         <p className={`text-lg font-semibold mt-2 ${valueClassName}`}>
           {value}
@@ -72,18 +64,23 @@ export default function StatsCard({
     }
     return null;
   };
+
   return (
-    <Card className="flex flex-col justify-between items-center text-center p-4 shadow-sm border rounded-lg h-full min-h-[140px] sm:min-h-[160px] min-w-[120px] sm:min-w-[140px]">
-      <div className="flex flex-col items-center">
-        {icon}
+    <Card className="flex flex-col justify-between items-center text-center p-4 shadow-sm border rounded-xl h-full min-h-[140px] sm:min-h-[160px] min-w-[140px] sm:min-w-[160px] transition-all duration-200 hover:shadow-md bg-white">
+      <div className="flex flex-col items-center space-y-3">
+        <div className="w-10 h-10 flex items-center justify-center text-slate-700 rounded-full shadow-sm">
+          {icon}
+        </div>
         {renderValue()}
-        <p className="text-sm text-gray-500">{label}</p>
+        <p className="text-xs sm:text-sm text-muted-foreground font-medium tracking-wide">
+          {label}
+        </p>
       </div>
 
       {buttonLabel && onToggle && (
         <Button
           variant="outline"
-          className="mt-4 w-full text-[10px] md:text-sm px-2 py-1 sm:px-3 sm:py-2 leading-tight sm:leading-normal"
+          className="mt-4 w-full text-[11px] sm:text-sm px-2 py-1 sm:px-3 sm:py-2"
           onClick={onToggle}
         >
           {buttonLabel}
