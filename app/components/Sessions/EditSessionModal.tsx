@@ -1,5 +1,7 @@
 "use client";
-import { useState } from "react";
+
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +22,11 @@ interface EditSessionProps {
   currentPlayers: string[];
 }
 
+type FormData = {
+  sessionName: string;
+  courtFee: number;
+};
+
 export default function EditSessionModal({
   sessionId,
   currentName,
@@ -27,26 +34,31 @@ export default function EditSessionModal({
   currentPlayers,
 }: EditSessionProps) {
   const { editSession } = useBadmintonSessions();
-  const [name, setName] = useState(currentName);
-  const [courtFee, setCourtFee] = useState(currentCourtFee);
-  const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSave = async () => {
+  // Initialize react-hook-form
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<FormData>({
+    defaultValues: {
+      sessionName: currentName,
+      courtFee: currentCourtFee,
+    },
+  });
+
+  // Called when the user submits the form
+  const onSubmit = async (data: FormData) => {
     setIsLoading(true);
-
-    // Store previous state in case of rollback
-    // const prevSessions = [...sessions];
-
-    // Optimistically update UI
-    const updatedSession = {
-      sessionId,
-      name,
-      courtFee,
-    };
-
     try {
-      await editSession.mutateAsync(updatedSession);
+      await editSession.mutateAsync({
+        sessionId,
+        name: data.sessionName,
+        courtFee: data.courtFee,
+      });
       setIsOpen(false);
     } catch (error: any) {
       console.error("Error saving session:", error.message);
@@ -55,37 +67,68 @@ export default function EditSessionModal({
     }
   };
 
+  // Optional: If the modal closes, reset the form
+  const handleClose = (open: boolean) => {
+    setIsOpen(open);
+    if (!open) {
+      reset({
+        sessionName: currentName,
+        courtFee: currentCourtFee,
+      });
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogTrigger asChild>
         <Button variant="outline">Edit Session</Button>
       </DialogTrigger>
+
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Edit Session Details</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <Label>Session Name</Label>
+            <Label htmlFor="sessionName">Session Name</Label>
             <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              id="sessionName"
               placeholder="Enter session name"
+              {...register("sessionName", {
+                required: "Session name is required",
+              })}
             />
+            {errors.sessionName && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.sessionName.message}
+              </p>
+            )}
           </div>
+
           <div>
-            <Label>Court Fee ($)</Label>
+            <Label htmlFor="courtFee">Court Fee ($)</Label>
             <Input
               type="number"
-              value={courtFee}
-              onChange={(e) => setCourtFee(parseFloat(e.target.value) || 0)}
+              id="courtFee"
+              step="0.01"
+              {...register("courtFee", {
+                required: "Court fee is required",
+                valueAsNumber: true,
+              })}
             />
+            {errors.courtFee && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.courtFee.message}
+              </p>
+            )}
           </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => setIsOpen(false)}>
+
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="ghost" type="button" onClick={() => setIsOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={isLoading}>
+            <Button type="submit" disabled={isLoading}>
               {isLoading ? (
                 <ClipLoader size={16} color="white" />
               ) : (
@@ -93,7 +136,7 @@ export default function EditSessionModal({
               )}
             </Button>
           </div>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

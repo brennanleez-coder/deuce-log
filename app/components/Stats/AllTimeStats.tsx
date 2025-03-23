@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useBadmintonSessionStats } from "@/hooks/useBadmintonSessionStats";
 import { Transaction } from "@prisma/client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -9,7 +9,6 @@ import {
   TrendingUp,
   TrendingDown,
   BarChart2,
-  Medal,
   Users,
 } from "lucide-react";
 import Loader from "@/components/FullScreenLoader";
@@ -39,11 +38,11 @@ export default function AllTimeStats({
   totalSessionFees,
   transactions,
   loading,
-  showGraphs = true
+  showGraphs = true,
 }: AllTimeStatsProps) {
-  if (!transactions) return null;
-  if (!userName) return null;
-  if (typeof totalSessionFees !== "number") return null;
+  if (!transactions || !userName || typeof totalSessionFees !== "number") {
+    return null;
+  }
 
   const [includeFees, setIncludeFees] = useState(false);
   const [includeFriendly, setIncludeFriendly] = useState(true);
@@ -53,113 +52,107 @@ export default function AllTimeStats({
   const { matchesPlayed, netAmount, winCount, lossCount } = statsAll;
 
   const filteredTransactions = transactions.filter((t) => t.amount !== 0);
-  const statsNoFriendly = useBadmintonSessionStats(
-    filteredTransactions,
-    userName
-  );
+  const statsNoFriendly = useBadmintonSessionStats(filteredTransactions, userName);
   const {
     winCount: nfWinCount,
     lossCount: nfLossCount,
     matchesPlayed: nfMatchesPlayed,
   } = statsNoFriendly;
 
-  const displayedMatchesPlayed = includeFriendlyMatches
-    ? matchesPlayed
-    : nfMatchesPlayed;
-  const displayedNetAmount = includeFees
-    ? netAmount - totalSessionFees
-    : netAmount;
+  // Decide which stats to display
+  const displayedMatchesPlayed = includeFriendlyMatches ? matchesPlayed : nfMatchesPlayed;
+  const displayedNetAmount = includeFees ? netAmount - totalSessionFees : netAmount;
   const displayedWinCount = includeFriendly ? winCount : nfWinCount;
   const displayedLossCount = includeFriendly ? lossCount : nfLossCount;
 
   return (
-    <>
-      <div className="flex justify-center gap-x-2 mb-4">
+    <div className="relative flex flex-col w-full bg-transparent text-gray-900 px-4">
+      {/* Buttons for H2H / Partner Stats (like your landing's minimal style) */}
+      <div className="flex justify-center items-center gap-4 mb-6 mt-2">
         <Dialog>
           <DialogTrigger asChild>
             <Button variant="outline" className="px-4 py-2">
-              H2H Stats
+              Head-to-Head Stats
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl bg-white border border-slate-200 rounded-lg shadow-lg">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold">
+              <DialogTitle className="text-xl font-bold text-slate-700">
                 Head-to-Head Stats
               </DialogTitle>
             </DialogHeader>
             <div className="max-h-[500px] overflow-y-auto p-4">
-              {/* <HeadToHeadTable statsArray={h2hStatsArray} showLastX={5} /> */}
-              <HeadToHeadStats
-                transactions={transactions}
-                userName={userName}
-              />
+              <HeadToHeadStats transactions={transactions} userName={userName} />
             </div>
           </DialogContent>
         </Dialog>
+
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="outline" className="px-4 py-2">
-              <Users className="w-5 h-5" /> Partner Stats
+            <Button variant="outline" className="px-4 py-2 flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              Partner Stats
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-3xl w-full">
+          <DialogContent className="max-w-3xl w-full bg-white border border-slate-200 rounded-lg shadow-lg">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold">
+              <DialogTitle className="text-xl font-bold text-slate-700">
                 Partner Stats
               </DialogTitle>
             </DialogHeader>
-            <PartnerStats transactions={transactions} userName={userName} />
+            <div className="p-4">
+              <PartnerStats transactions={transactions} userName={userName} />
+            </div>
           </DialogContent>
         </Dialog>
       </div>
+
       {loading ? (
         <div className="flex justify-center items-center py-6">
           <Loader />
         </div>
       ) : (
         <>
-          <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 auto-rows-fr gap-6">
-            <StatsCard
-              icon={<Gamepad2 className="w-8 h-8 text-blue-600" />}
-              value={displayedMatchesPlayed}
-              label="Matches Played"
-              buttonLabel={
-                includeFriendlyMatches ? "Without Friendly" : "With Friendly"
-              }
-              onToggle={() => setIncludeFriendlyMatches((prev) => !prev)}
-            />
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 auto-rows-fr gap-6 p-4">
+              <StatsCard
+                icon={<Gamepad2 className="w-8 h-8 text-blue-600" />}
+                value={displayedMatchesPlayed}
+                label="Matches Played"
+                buttonLabel={
+                  includeFriendlyMatches ? "Without Friendly" : "With Friendly"
+                }
+                onToggle={() => setIncludeFriendlyMatches((prev) => !prev)}
+              />
 
-            <StatsCard
-              icon={
-                displayedNetAmount >= 0 ? (
-                  <TrendingUp className="w-8 h-8 text-green-500" />
-                ) : (
-                  <TrendingDown className="w-8 h-8 text-red-500" />
-                )
-              }
-              value={`$${displayedNetAmount.toFixed(2)}`}
-              label={`Net Amount ${includeFees ? "(Fees Included)" : ""}`}
-              valueClassName={
-                displayedNetAmount >= 0 ? "text-green-600" : "text-red-600"
-              }
-              buttonLabel={includeFees ? "Hide Fees" : "Include Fees"}
-              onToggle={() => setIncludeFees((prev) => !prev)}
-            />
+              <StatsCard
+                icon={
+                  displayedNetAmount >= 0 ? (
+                    <TrendingUp className="w-8 h-8 text-green-500" />
+                  ) : (
+                    <TrendingDown className="w-8 h-8 text-red-500" />
+                  )
+                }
+                value={`$${displayedNetAmount.toFixed(2)}`}
+                label={`Net Amount ${includeFees ? "(Fees Included)" : ""}`}
+                valueClassName={
+                  displayedNetAmount >= 0 ? "text-green-600" : "text-red-600"
+                }
+                buttonLabel={includeFees ? "Hide Fees" : "Include Fees"}
+                onToggle={() => setIncludeFees((prev) => !prev)}
+              />
 
-            <StatsCard
-              icon={<BarChart2 className="w-8 h-8 text-gray-600" />}
-              value={`${displayedWinCount}W / ${displayedLossCount}L`}
-              label="Win / Loss"
-              buttonLabel={
-                includeFriendly ? "Without Friendly" : "With Friendly"
-              }
-              onToggle={() => setIncludeFriendly((prev) => !prev)}
-            />
-          </CardContent>
+              <StatsCard
+                icon={<BarChart2 className="w-8 h-8 text-gray-600" />}
+                value={`${displayedWinCount}W / ${displayedLossCount}L`}
+                label="Win / Loss"
+                buttonLabel={includeFriendly ? "Without Friendly" : "With Friendly"}
+                onToggle={() => setIncludeFriendly((prev) => !prev)}
+              />
+            </CardContent>
 
-          {showGraphs && (<PerformanceCharts data={transactions} />)}
+          {showGraphs && <PerformanceCharts data={transactions} />}
         </>
       )}
-    </>
+    </div>
   );
 }

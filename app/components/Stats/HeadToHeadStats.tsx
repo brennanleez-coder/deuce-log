@@ -4,11 +4,9 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Medal } from "lucide-react";
 
-import { getHeadToHeadStats, getBestAndWorstPartners } from "@/lib/utils";
+import { getHeadToHeadStats } from "@/lib/utils";
 import HeadToHeadTable from "./HeadToHeadTable";
 import { Transaction } from "@prisma/client";
-
-import BestWorstPartnerCard from "@/app/components/Stats/BestWorstPartnerCard";
 import { useBadmintonSessionStats } from "@/hooks/useBadmintonSessionStats";
 interface HeadToHeadStatsProps {
   transactions: Transaction[];

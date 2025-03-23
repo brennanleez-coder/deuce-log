@@ -31,41 +31,41 @@ const NetAmountChart: React.FC<NetAmountChartProps> = ({ data }) => {
   const { name } = useUser();
   const isMobile = useMediaQuery({ query: "(max-width: 640px)" });
 
-  // Aggregate net amounts by date
+  // 1) Aggregate net amounts by date
   const dateMap: Record<string, number> = {};
 
   data.forEach((match) => {
-    const date = new Date(match.timestamp).toISOString().slice(0, 10);
+    const dateKey = new Date(match.timestamp).toISOString().slice(0, 10);
     const netAmount = match.receiver === name ? match.amount : -match.amount;
 
-    if (!dateMap[date]) {
-      dateMap[date] = 0;
+    if (!dateMap[dateKey]) {
+      dateMap[dateKey] = 0;
     }
-    dateMap[date] += netAmount;
+    dateMap[dateKey] += netAmount;
   });
 
-  // Sort by date, then accumulate net amounts over time
-  const aggregatedNetData = Object.entries(dateMap)
-    .map(([date, netAmount]) => ({ date, netAmount }))
+  // 2) Sort by date & accumulate net amounts over time
+  const sortedEntries = Object.entries(dateMap)
+    .map(([date, net]) => ({ date, net }))
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  let cumulativeNet = 0;
-  const cumulativeNetData = aggregatedNetData.map((entry) => {
-    cumulativeNet += entry.netAmount;
-    return { ...entry, cumulativeNet };
+  let cumulative = 0;
+  const cumulativeNetData = sortedEntries.map((entry) => {
+    cumulative += entry.net;
+    return { date: entry.date, cumulative };
   });
 
-  const finalNet =
-    cumulativeNetData.length > 0
-      ? cumulativeNetData[cumulativeNetData.length - 1].cumulativeNet
-      : 0;
+  // 3) Determine final net for color-coding
+  const finalNet = cumulativeNetData.length > 0 
+    ? cumulativeNetData[cumulativeNetData.length - 1].cumulative 
+    : 0;
   const strokeColor = finalNet < 0 ? "#f87171" : "#4f46e5";
 
-  // Handle empty data scenario
+  // 4) Handle empty data scenario
   if (cumulativeNetData.length === 0) {
     return (
-      <div className="w-full p-4 md:p-6">
-        <h2 className="text-lg md:text-xl font-semibold text-slate-600 text-center mb-4">
+      <div className="w-full p-4 md:p-6 bg-white/80 backdrop-blur-md border border-slate-100 shadow-sm rounded-lg">
+        <h2 className="text-lg md:text-xl font-semibold text-slate-700 text-center mb-4">
           Cumulative Net Amount
         </h2>
         <p className="text-center text-gray-500">No data available</p>
@@ -74,27 +74,31 @@ const NetAmountChart: React.FC<NetAmountChartProps> = ({ data }) => {
   }
 
   return (
-    <div className="w-full p-4 md:p-6 rounded-md">
-      <h2 className="text-lg md:text-xl font-semibold text-center mb-4">
+    <div className="w-full p-4 md:p-6 bg-white/80 backdrop-blur-md border border-slate-100 shadow-sm rounded-lg">
+      <h2 className="text-lg md:text-xl font-semibold text-slate-700 text-center mb-4">
         Cumulative Net Amount
       </h2>
-      <ResponsiveContainer width="100%" height={isMobile ? 130 : 200}>
+      <ResponsiveContainer width="100%" height={isMobile ? 140 : 220}>
         <LineChart data={cumulativeNetData}>
-          <CartesianGrid strokeDasharray="3 3" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
           <XAxis
             dataKey="date"
-            tickFormatter={(date) =>
-              new Date(date).toLocaleDateString("en-GB", {
+            tickFormatter={(dateStr) =>
+              new Date(dateStr).toLocaleDateString("en-GB", {
                 day: "2-digit",
                 month: "2-digit",
               })
             }
+            stroke="#475569"
           />
-          <YAxis />
-          <Tooltip />
+          <YAxis stroke="#475569" />
+          <Tooltip
+            contentStyle={{ backgroundColor: "#fff", border: "1px solid #e2e8f0" }}
+            labelStyle={{ color: "#475569" }}
+          />
           <Line
             type="monotone"
-            dataKey="cumulativeNet"
+            dataKey="cumulative"
             stroke={strokeColor}
             strokeWidth={2}
             name="Net Amount"
