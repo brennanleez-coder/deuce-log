@@ -8,7 +8,7 @@ function computeStreakStats(sessions: any[], userName: string) {
   const allTransactions = sessions.flatMap((s) => s.transactions || []);
   const userMatches = allTransactions
     .map((tx) => ({
-      result: tx.payer === userName ? "win" : "loss",
+      result: tx.team1.includes(tx.payer) ? "loss" : "win",
       timestamp: new Date(tx.timestamp),
     }))
     .filter((m) => m.result !== "none")
