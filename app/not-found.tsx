@@ -17,24 +17,22 @@ export default function NotFoundPage() {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          className="text-6xl md:text-7xl font-extrabold tracking-tight mb-5 text-blue-600"
-        >
+          className="pointer-events-none whitespace-pre-wrap bg-gradient-to-b from-black to-gray-300/80 bg-clip-text text-center text-6xl md:text-8xl font-semibold leading-none text-transparent dark:from-white dark:to-slate-900/10"        >
           404
         </motion.h1>
 
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+        <h2 className="text-2xl md:text-3xl font-bold text-slate-700 mb-4">
           Page Not Found
         </h2>
 
-        <p className="text-base md:text-lg text-gray-700 max-w-2xl mx-auto mb-8">
+        <p className="text-base md:text-lg text-slate-600 max-w-2xl mx-auto mb-8">
           Oops! The page you're looking for doesn't exist or has been moved.
         </p>
 
         <Link href="/">
           <Button
             size="lg"
-            className="bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-200"
-          >
+            variant="outline">
             Return Home
           </Button>
         </Link>
