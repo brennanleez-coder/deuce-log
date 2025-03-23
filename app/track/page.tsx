@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { useBadmintonSessions } from "@/hooks/useBadmintonSessions";
 import { useUser } from "@/hooks/useUser";
 import { Card, CardTitle, CardContent, CardHeader } from "@/components/ui/card";
-import StreakCard from "../components/Stats/StreakCard";
+import CurrentPerformance from "../components/Stats/CurrentPerformance";
 
 function Home() {
   const { name } = useUser();
@@ -34,7 +34,7 @@ function Home() {
         <div className="flex flex-col md:flex-row gap-6">
           <div className="flex flex-col flex-1 gap-y-6">
             {/* Current Performance Card */}
-            <StreakCard name={name} sessions={sessions} />
+            <CurrentPerformance name={name} sessions={sessions} />
 
             {/* Live Matches Card (future feature) */}
             <Card className="flex flex-col gap-y-4">

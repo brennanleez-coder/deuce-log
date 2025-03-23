@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Card, CardTitle, CardContent, CardHeader } from "@/components/ui/card";
 import { isWithinInterval, startOfWeek, endOfWeek, parseISO } from "date-fns";
 
 function computeStreakStats(sessions: any[], userName: string) {
@@ -60,19 +59,6 @@ function computeStreakStats(sessions: any[], userName: string) {
   };
 }
 
-function countSessionsThisWeek(sessions: any[]): number {
-  const now = new Date();
-  const start = startOfWeek(now, { weekStartsOn: 1 }); // Monday
-  const end = endOfWeek(now, { weekStartsOn: 1 }); // Sunday
-
-  return sessions.filter((s) => {
-    const createdAt =
-      typeof s.createdAt === "string"
-        ? parseISO(s.createdAt)
-        : new Date(s.createdAt);
-    return isWithinInterval(createdAt, { start, end });
-  }).length;
-}
 
 interface StreakCardProps {
   name: string;
@@ -86,79 +72,60 @@ const StreakCard: React.FC<StreakCardProps> = ({ name, sessions }) => {
     longestWinStreak: 0,
     longestLossStreak: 0,
   });
-  const [weeklySessions, setWeeklySessions] = useState(0);
 
   useEffect(() => {
     if (!name || !sessions) return;
     setStreak(computeStreakStats(sessions, name));
-    setWeeklySessions(countSessionsThisWeek(sessions));
   }, [name, sessions]);
 
   return (
-    <Card className="flex flex-col gap-y-4">
-      <CardHeader className="bg-gray-50 rounded-t-xl px-6 py-4 flex items-center justify-between">
-        <CardTitle className="flex w-full items-center gap-3 justify-between text-xl font-bold text-slate-600">
-          <h2 className="text-xl font-bold text-slate-600 text-center">
-            🏋️‍♂️ Current Performance
-          </h2>
-          {/* Weekly Sessions */}
-          <div className="col-span-full text-sm text-center text-slate-500 mt-2">
-            <p>
-              📅 Sessions played this week (Mon–Sun):{" "}
-              <span className="font-semibold text-slate-700">
-                {weeklySessions}
-              </span>
+    <>
+      {streak.currentStreakType === "none" ? (
+        <div className="text-slate-500">No matches found.</div>
+      ) : (
+        <div className="flex flex-col items-center gap-4">
+          {/* Streak Icon + Label */}
+          <div className="flex flex-col items-center">
+            <span className="text-3xl">
+              {streak.currentStreakType === "win" ? "🔥" : "🥶"}
+            </span>
+            <p className="text-sm mt-1 text-gray-500">
+              {streak.currentStreakType === "win"
+                ? "Win Streak"
+                : "Loss Streak"}
+            </p>
+            <p
+              className={`text-4xl font-bold ${
+                streak.currentStreakType === "win"
+                  ? "text-green-600"
+                  : "text-red-500"
+              }`}
+            >
+              {streak.currentStreakCount}
             </p>
           </div>
-        </CardTitle>
-      </CardHeader>
 
-      <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-center text-slate-600">
-        {streak.currentStreakType === "none" ? (
-          <div className="col-span-full text-slate-500">
-            No matches found.
-          </div>
-        ) : (
-          <>
-            <div className="flex flex-col items-center border rounded-lg p-4 shadow-sm bg-slate-50">
-              <span className="text-lg">
-                {streak.currentStreakType === "win" ? "🔥" : "🥶"}
-              </span>
-              <p className="font-medium">
-                {streak.currentStreakType === "win"
-                  ? "Win Streak"
-                  : "Loss Streak"}
-              </p>
-              <p
-                className={`text-lg font-bold ${
-                  streak.currentStreakType === "win"
-                    ? "text-green-600"
-                    : "text-red-500"
-                }`}
-              >
-                {streak.currentStreakCount}
-              </p>
-            </div>
+          {/* Divider */}
+          <div className="w-full h-px bg-gray-200 my-2" />
 
-            <div className="flex flex-col items-center border rounded-lg p-4 shadow-sm bg-slate-50">
-              <span className="text-lg">🏆</span>
-              <p className="font-medium">Longest Win Streak</p>
-              <p className="text-lg font-bold text-green-600">
+          {/* Longest Win / Loss */}
+          <div className="flex justify-center gap-8 text-xs">
+            <div className="flex flex-col items-center">
+              <span className="text-gray-500">🏆 Longest Win</span>
+              <span className="text-green-600 font-semibold">
                 {streak.longestWinStreak}
-              </p>
+              </span>
             </div>
-
-            <div className="flex flex-col items-center border rounded-lg p-4 shadow-sm bg-slate-50">
-              <span className="text-lg">💔</span>
-              <p className="font-medium">Longest Loss Streak</p>
-              <p className="text-lg font-bold text-red-500">
+            <div className="flex flex-col items-center">
+              <span className="text-gray-500">💔 Longest Loss</span>
+              <span className="text-red-500 font-semibold">
                 {streak.longestLossStreak}
-              </p>
+              </span>
             </div>
-          </>
-        )}
-      </CardContent>
-    </Card>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
