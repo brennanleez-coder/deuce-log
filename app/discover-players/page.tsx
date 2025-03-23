@@ -13,7 +13,9 @@ import { toast } from "sonner";
 
 const fetchUsers = async () => {
   const res = await fetch("/api/users");
-  if (!res.ok) toast.error("Failed to fetch users.");
+  if (!res.ok) {
+    toast.error("Failed to fetch users.");
+  }
   return res.json();
 };
 
@@ -33,39 +35,54 @@ export default function DiscoverPlayers() {
   const router = useRouter();
   const { userId } = useUser();
 
-  const { data: users, isLoading, isError } = useQuery({
+  const {
+    data: users,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["users"],
     queryFn: fetchUsers,
   });
-  console.log(users);
 
   return (
     <motion.main
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="min-h-screen bg-white font-sans px-4 md:px-10 pt-16"
+      className="min-h-screen font-sans px-4 md:px-10 pt-16 text-slate-700 bg-white"
     >
-      <div className="flex flex-col gap-y-6 max-w-5xl mx-auto">
+      <div className="max-w-6xl mx-auto flex flex-col gap-y-6">
+        {/* Header */}
         <motion.header
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
           className="relative flex items-center justify-center mb-6"
         >
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          {/* Optional Back Button on the left */}
+          <Button
+            variant="ghost"
+            className="absolute left-0 flex items-center gap-2"
+            onClick={() => router.push("/track")}
+          >
+            <ArrowLeft className="w-5 h-5" />
+            Back
+          </Button>
+
+          <h1 className="text-2xl font-bold flex items-center gap-2 text-slate-800">
             <Users className="w-6 h-6 text-blue-500" />
             Discover Players
           </h1>
         </motion.header>
 
+        {/* Loading / Error States */}
         {isLoading && <Loader fullScreen />}
-
         {isError && (
           <p className="text-red-500 text-center">Failed to load players.</p>
         )}
 
-        {!isLoading && !isError && users.length > 0 ? (
+        {/* List of Users */}
+        {!isLoading && !isError && users?.length > 0 ? (
           <motion.div
             initial="hidden"
             animate="visible"
@@ -88,9 +105,9 @@ export default function DiscoverPlayers() {
                     hidden: { opacity: 0, y: 10 },
                     visible: { opacity: 1, y: 0 },
                   }}
-                  whileHover={{ scale: 1.03 }}
+                  whileHover={{ scale: 1.02 }}
                   transition={{ duration: 0.2 }}
-                  className="border border-gray-200 p-5 rounded-xl shadow-sm hover:shadow-md transition cursor-pointer flex flex-col items-center bg-gray-50 hover:bg-gray-100"
+                  className="bg-white/80 backdrop-blur-md border border-slate-100 shadow-sm rounded-xl p-5 flex flex-col items-center hover:shadow-md hover:bg-white transition cursor-pointer"
                 >
                   <Avatar className="h-16 w-16">
                     {user.image ? (
@@ -101,20 +118,26 @@ export default function DiscoverPlayers() {
                       </AvatarFallback>
                     )}
                   </Avatar>
-                  <h2 className="mt-3 font-semibold text-lg text-gray-900 text-center">
+
+                  <h2 className="mt-3 font-medium text-lg text-slate-800 text-center truncate">
                     {user.name || "Unknown"}
                   </h2>
-                  {/* Display the number of matches and sessions */}
-                  <div className="mt-2 flex flex-col items-center gap-1 text-sm text-gray-600">
-                    <span>
-                      Sessions: {user?.badmintonSessions}
+
+                  {/* Sessions & Matches */}
+                  <div className="mt-2 flex flex-col items-center gap-1 text-xs text-slate-500">
+                    <span className="whitespace-nowrap">
+                      Sessions: {user?.badmintonSessions || 0}
                     </span>
-                    <span>
-                      Matches: {user?.transactions}
+                    <span className="whitespace-nowrap">
+                      Matches: {user?.transactions || 0}
                     </span>
                   </div>
-                  <div className="mt-2 flex gap-2">
-                    <Badge className={badge.className}>{badge.text}</Badge>
+
+                  {/* Badge */}
+                  <div className="mt-3">
+                    <Badge className={`${badge.className} px-2 py-1`}>
+                      {badge.text}
+                    </Badge>
                   </div>
                 </motion.div>
               );
@@ -123,7 +146,9 @@ export default function DiscoverPlayers() {
         ) : (
           !isLoading &&
           !isError && (
-            <p className="text-center text-gray-500">No players found.</p>
+            <p className="text-center text-slate-500">
+              No players found.
+            </p>
           )
         )}
       </div>
