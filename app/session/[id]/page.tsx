@@ -108,21 +108,29 @@ export default function SessionPage({ params }: { params: { id: string } }) {
       )}
 
       <div className="flex flex-col gap-y-4 max-w-5xl mx-auto">
-        <header className="relative flex items-center justify-center">
-          {/* Left-aligned back button */}
-          <Button
-            variant="ghost"
-            onClick={() => router.push("/track")}
-            className="absolute left-0 flex items-center gap-2"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="text-sm">Back</span>
-          </Button>
+      <header className="relative w-full bg-white/80 backdrop-blur-md border-b border-slate-100 py-3 px-4 flex items-center">
+      {/* Left-aligned back button */}
+      <Button
+        variant="ghost"
+        onClick={() => router.push("/track")}
+        className="absolute left-4 flex items-center gap-1 text-slate-600"
+      >
+        <ArrowLeft className="w-5 h-5" />
+        <span className="text-sm">Back</span>
+      </Button>
 
-          {/* Centered session name */}
-          <h1 className="text-2xl font-bold text-gray-900">{session?.name}</h1>
-        </header>
-
+      {/* Centered name & fee */}
+      <div className="flex flex-col items-center mx-auto">
+        <h1 className="text-lg md:text-xl font-semibold text-slate-800">
+          {session?.name || "Session"}
+        </h1>
+        {session?.courtFee != null && (
+          <p className="text-sm text-slate-500">
+            Court Fee: ${session.courtFee}
+          </p>
+        )}
+      </div>
+    </header>
 
         {/* Session Metrics Card */}
         <div className="flex items-center gap-4">
