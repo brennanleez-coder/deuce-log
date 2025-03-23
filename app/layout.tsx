@@ -3,10 +3,13 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react";
 import ClientToaster from "@/app/components/ClientToaster";
-import RootClientWrapper from "@/app/components/RootClientWrapper"; // We'll create this next
+import RootClientWrapper from "@/app/components/RootClientWrapper";
+
+// Determine if we are in local/development
+const isLocal = process.env.NODE_ENV === "development";
 
 export const metadata: Metadata = {
-  title: "DeuceLog",
+  title: isLocal ? "DeuceLog (Local)" : "DeuceLog",
   description: "A simple log",
 };
 
@@ -29,7 +32,6 @@ export default function RootLayout({
         />
       </head>
       <body>
-        {/* Use a client wrapper around your app */}
         <RootClientWrapper>
           {children}
           <ClientToaster />
