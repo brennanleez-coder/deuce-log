@@ -45,6 +45,7 @@ export default function SessionListCards({
   handleDeleteSession,
   formatDate,
 }: SessionListCardsProps) {
+  console.log("sessions", sessions);
   const { name, userId } = useUser();
   const sessionStats = useAllBadmintonSessionStats(sessions.flatMap(s => s.transactions), name);
   const [loading, setLoading] = useState(false);

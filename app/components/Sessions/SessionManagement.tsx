@@ -22,7 +22,7 @@ import SessionForm from "@/app/components/Sessions/SessionForm";
 import SessionListTable from "@/app/components/Sessions/SessionListTable";
 import SessionListCards from "@/app/components/Sessions/SessionListCards";
 
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 6;
 type ViewMode = "table" | "cards";
 
 export default function SessionManagement({

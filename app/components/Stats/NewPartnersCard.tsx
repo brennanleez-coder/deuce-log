@@ -7,7 +7,7 @@ import { subDays, isAfter, parseISO } from "date-fns";
 import { Transaction } from "@prisma/client";
 
 export function computeCommunityStats(
-  transactions: any[],
+  transactions: Transaction[],
   userName: string
 ): {
   uniquePartnersThisMonth: number;
@@ -25,9 +25,14 @@ export function computeCommunityStats(
   const user = userName.trim().toLowerCase();
 
   for (const tx of transactions) {
+    if (!tx.team1 || !tx.team2) {
+      console.error("Transaction missing team data", tx);
+      continue;
+    }
     // If transaction is older than 30 days, skip
-    const txDate = typeof tx.createdAt === "string" ? parseISO(tx.timestamp) : tx.timestamp;
+    const txDate = typeof tx?.timestamp === "string" ? parseISO(tx?.timestamp) : tx?.timestamp;
     if (!isAfter(txDate, monthStart)) {
+        console.log("Transaction is older than 30 days, skipping", tx);
       continue;
     }
 
@@ -77,6 +82,8 @@ const NewPartnersCard: React.FC<NewPartnersCardProps> = ({
     transactions,
     userName,
   }) => {
+    console.log(transactions)
+    if (!transactions || transactions.length === 0 || !userName) return null;
     const [communityStats, setCommunityStats] = useState({
       uniquePartnersThisMonth: 0,
       uniqueOpponentsThisMonth: 0,
@@ -99,7 +106,7 @@ const NewPartnersCard: React.FC<NewPartnersCardProps> = ({
   
     // If everything is zero => no new partners or opponents
     if (!uniquePartnersThisMonth && !uniqueOpponentsThisMonth) {
-      return <div className="text-slate-500">No new partners or opponents found.</div>;
+      return <div className="text-slate-500 flex justify-center items-center">No new partners or opponents found.</div>;
     }
   
     return (

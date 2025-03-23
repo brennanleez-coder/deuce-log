@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Card, CardTitle, CardContent, CardHeader } from "@/components/ui/card";
 import { isWithinInterval, startOfWeek, endOfWeek, parseISO } from "date-fns";
 import StreakCard from "./StreakCard";
@@ -27,18 +27,6 @@ interface CurrentPerformanceProps {
 }
 
 const CurrentPerformance: React.FC<CurrentPerformanceProps> = ({ name, sessions }) => {
-  const [streak, setStreak] = useState({
-    currentStreakCount: 0,
-    currentStreakType: "none",
-    longestWinStreak: 0,
-    longestLossStreak: 0,
-  });
-  const [weeklySessions, setWeeklySessions] = useState(0);
-
-  useEffect(() => {
-    if (!name || !sessions) return;
-    setWeeklySessions(countSessionsThisWeek(sessions));
-  }, [name, sessions]);
 
   return (
     <Card className="flex flex-col gap-y-4">
@@ -62,7 +50,7 @@ const CurrentPerformance: React.FC<CurrentPerformanceProps> = ({ name, sessions 
       <CardContent className="text-sm text-center text-slate-600 grid grid-cols-1 md:grid-cols-3 gap-y-2">
         <StreakCard name={name} sessions={sessions} />
         <ConsistencyCard sessions={sessions} />
-        <NewPartnersCard transactions={sessions.flatMap(s=>s.transactions)} userName={name} />
+        <NewPartnersCard transactions={sessions.flatMap((s) => Array.isArray(s.transactions) ? s.transactions : [])} userName={name} />
       </CardContent>
     </Card>
   );
