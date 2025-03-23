@@ -126,7 +126,7 @@ const NewPartnersCard: React.FC<NewPartnersCardProps> = ({
         {/* BOTTOM (2 columns): Opponents & Total */}
         <div className="flex justify-center gap-8 text-xs">
           <div className="flex flex-col items-center">
-            <span className="text-gray-500">Opponents</span>
+            <span className="text-gray-500">Unique Opponents</span>
             <span className="text-lg font-bold text-gray-700">
               {uniqueOpponentsThisMonth}
             </span>

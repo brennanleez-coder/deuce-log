@@ -101,7 +101,7 @@ export default function SessionManagement({
     s.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
   );
 
-  const paginatedSessions = filteredSessions.slice(0, currentPage * ITEMS_PER_PAGE);
+  const paginatedSessions = filteredSessions // filteredSessions.slice(0, currentPage * ITEMS_PER_PAGE);
 
   // Toggle asc/desc
   const toggleSortOrder = () =>
