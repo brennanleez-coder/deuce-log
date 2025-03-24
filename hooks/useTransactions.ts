@@ -25,7 +25,7 @@ export const useTransactions = (selectedSession: string | null = null) => {
   const { userId } = useUser();
   const queryClient = useQueryClient();
 
-  // 1) Fetch session transactions (if `selectedSession` is provided)
+  // 1) Fetch session transactions
   const {
     data: transactions = [],
     isLoading,
@@ -39,29 +39,24 @@ export const useTransactions = (selectedSession: string | null = null) => {
       });
       return data;
     },
-    enabled: Boolean(selectedSession), // only fetch if we have a session
+    enabled: Boolean(selectedSession),
     initialData: [],
   });
 
   // 2) Add Transaction Mutation
   const addTransaction = useMutation<Transaction, Error, Transaction>({
     mutationFn: async (newTx: Transaction) => {
-      // POST to create a new transaction
       const { data } = await axios.post("/api/transactions", newTx);
       return data;
     },
-    // Optional: optimistic update
     onMutate: async (newTx) => {
-      // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ["transactions", selectedSession] });
 
-      // Snapshot the previous value
       const previousTransactions = queryClient.getQueryData<Transaction[]>([
         "transactions",
         selectedSession,
       ]);
 
-      // Optimistically update
       if (previousTransactions) {
         queryClient.setQueryData<Transaction[]>(
           ["transactions", selectedSession],
@@ -72,7 +67,6 @@ export const useTransactions = (selectedSession: string | null = null) => {
       return { previousTransactions };
     },
     onError: (error, _newTx, context) => {
-      // Roll back on error
       if (context?.previousTransactions) {
         queryClient.setQueryData(
           ["transactions", selectedSession],
@@ -82,7 +76,6 @@ export const useTransactions = (selectedSession: string | null = null) => {
       console.error("Error creating transaction:", error);
     },
     onSettled: () => {
-      // Always refetch after success or error
       queryClient.invalidateQueries({ queryKey: ["transactions", selectedSession] });
     },
   });
@@ -94,7 +87,6 @@ export const useTransactions = (selectedSession: string | null = null) => {
       return data;
     },
     onSuccess: () => {
-      // Invalidate to refetch updated data
       queryClient.invalidateQueries({ queryKey: ["transactions", selectedSession] });
     },
     onError: (error) => {
@@ -102,24 +94,70 @@ export const useTransactions = (selectedSession: string | null = null) => {
     },
   });
 
-  // 4) (Optional) Fetch Transactions by user ID (manual approach)
-  // If you want a query-based approach, create a separate useQuery. This is a fallback example.
-  const fetchTransactionsByUserId = useCallback(async (uid?: string) => {
-    const effectiveUserId = uid || userId;
-    if (!effectiveUserId) {
-      console.error("User ID is required to fetch transactions by user");
-      return [];
-    }
-    try {
-      const { data } = await axios.get("/api/transactions", {
-        params: { userId: effectiveUserId },
-      });
-      return data;
-    } catch (error) {
-      console.error("Error fetching transactions by user:", error);
-      return [];
-    }
-  }, [userId, queryClient]);
+  // 4) Delete Transaction Mutation
+  const deleteTransaction = useMutation<void, Error, string>({
+    // Our "variables" here is just the transactionId we want to delete
+    mutationFn: async (transactionId: string) => {
+      // Calls the DELETE endpoint with `id` as a query param
+      await axios.delete(`/api/transactions?id=${transactionId}`);
+    },
+    onMutate: async (transactionId: string) => {
+      // Cancel any outgoing fetches to avoid overwriting our optimistic update
+      await queryClient.cancelQueries({ queryKey: ["transactions", selectedSession] });
+
+      // Snapshot previous transactions
+      const previousTransactions = queryClient.getQueryData<Transaction[]>([
+        "transactions",
+        selectedSession,
+      ]);
+
+      // Optimistically remove the transaction from the list
+      if (previousTransactions) {
+        queryClient.setQueryData<Transaction[]>(
+          ["transactions", selectedSession],
+          previousTransactions.filter((tx) => tx.id !== transactionId)
+        );
+      }
+
+      // Return the snapshot so we can roll back in case of error
+      return { previousTransactions };
+    },
+    onError: (error, transactionId, context) => {
+      // Roll back to previous state if the mutation fails
+      if (context?.previousTransactions) {
+        queryClient.setQueryData(
+          ["transactions", selectedSession],
+          context.previousTransactions
+        );
+      }
+      console.error("Error deleting transaction:", error);
+    },
+    onSettled: () => {
+      // Refetch after success or error to ensure data is in sync
+      queryClient.invalidateQueries({ queryKey: ["transactions", selectedSession] });
+    },
+  });
+
+  // 5) (Optional) Fetch Transactions by user ID (manual approach)
+  const fetchTransactionsByUserId = useCallback(
+    async (uid?: string) => {
+      const effectiveUserId = uid || userId;
+      if (!effectiveUserId) {
+        console.error("User ID is required to fetch transactions by user");
+        return [];
+      }
+      try {
+        const { data } = await axios.get("/api/transactions", {
+          params: { userId: effectiveUserId },
+        });
+        return data;
+      } catch (error) {
+        console.error("Error fetching transactions by user:", error);
+        return [];
+      }
+    },
+    [userId, queryClient]
+  );
 
   return {
     transactions,
@@ -127,8 +165,8 @@ export const useTransactions = (selectedSession: string | null = null) => {
     isError,
 
     addTransaction: addTransaction.mutate,
-
     editTransaction: editTransaction.mutate,
+    deleteTransaction: deleteTransaction.mutate,
 
     fetchTransactionsByUserId, // optional
   };

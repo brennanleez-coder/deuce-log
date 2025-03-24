@@ -48,9 +48,9 @@ export default function TransactionsList({
   lossCount,
   totalWinsAmount,
   totalLossesAmount,
-  userId = "defaultUserId", // Placeholder value, pass real value from parent/context
-  name = "Default Name", // Placeholder value
-  sessionId = "defaultSessionId", // Placeholder value
+  userId = "defaultUserId",
+  name = "Default Name",
+  sessionId = "defaultSessionId",
   sharing = true,
 }: TransactionsListProps) {
   // State for Dialog open/close
@@ -65,7 +65,6 @@ export default function TransactionsList({
   const [friendlyFilter, setFriendlyFilter] = useState<"all" | "friendly">(
     "all"
   );
-  const [layout, setLayout] = useState<"columns" | "swipe">("columns"); // 🆕 Layout toggle
 
   const friendlyOption = friendlyFilter === "friendly" ? true : undefined;
 
