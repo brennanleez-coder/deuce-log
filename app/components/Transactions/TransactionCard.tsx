@@ -102,7 +102,6 @@ export default function TransactionCard({ transaction, sharing = false }: Transa
   // Handle delete
   const handleDelete = async () => {
     try {
-      
       await deleteTransaction(transaction.id);
       toast.success("Transaction deleted successfully!");
     } catch (error) {

@@ -1,6 +1,11 @@
 "use client";
 
-import { Trophy, XCircle, CheckCircle, Gamepad2 } from "lucide-react";
+import {
+  Trophy,
+  XCircle,
+  CheckCircle,
+  Gamepad2,
+} from "lucide-react";
 
 interface SessionMetricsProps {
   matchesPlayed: number;
@@ -16,36 +21,51 @@ export default function SessionMetrics({
   netAmount,
 }: SessionMetricsProps) {
   return (
-    <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-        {/* Matches Played */}
-        <MetricCard icon={<Gamepad2 className="w-6 h-6 text-blue-500" />} label="Matches" value={matchesPlayed} />
-
-        {/* Wins */}
-        <MetricCard icon={<CheckCircle className="w-6 h-6 text-green-500" />} label="Wins" value={winCount} textColor="text-green-700" />
-
-        {/* Losses */}
-        <MetricCard icon={<XCircle className="w-6 h-6 text-red-500" />} label="Losses" value={lossCount} textColor="text-red-700" />
-
-        {/* Net Amount */}
+    <div className="bg-white/90 backdrop-blur-md border border-slate-200 rounded-xl shadow-sm px-4 py-6 w-full">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+        <MetricCard
+          icon={<Gamepad2 className="w-5 h-5 text-primary" />}
+          label="Matches"
+          value={matchesPlayed}
+        />
+        <MetricCard
+          icon={<CheckCircle className="w-5 h-5 text-success" />}
+          label="Wins"
+          value={winCount}
+          textColor="text-success"
+        />
+        <MetricCard
+          icon={<XCircle className="w-5 h-5 text-destructive" />}
+          label="Losses"
+          value={lossCount}
+          textColor="text-destructive"
+        />
         <MetricCard
           icon={
             <Trophy
-              className={`w-6 h-6 ${
-                netAmount > 0 ? "text-green-500" : netAmount < 0 ? "text-red-500" : "text-gray-500"
+              className={`w-5 h-5 ${
+                netAmount > 0
+                  ? "text-success"
+                  : netAmount < 0
+                  ? "text-destructive"
+                  : "text-muted-foreground"
               }`}
             />
           }
           label="Net"
           value={
             netAmount > 0
-              ? `+ $${netAmount.toFixed(2)}`
+              ? `+$${netAmount.toFixed(2)}`
               : netAmount < 0
-              ? `- $${Math.abs(netAmount).toFixed(2)}`
+              ? `-$${Math.abs(netAmount).toFixed(2)}`
               : `$${netAmount.toFixed(2)}`
           }
           textColor={
-            netAmount > 0 ? "text-green-700" : netAmount < 0 ? "text-red-700" : "text-gray-800"
+            netAmount > 0
+              ? "text-success"
+              : netAmount < 0
+              ? "text-destructive"
+              : "text-muted-foreground"
           }
         />
       </div>
@@ -57,7 +77,7 @@ function MetricCard({
   icon,
   label,
   value,
-  textColor = "text-gray-900",
+  textColor = "text-foreground",
 }: {
   icon: React.ReactNode;
   label: string;
@@ -65,10 +85,10 @@ function MetricCard({
   textColor?: string;
 }) {
   return (
-    <div className="flex flex-col items-center gap-1">
-      {icon}
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className={`text-lg font-semibold ${textColor}`}>{value}</p>
+    <div className="flex flex-col items-center gap-2 text-center">
+      <div className="bg-muted rounded-full p-2">{icon}</div>
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className={`text-lg font-semibold ${textColor}`}>{value}</div>
     </div>
   );
 }
