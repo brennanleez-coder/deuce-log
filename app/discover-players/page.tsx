@@ -11,12 +11,14 @@ import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
+// 1) Fetch all users
 const fetchUsers = async () => {
   const res = await fetch("/api/users");
   if (!res.ok) throw new Error("Failed to fetch users.");
   return res.json();
 };
 
+// 2) Create friend request
 const addFriend = async ({
   userId,
   friendId,
@@ -33,7 +35,7 @@ const addFriend = async ({
   return res.json();
 };
 
-// Accept or reject friend
+// 3) Accept/Reject friend request
 const updateFriendRequest = async ({
   userId,
   friendId,
@@ -52,6 +54,7 @@ const updateFriendRequest = async ({
   return res.json();
 };
 
+// Helper for user badges
 const getBadgeForUser = (index: number, email: string) => {
   if (email === "brennanlee95@gmail.com") {
     return { text: "🏆 First Member", className: "bg-yellow-500 text-white" };
@@ -69,41 +72,157 @@ export default function DiscoverPlayers() {
   const { userId } = useUser();
   const queryClient = useQueryClient();
 
+  // 4) Query user list, poll every 5s for pseudo-realtime
   const { data: users, isLoading, isError } = useQuery({
     queryKey: ["users"],
     queryFn: fetchUsers,
-    refetchInterval: 5000,
+    refetchInterval: 5000, // poll
   });
 
-  const { mutate: addFriendMutate, isPending: isAdding } = useMutation({
+  // ----------- MUTATIONS WITH OPTIMISTIC UPDATES ----------- //
+
+  // A) Add friend
+  const {
+    mutate: addFriendMutate,
+    isPending: isAdding,
+  } = useMutation({
     mutationFn: addFriend,
+    // 1) onMutate => do optimistic update
+    onMutate: async (vars) => {
+      await queryClient.cancelQueries({ queryKey: ["users"] });
+
+      const prevUsers = queryClient.getQueryData<any[]>(["users"]);
+      if (!prevUsers) return { prevUsers: [] };
+
+      // Clone
+      const newUsers = structuredClone(prevUsers);
+
+      // Find friend in the list
+      const friendIndex = newUsers.findIndex((u: any) => u.id === vars.friendId);
+      if (friendIndex !== -1) {
+        const friend = newUsers[friendIndex];
+        // "requestSent" means the current user => friend => friend is the receiver
+        // So, we push a new "incomingRequests" with senderId = userId
+        friend.incomingRequests = [
+          ...(friend.incomingRequests || []),
+          { senderId: vars.userId, status: "PENDING" },
+        ];
+        newUsers[friendIndex] = friend;
+      }
+
+      queryClient.setQueryData(["users"], newUsers);
+      return { prevUsers };
+    },
+    // 2) onError => rollback
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prevUsers) {
+        queryClient.setQueryData(["users"], ctx.prevUsers);
+      }
+      toast.error("Failed to send friend request");
+    },
+    // 3) onSuccess => toast success
     onSuccess: () => {
       toast.success("Friend request sent!");
+    },
+    // 4) onSettled => re-fetch
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
-    onError: () => toast.error("Failed to send friend request"),
   });
 
-  const { mutate: acceptFriendMutate, isPending: isAccepting } = useMutation({
+  // B) Accept friend
+  const {
+    mutate: acceptFriendMutate,
+    isPending: isAccepting,
+  } = useMutation({
     mutationFn: (vars: { userId: string; friendId: string }) =>
       updateFriendRequest({ ...vars, action: "ACCEPTED" }),
+    onMutate: async (vars) => {
+      await queryClient.cancelQueries({ queryKey: ["users"] });
+      const prevUsers = queryClient.getQueryData<any[]>(["users"]);
+      if (!prevUsers) return { prevUsers: [] };
+
+      const newUsers = structuredClone(prevUsers);
+
+      // The friend is the sender => find them in newUsers
+      const senderIndex = newUsers.findIndex((u: any) => u.id === vars.friendId);
+      if (senderIndex !== -1) {
+        const senderUser = newUsers[senderIndex];
+        // The request is in senderUser.friendRequests with { receiverId: userId, status: "PENDING" }
+        if (senderUser.friendRequests) {
+          const request = senderUser.friendRequests.find(
+            (r: any) => r.receiverId === vars.userId && r.status === "PENDING"
+          );
+          if (request) {
+            request.status = "ACCEPTED";
+          }
+        }
+      }
+      // Also can mark as "accepted" for the current user (optional)
+
+      queryClient.setQueryData(["users"], newUsers);
+      return { prevUsers };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prevUsers) {
+        queryClient.setQueryData(["users"], ctx.prevUsers);
+      }
+      toast.error("Failed to accept request");
+    },
     onSuccess: () => {
       toast.success("Friend request accepted!");
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
-    onError: () => toast.error("Failed to accept request"),
   });
 
-  const { mutate: rejectFriendMutate, isPending: isRejecting } = useMutation({
+  // C) Reject friend
+  const {
+    mutate: rejectFriendMutate,
+    isPending: isRejecting,
+  } = useMutation({
     mutationFn: (vars: { userId: string; friendId: string }) =>
       updateFriendRequest({ ...vars, action: "DECLINED" }),
+    onMutate: async (vars) => {
+      await queryClient.cancelQueries({ queryKey: ["users"] });
+      const prevUsers = queryClient.getQueryData<any[]>(["users"]);
+      if (!prevUsers) return { prevUsers: [] };
+
+      const newUsers = structuredClone(prevUsers);
+
+      // The friend is the sender => find them
+      const senderIndex = newUsers.findIndex((u: any) => u.id === vars.friendId);
+      if (senderIndex !== -1) {
+        const senderUser = newUsers[senderIndex];
+        // The request is in friendRequests
+        if (senderUser.friendRequests) {
+          const reqIndex = senderUser.friendRequests.findIndex(
+            (r: any) => r.receiverId === vars.userId && r.status === "PENDING"
+          );
+          if (reqIndex !== -1) {
+            senderUser.friendRequests[reqIndex].status = "DECLINED";
+          }
+        }
+      }
+      queryClient.setQueryData(["users"], newUsers);
+      return { prevUsers };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prevUsers) {
+        queryClient.setQueryData(["users"], ctx.prevUsers);
+      }
+      toast.error("Failed to reject request");
+    },
     onSuccess: () => {
       toast.success("Friend request rejected.");
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
-    onError: () => toast.error("Failed to reject request"),
   });
 
+  // Handlers
   function handleAddFriend(friendId: string) {
     if (!userId || userId === friendId) return;
     addFriendMutate({ userId, friendId });
@@ -167,14 +286,13 @@ export default function DiscoverPlayers() {
               const badge = getBadgeForUser(index + 1, user.email);
               const isSelf = userId === user.id;
 
+              // "Friends" if accepted from either direction
               const isFriends =
                 user.incomingRequests?.some(
-                  (req: any) =>
-                    req.senderId === userId && req.status === "ACCEPTED"
+                  (req: any) => req.senderId === userId && req.status === "ACCEPTED"
                 ) ||
                 user.friendRequests?.some(
-                  (req: any) =>
-                    req.receiverId === userId && req.status === "ACCEPTED"
+                  (req: any) => req.receiverId === userId && req.status === "ACCEPTED"
                 );
 
               const requestSent = user.incomingRequests?.some(
@@ -200,7 +318,9 @@ export default function DiscoverPlayers() {
                     {user.image ? (
                       <AvatarImage src={user.image} alt={user.name || "User"} />
                     ) : (
-                      <AvatarFallback>{user.name?.charAt(0) || "?"}</AvatarFallback>
+                      <AvatarFallback>
+                        {user.name?.charAt(0) || "?"}
+                      </AvatarFallback>
                     )}
                   </Avatar>
 
@@ -214,15 +334,23 @@ export default function DiscoverPlayers() {
                   </div>
 
                   <div className="mt-2">
-                    <Badge className={`${badge.className} px-2 py-1`}>
+                    <span
+                      className={`${badge.className} px-2 py-1 text-xs rounded-full`}
+                    >
                       {badge.text}
-                    </Badge>
+                    </span>
                   </div>
 
+                  {/* Action Buttons */}
                   {!isSelf && (
                     <div className="mt-3 flex flex-col gap-2">
                       {isFriends ? (
-                        <Button disabled size="sm" variant="ghost" className="text-green-600">
+                        <Button
+                          disabled
+                          size="sm"
+                          variant="ghost"
+                          className="text-green-600"
+                        >
                           <Check className="w-4 h-4 mr-1" />
                           Friends
                         </Button>
