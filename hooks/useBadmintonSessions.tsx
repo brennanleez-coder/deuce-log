@@ -71,11 +71,10 @@ export function useBadmintonSessions() {
     },
   });
 
-  // ---- EDIT SESSION (optimistic) ----
   const editSession = useMutation<
-    BadmintonSession,  // Return type on success
-    unknown,           // Error type
-    { sessionId: string; name: string; courtFee: number; players: string[] } // Variables
+    BadmintonSession,
+    unknown,
+    { sessionId: string; name: string; courtFee: number; players: string[] } 
   >({
     mutationFn: async ({ sessionId, name, courtFee, players }) => {
       const { data } = await axios.put<BadmintonSession>(
@@ -111,11 +110,10 @@ export function useBadmintonSessions() {
     },
   });
 
-  // ---- DELETE SESSION (optimistic) ----
   const deleteSession = useMutation<
-    string,   // Return type on success (sessionId)
-    unknown,  // Error type
-    string    // Variable: sessionId to delete
+    string,
+    unknown,
+    string
   >({
     mutationFn: async (sessionId: string) => {
       const res = await fetch(`/api/badminton-sessions/${sessionId}`, {

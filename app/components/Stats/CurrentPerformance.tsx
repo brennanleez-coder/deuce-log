@@ -35,15 +35,6 @@ const CurrentPerformance: React.FC<CurrentPerformanceProps> = ({ name, sessions 
           <h2 className="text-xl font-bold text-slate-600 text-center">
             🏋️‍♂️ Current Performance
           </h2>
-          {/* Weekly Sessions */}
-          {/* <div className="col-span-full text-sm text-center text-slate-500 mt-2">
-            <p>
-              📅 Sessions played this week (Mon–Sun):{" "}
-              <span className="font-semibold text-slate-700">
-                {weeklySessions}
-              </span>
-            </p>
-          </div> */}
         </CardTitle>
       </CardHeader>
 

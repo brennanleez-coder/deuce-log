@@ -67,7 +67,6 @@ export async function POST(req: Request) {
     );
   }
 
-  // Optional: Check if a request was already received from the other user
   const existingIncomingRequest = await prisma.friendRequest.findFirst({
     where: {
       senderId: friendId,

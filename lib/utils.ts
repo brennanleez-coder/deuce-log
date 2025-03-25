@@ -15,6 +15,17 @@ export interface OpponentRecord {
   encounters: EncounterResult[];
 }
 
+export const getTimeAwareGreeting = (name:string) =>{
+  const now = new Date();
+  const currentHour = now.getHours();
+  if (currentHour < 12) {
+    return `Good morning, ${name}`;
+  } else if (currentHour < 18) {
+    return `Good afternoon, ${name}`;
+  } else {
+    return `Good evening, ${name}`;
+  }
+}
 export function getHeadToHeadStats(
   transactions: Transaction[],
   userName: string

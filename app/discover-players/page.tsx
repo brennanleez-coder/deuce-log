@@ -1,6 +1,6 @@
 "use client";
-
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { Button } from "@/components/ui/button";
@@ -8,49 +8,12 @@ import { ArrowLeft, Users, UserPlus, Clock, Check } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Loader from "@/components/FullScreenLoader";
 import { motion } from "framer-motion";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { useFriendRequests } from "@/hooks/useFriendRequests";
 
-// 1) Fetch all users
 const fetchUsers = async () => {
   const res = await fetch("/api/users");
   if (!res.ok) throw new Error("Failed to fetch users.");
-  return res.json();
-};
-
-// 2) Create friend request
-const addFriend = async ({
-  userId,
-  friendId,
-}: {
-  userId: string;
-  friendId: string;
-}) => {
-  const res = await fetch("/api/users", {
-    method: "POST",
-    body: JSON.stringify({ userId, friendId }),
-    headers: { "Content-Type": "application/json" },
-  });
-  if (!res.ok) throw new Error("Failed to send friend request");
-  return res.json();
-};
-
-// 3) Accept/Reject friend request
-const updateFriendRequest = async ({
-  userId,
-  friendId,
-  action,
-}: {
-  userId: string;
-  friendId: string;
-  action: "ACCEPTED" | "DECLINED";
-}) => {
-  const res = await fetch("/api/users", {
-    method: "PATCH",
-    body: JSON.stringify({ userId, friendId, action }),
-    headers: { "Content-Type": "application/json" },
-  });
-  if (!res.ok) throw new Error(`Failed to ${action.toLowerCase()} request`);
   return res.json();
 };
 
@@ -70,171 +33,25 @@ const getBadgeForUser = (index: number, email: string) => {
 export default function DiscoverPlayers() {
   const router = useRouter();
   const { userId } = useUser();
-  const queryClient = useQueryClient();
 
-  // 4) Query user list, poll every 5s for pseudo-realtime
-  const { data: users, isLoading, isError } = useQuery({
+  const {
+    data: users,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["users"],
     queryFn: fetchUsers,
-    refetchInterval: 5000, // poll
+    enabled: !!userId,
+    refetchInterval: 1000 * 5,
   });
-
-  // ----------- MUTATIONS WITH OPTIMISTIC UPDATES ----------- //
-
-  // A) Add friend
   const {
-    mutate: addFriendMutate,
-    isPending: isAdding,
-  } = useMutation({
-    mutationFn: addFriend,
-    // 1) onMutate => do optimistic update
-    onMutate: async (vars) => {
-      await queryClient.cancelQueries({ queryKey: ["users"] });
-
-      const prevUsers = queryClient.getQueryData<any[]>(["users"]);
-      if (!prevUsers) return { prevUsers: [] };
-
-      // Clone
-      const newUsers = structuredClone(prevUsers);
-
-      // Find friend in the list
-      const friendIndex = newUsers.findIndex((u: any) => u.id === vars.friendId);
-      if (friendIndex !== -1) {
-        const friend = newUsers[friendIndex];
-        // "requestSent" means the current user => friend => friend is the receiver
-        // So, we push a new "incomingRequests" with senderId = userId
-        friend.incomingRequests = [
-          ...(friend.incomingRequests || []),
-          { senderId: vars.userId, status: "PENDING" },
-        ];
-        newUsers[friendIndex] = friend;
-      }
-
-      queryClient.setQueryData(["users"], newUsers);
-      return { prevUsers };
-    },
-    // 2) onError => rollback
-    onError: (_err, _vars, ctx) => {
-      if (ctx?.prevUsers) {
-        queryClient.setQueryData(["users"], ctx.prevUsers);
-      }
-      toast.error("Failed to send friend request");
-    },
-    // 3) onSuccess => toast success
-    onSuccess: () => {
-      toast.success("Friend request sent!");
-    },
-    // 4) onSettled => re-fetch
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-    },
-  });
-
-  // B) Accept friend
-  const {
-    mutate: acceptFriendMutate,
-    isPending: isAccepting,
-  } = useMutation({
-    mutationFn: (vars: { userId: string; friendId: string }) =>
-      updateFriendRequest({ ...vars, action: "ACCEPTED" }),
-    onMutate: async (vars) => {
-      await queryClient.cancelQueries({ queryKey: ["users"] });
-      const prevUsers = queryClient.getQueryData<any[]>(["users"]);
-      if (!prevUsers) return { prevUsers: [] };
-
-      const newUsers = structuredClone(prevUsers);
-
-      // The friend is the sender => find them in newUsers
-      const senderIndex = newUsers.findIndex((u: any) => u.id === vars.friendId);
-      if (senderIndex !== -1) {
-        const senderUser = newUsers[senderIndex];
-        // The request is in senderUser.friendRequests with { receiverId: userId, status: "PENDING" }
-        if (senderUser.friendRequests) {
-          const request = senderUser.friendRequests.find(
-            (r: any) => r.receiverId === vars.userId && r.status === "PENDING"
-          );
-          if (request) {
-            request.status = "ACCEPTED";
-          }
-        }
-      }
-      // Also can mark as "accepted" for the current user (optional)
-
-      queryClient.setQueryData(["users"], newUsers);
-      return { prevUsers };
-    },
-    onError: (_err, _vars, ctx) => {
-      if (ctx?.prevUsers) {
-        queryClient.setQueryData(["users"], ctx.prevUsers);
-      }
-      toast.error("Failed to accept request");
-    },
-    onSuccess: () => {
-      toast.success("Friend request accepted!");
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-    },
-  });
-
-  // C) Reject friend
-  const {
-    mutate: rejectFriendMutate,
-    isPending: isRejecting,
-  } = useMutation({
-    mutationFn: (vars: { userId: string; friendId: string }) =>
-      updateFriendRequest({ ...vars, action: "DECLINED" }),
-    onMutate: async (vars) => {
-      await queryClient.cancelQueries({ queryKey: ["users"] });
-      const prevUsers = queryClient.getQueryData<any[]>(["users"]);
-      if (!prevUsers) return { prevUsers: [] };
-
-      const newUsers = structuredClone(prevUsers);
-
-      // The friend is the sender => find them
-      const senderIndex = newUsers.findIndex((u: any) => u.id === vars.friendId);
-      if (senderIndex !== -1) {
-        const senderUser = newUsers[senderIndex];
-        // The request is in friendRequests
-        if (senderUser.friendRequests) {
-          const reqIndex = senderUser.friendRequests.findIndex(
-            (r: any) => r.receiverId === vars.userId && r.status === "PENDING"
-          );
-          if (reqIndex !== -1) {
-            senderUser.friendRequests[reqIndex].status = "DECLINED";
-          }
-        }
-      }
-      queryClient.setQueryData(["users"], newUsers);
-      return { prevUsers };
-    },
-    onError: (_err, _vars, ctx) => {
-      if (ctx?.prevUsers) {
-        queryClient.setQueryData(["users"], ctx.prevUsers);
-      }
-      toast.error("Failed to reject request");
-    },
-    onSuccess: () => {
-      toast.success("Friend request rejected.");
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-    },
-  });
-
-  // Handlers
-  function handleAddFriend(friendId: string) {
-    if (!userId || userId === friendId) return;
-    addFriendMutate({ userId, friendId });
-  }
-
-  function handleAccept(senderId: string) {
-    acceptFriendMutate({ userId: userId!, friendId: senderId });
-  }
-
-  function handleReject(senderId: string) {
-    rejectFriendMutate({ userId: userId!, friendId: senderId });
-  }
+    handleAddFriend,
+    handleAccept,
+    handleReject,
+    isAdding,
+    isAccepting,
+    isRejecting,
+  } = useFriendRequests(userId);
 
   return (
     <motion.main
@@ -244,7 +61,6 @@ export default function DiscoverPlayers() {
       className="min-h-screen font-sans px-4 md:px-10 pt-16 text-slate-700 bg-white"
     >
       <div className="max-w-6xl mx-auto flex flex-col gap-y-6">
-        {/* Header */}
         <motion.header
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -267,7 +83,9 @@ export default function DiscoverPlayers() {
         </motion.header>
 
         {isLoading && <Loader fullScreen />}
-        {isError && <p className="text-red-500 text-center">Failed to load players.</p>}
+        {isError && (
+          <p className="text-red-500 text-center">Failed to load players.</p>
+        )}
 
         {!isLoading && !isError && users?.length > 0 ? (
           <motion.div
@@ -286,21 +104,24 @@ export default function DiscoverPlayers() {
               const badge = getBadgeForUser(index + 1, user.email);
               const isSelf = userId === user.id;
 
-              // "Friends" if accepted from either direction
               const isFriends =
                 user.incomingRequests?.some(
-                  (req: any) => req.senderId === userId && req.status === "ACCEPTED"
+                  (req: any) =>
+                    req.senderId === userId && req.status === "ACCEPTED"
                 ) ||
                 user.friendRequests?.some(
-                  (req: any) => req.receiverId === userId && req.status === "ACCEPTED"
+                  (req: any) =>
+                    req.receiverId === userId && req.status === "ACCEPTED"
                 );
 
               const requestSent = user.incomingRequests?.some(
-                (req: any) => req.senderId === userId && req.status === "PENDING"
+                (req: any) =>
+                  req.senderId === userId && req.status === "PENDING"
               );
 
               const requestReceived = user.friendRequests?.some(
-                (req: any) => req.receiverId === userId && req.status === "PENDING"
+                (req: any) =>
+                  req.receiverId === userId && req.status === "PENDING"
               );
 
               return (
@@ -314,25 +135,34 @@ export default function DiscoverPlayers() {
                   transition={{ duration: 0.2 }}
                   className="bg-white/80 backdrop-blur-md border border-slate-100 shadow-sm rounded-xl p-5 flex flex-col items-center hover:shadow-md transition"
                 >
-                  <Avatar className="h-16 w-16">
-                    {user.image ? (
-                      <AvatarImage src={user.image} alt={user.name || "User"} />
-                    ) : (
-                      <AvatarFallback>
-                        {user.name?.charAt(0) || "?"}
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
+                  {/* Avatar links to profile */}
+                  <Link href={`/user/${user.id}`} className="cursor-pointer">
+                    <Avatar className="h-16 w-16">
+                      {user.image ? (
+                        <AvatarImage
+                          src={user.image}
+                          alt={user.name || "User"}
+                        />
+                      ) : (
+                        <AvatarFallback>
+                          {user.name?.charAt(0) || "?"}
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                  </Link>
 
+                  {/* User name */}
                   <h2 className="mt-3 font-medium text-lg text-slate-800 text-center truncate">
                     {user.name || "Unknown"}
                   </h2>
 
+                  {/* Stats */}
                   <div className="mt-2 flex flex-col items-center gap-1 text-xs text-slate-500">
                     <span>Sessions: {user?.badmintonSessions || 0}</span>
                     <span>Matches: {user?.transactions || 0}</span>
                   </div>
 
+                  {/* Badge */}
                   <div className="mt-2">
                     <span
                       className={`${badge.className} px-2 py-1 text-xs rounded-full`}
@@ -341,64 +171,68 @@ export default function DiscoverPlayers() {
                     </span>
                   </div>
 
-                  {/* Action Buttons */}
-                  {!isSelf && (
-                    <div className="mt-3 flex flex-col gap-2">
-                      {isFriends ? (
-                        <Button
-                          disabled
-                          size="sm"
-                          variant="ghost"
-                          className="text-green-600"
-                        >
-                          <Check className="w-4 h-4 mr-1" />
-                          Friends
-                        </Button>
-                      ) : requestSent ? (
-                        <Button
-                          disabled
-                          size="sm"
-                          variant="ghost"
-                          className="text-slate-400"
-                        >
-                          <Clock className="w-4 h-4 mr-1" />
-                          Request Sent
-                        </Button>
-                      ) : requestReceived ? (
-                        <div className="flex gap-2">
+                  {/* Friend request actions */}
+                  <div className="mt-3 flex flex-col gap-2 min-h-[42px]">
+                    {" "}
+                    {/* consistent height */}
+                    {!isSelf && (
+                      <>
+                        {isFriends ? (
                           <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-xs"
-                            onClick={() => handleAccept(user.id)}
-                            disabled={isAccepting}
-                          >
-                            Accept
-                          </Button>
-                          <Button
+                            disabled
                             size="sm"
                             variant="ghost"
-                            className="text-xs text-muted-foreground"
-                            onClick={() => handleReject(user.id)}
-                            disabled={isRejecting}
+                            className="text-green-600"
                           >
-                            Reject
+                            <Check className="w-4 h-4 mr-1" />
+                            Friends
                           </Button>
-                        </div>
-                      ) : (
-                        <Button
-                          onClick={() => handleAddFriend(user.id)}
-                          disabled={isAdding}
-                          size="sm"
-                          variant="ghost"
-                          className="text-blue-600 hover:bg-blue-50"
-                        >
-                          <UserPlus className="w-4 h-4 mr-1" />
-                          Add Friend
-                        </Button>
-                      )}
-                    </div>
-                  )}
+                        ) : requestSent ? (
+                          <Button
+                            disabled
+                            size="sm"
+                            variant="ghost"
+                            className="text-slate-400"
+                          >
+                            <Clock className="w-4 h-4 mr-1" />
+                            Request Sent
+                          </Button>
+                        ) : requestReceived ? (
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs"
+                              onClick={() => handleAccept(user.id)}
+                              disabled={isAccepting}
+                            >
+                              Accept
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-xs text-muted-foreground"
+                              onClick={() => handleReject(user.id)}
+                              disabled={isRejecting}
+                            >
+                              Reject
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            onClick={() => handleAddFriend(user.id)}
+                            disabled={isAdding}
+                            size="sm"
+                            variant="ghost"
+                            className="text-blue-600 hover:bg-blue-50"
+                          >
+                            <UserPlus className="w-4 h-4 mr-1" />
+                            Add Friend
+                          </Button>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </motion.div>
               );
             })}

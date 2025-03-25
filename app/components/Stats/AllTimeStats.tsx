@@ -59,7 +59,6 @@ export default function AllTimeStats({
     matchesPlayed: nfMatchesPlayed,
   } = statsNoFriendly;
 
-  // Decide which stats to display
   const displayedMatchesPlayed = includeFriendlyMatches ? matchesPlayed : nfMatchesPlayed;
   const displayedNetAmount = includeFees ? netAmount - totalSessionFees : netAmount;
   const displayedWinCount = includeFriendly ? winCount : nfWinCount;
@@ -67,7 +66,6 @@ export default function AllTimeStats({
 
   return (
     <div className="relative flex flex-col w-full bg-transparent text-gray-900 px-4">
-      {/* Buttons for H2H / Partner Stats (like your landing's minimal style) */}
       <div className="flex justify-center items-center gap-4 mb-6 mt-2">
         <Dialog>
           <DialogTrigger asChild>

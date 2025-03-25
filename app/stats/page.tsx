@@ -22,26 +22,7 @@ import {
 
 function Home() {
   const { name } = useUser();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Close the dropdown when clicking outside of it
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setDropdownOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [dropdownRef]);
-
-  const { sessions, isLoading, createSession, editSession, deleteSession } =
+  const { sessions, isLoading, } =
     useBadmintonSessions();
 
   const aggregateSessionFees = sessions.reduce(

@@ -40,7 +40,6 @@ export const useBadmintonSessionStats = (
       };
     }
 
-    // Initialize accumulators.
     let netAmount = 0;
     let winCount = 0;
     let lossCount = 0;
@@ -50,7 +49,6 @@ export const useBadmintonSessionStats = (
     const losses: Transaction[] = [];
     const opponentStats: Record<string, { wins: number; losses: number }> = {};
 
-    // Process each transaction.
     transactions.forEach((t) => {
       const userInTeam1 = t.team1.includes(userName);
       const userInTeam2 = t.team2.includes(userName);
