@@ -65,7 +65,7 @@ export default function AllTimeStats({
   const displayedLossCount = includeFriendly ? lossCount : nfLossCount;
 
   return (
-    <div className="relative flex flex-col w-full bg-transparent text-gray-900 px-4">
+    <div className="relative flex flex-col w-full bg-transparent text-gray-900">
       <div className="flex justify-center items-center gap-4 mb-6 mt-2">
         <Dialog>
           <DialogTrigger asChild>
@@ -87,18 +87,18 @@ export default function AllTimeStats({
 
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="outline" className="px-4 py-2 flex items-center gap-2">
+            <Button variant="outline" className="px-4 py-2 flex items-center gap-1">
               <Users className="w-5 h-5" />
               Partner Stats
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-3xl w-full bg-white border border-slate-200 rounded-lg shadow-lg">
+          <DialogContent className="max-w-2xl w-full bg-white border border-slate-200 rounded-lg shadow-lg">
             <DialogHeader>
               <DialogTitle className="text-xl font-bold text-slate-700">
                 Partner Stats
               </DialogTitle>
             </DialogHeader>
-            <div className="p-4">
+            <div className="p-1">
               <PartnerStats transactions={transactions} userName={userName} />
             </div>
           </DialogContent>

@@ -36,7 +36,7 @@ export default function HeadToHeadStats({
   }
 
   return (
-    <div className="bg-white rounded-lg p-5 w-full">
+    <div className="flex flex-col max-h-[80vh] overflow-y-auto items-center px-2 bg-white rounded-xl shadow-md p-4 border border-gray-200 w-full">
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
@@ -45,7 +45,6 @@ export default function HeadToHeadStats({
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="overflow-hidden"
           >
             {/* Partner Performance */}
             <div className="border-b pb-4 mb-4 flex flex-col items-center">
@@ -58,7 +57,7 @@ export default function HeadToHeadStats({
                 {/* Toughest Opponents - Rivals */}
                 <div className="flex flex-col items-center gap-4">
                   <h5 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                    Most Challenging
+                    Hardest
                   </h5>
                   {toughestOpponents?.map((opponent, index) => (
                     <div
@@ -77,7 +76,7 @@ export default function HeadToHeadStats({
                 {/* Most Beaten Opponents */}
                 <div className="flex flex-col items-center gap-4">
                   <h5 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                    Most Defeated
+                    Easiest
                   </h5>
                   {mostDefeatedOpponents?.map((opponent, index) => (
                     <div

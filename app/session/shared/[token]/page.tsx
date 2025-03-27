@@ -116,7 +116,7 @@ export default function SharedSessionPage({
               name={mostDefeatedOpponents?.[0]?.name}
               wins={mostDefeatedOpponents?.[0]?.wins}
               losses={mostDefeatedOpponents?.[0]?.losses}
-              label="Most Defeated"
+              label="Easiest Opponent"
               icon={<ThumbsUp className="w-6 h-6 text-green-500" />}
             />
           </div>

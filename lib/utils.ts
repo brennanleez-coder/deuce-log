@@ -200,28 +200,31 @@ export const getBestAndWorstPartners = (
     });
   });
 
-  // 2. Convert partnerStats to an array with a computed ratio
+  // 2. Convert partnerStats to an array with computed Elo-like score
   const statsArray = Object.entries(partnerStats).map(([name, { wins, losses }]) => {
     const totalGames = wins + losses;
-    const ratio = totalGames > 0 ? wins / totalGames : 0;
+    const eloScore = wins - 0.5 * losses;
     return {
       name,
       wins,
       losses,
       totalGames,
-      ratio,
+      eloScore,
     };
   });
 
-  // 3. Identify best partners by ratio (descending) and prioritize more games played
-  const bestPartners = [...statsArray]
-    .sort((a, b) => b.ratio - a.ratio || b.totalGames - a.totalGames)
+  // 3. Best partners: positive Elo score only
+  const bestPartners = statsArray
+    .filter((p) => p.eloScore > 0)
+    .sort((a, b) => b.eloScore - a.eloScore || b.totalGames - a.totalGames)
     .slice(0, 2);
 
-  // 4. Identify worst partners by ratio (ascending) and prioritize more losses
-  const worstPartners = [...statsArray]
-    .sort((a, b) => a.ratio - b.ratio || b.losses - a.losses)
+  // 4. Worst partners: negative Elo score only
+  const worstPartners = statsArray
+    .filter((p) => p.eloScore < 0)
+    .sort((a, b) => a.eloScore - b.eloScore || b.losses - a.losses)
     .slice(0, 2);
 
   return { bestPartners, worstPartners };
 };
+

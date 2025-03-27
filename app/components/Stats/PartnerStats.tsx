@@ -30,11 +30,12 @@ export default function PartnerStats({
     transactions,
     userName
   );
+  console.log("worstPartners , ", worstPartners);
 
   const partnerStats = getPartnerStats(transactions, userName);
 
   return (
-    <div className="flex flex-col items-center bg-white rounded-xl shadow-md p-6 border border-gray-200 max-h-[80vh] overflow-y-auto">
+    <div className="flex flex-col items-center bg-white rounded-xl shadow-md p-4 border border-gray-200 max-h-[80vh] overflow-y-auto">
       <h4 className="text-md font-semibold text-gray-700 mb-3 text-center">
         Partner Performance
       </h4>

@@ -38,8 +38,8 @@ export default function HeadToHeadTable({
   if (statsArray.length === 0) return null;
 
   return (
-    <div className="w-full">
-      <div className="sticky top-0 bg-white z-10 py-3">
+    <div className="w-full overflow-auto">
+      <div className="sticky top-0 bg-white z-10 py-1">
         <Input
           ref={inputRef}
           type="text"
@@ -50,13 +50,12 @@ export default function HeadToHeadTable({
         />
       </div>
 
-      {/* Table Wrapper with Overflow Auto */}
-      <div className="overflow-auto max-h-[400px] border border-gray-200 rounded-md shadow-sm mt-3">
+      <div className="border border-gray-200 rounded-md shadow-sm mt-3">
         <table className="w-full border-collapse text-sm text-center">
           <thead className="bg-gray-100 sticky top-0">
             <tr>
               <th className="p-3 text-gray-700">Opponent</th>
-              <th className="p-3 text-gray-700">W / L</th>
+              <th className="p-3 text-gray-700">W/L</th>
               <th className="p-3 text-gray-700">Last {showLastX}</th>
             </tr>
           </thead>
@@ -73,13 +72,13 @@ export default function HeadToHeadTable({
                     <td className="p-3 font-medium text-gray-800 whitespace-nowrap">
                       {opponent}
                     </td>
-                    <td className="p-3 text-gray-700">{`${totalWins} / ${totalLosses}`}</td>
+                    <td className="p-3 text-gray-700">{`${totalWins}-${totalLosses}`}</td>
                     <td className="p-3">
                       <div className="flex justify-center gap-2">
                         {lastX.map((result, i) => (
                           <span
                             key={i}
-                            className={`px-2 py-1 rounded border text-xs font-bold 
+                            className={`px-2 py-1 rounded border text-xs 
                             ${
                               result === "W"
                                 ? "border-green-600 text-green-600"

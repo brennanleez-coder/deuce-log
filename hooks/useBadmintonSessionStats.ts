@@ -89,29 +89,38 @@ export const useBadmintonSessionStats = (
       });
     });
 
+    const MIN_GAMES = 3;
+
     // Helper function to pick top opponents based on filter and sort functions.
     const pickOpponents = (
-      filterFn: (stats: { wins: number; losses: number }) => boolean,
-      sortFn: (a: { wins: number; losses: number }, b: { wins: number; losses: number }) => number,
+      filterFn: (stats: { wins: number; losses: number; totalGames: number; winRate: number }) => boolean,
+      sortFn: (
+        a: { wins: number; losses: number; totalGames: number; winRate: number },
+        b: { wins: number; losses: number; totalGames: number; winRate: number }
+      ) => number,
       limit: number = 2
     ) => {
       return Object.entries(opponentStats)
-        .filter(([_, stats]) => filterFn(stats))
-        .sort((a, b) => sortFn(a[1], b[1]))
-        .slice(0, limit)
-        .map(([name, stats]) => ({ name, wins: stats.wins, losses: stats.losses }));
+        .map(([name, stats]) => {
+          const totalGames = stats.wins + stats.losses;
+          const winRate = totalGames > 0 ? stats.wins / totalGames : 0;
+          return { name, ...stats, totalGames, winRate };
+        })
+        .filter((stats) => stats.totalGames >= MIN_GAMES && filterFn(stats))
+        .sort((a, b) => sortFn(a, b))
+        .slice(0, limit);
     };
 
-    // Determine toughest opponents (those with more losses than wins).
+    // Determine toughest opponents: low win rate (you lose to them more)
     const toughestOpponents = pickOpponents(
-      (stats) => stats.losses > stats.wins,
-      (a, b) => b.losses - a.losses
+      (stats) => stats.winRate < 0.5,
+      (a, b) => a.winRate - b.winRate || b.losses - a.losses
     );
 
-    // Determine most defeated opponents (those with more wins than losses).
+    // Determine most defeated opponents: high win rate (you beat them more)
     const mostDefeatedOpponents = pickOpponents(
-      (stats) => stats.wins > stats.losses,
-      (a, b) => b.wins - a.wins
+      (stats) => stats.winRate > 0.5,
+      (a, b) => b.winRate - a.winRate || b.wins - a.wins
     );
 
     // Fallback: Ensure at least one opponent is returned if none match the criteria.
@@ -119,17 +128,28 @@ export const useBadmintonSessionStats = (
       const fallback = Object.entries(opponentStats).find(([_, stats]) => stats.losses > 0);
       if (fallback) {
         const [name, stats] = fallback;
-        toughestOpponents.push({ name, wins: stats.wins, losses: stats.losses });
+        toughestOpponents.push({
+          name,
+          wins: stats.wins,
+          losses: stats.losses,
+          totalGames: stats.wins + stats.losses,
+          winRate: stats.wins + stats.losses > 0 ? stats.wins / (stats.wins + stats.losses) : 0,
+        });
       }
     }
     if (mostDefeatedOpponents.length === 0) {
       const fallback = Object.entries(opponentStats).find(([_, stats]) => stats.wins > 0);
       if (fallback) {
         const [name, stats] = fallback;
-        mostDefeatedOpponents.push({ name, wins: stats.wins, losses: stats.losses });
+        mostDefeatedOpponents.push({
+          name,
+          wins: stats.wins,
+          losses: stats.losses,
+          totalGames: stats.wins + stats.losses,
+          winRate: stats.wins + stats.losses > 0 ? stats.wins / (stats.wins + stats.losses) : 0,
+        });
       }
     }
-
     // Get best and worst partners from the helper function.
     const { bestPartners, worstPartners } = getBestAndWorstPartners(transactions, userName);
 

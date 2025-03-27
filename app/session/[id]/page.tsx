@@ -178,7 +178,7 @@ export default function SessionPage({ params }: { params: { id: string } }) {
                 name={mostDefeatedOpponents?.[0]?.name || "N/A"}
                 wins={mostDefeatedOpponents?.[0]?.wins || 0}
                 losses={mostDefeatedOpponents?.[0]?.losses || 0}
-                label="Most Defeated"
+                label="Easiest Opponent"
                 icon={<ThumbsUp className="w-6 h-6 text-green-500" />}
               />
             </div>
@@ -190,7 +190,7 @@ export default function SessionPage({ params }: { params: { id: string } }) {
                     <Users className="w-5 h-5" /> H2H Stats
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-3xl w-full">
+                <DialogContent className="max-w-2xl w-full">
                   <DialogHeader>
                     <DialogTitle>Head-to-Head Stats</DialogTitle>
                   </DialogHeader>
@@ -206,7 +206,7 @@ export default function SessionPage({ params }: { params: { id: string } }) {
                     <Users className="w-5 h-5" /> Partner Stats
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-3xl w-full">
+                <DialogContent className="max-w-2xl w-full">
                   <DialogHeader>
                     <DialogTitle>Partner Stats</DialogTitle>
                   </DialogHeader>

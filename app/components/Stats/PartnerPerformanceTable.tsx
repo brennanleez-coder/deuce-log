@@ -50,12 +50,12 @@ export default function PartnerPerformanceTable({
         />
       </div>
 
-      <div className="overflow-auto max-h-[400px] border border-gray-200 rounded-md shadow-sm mt-3">
+      <div className="border border-gray-200 rounded-md shadow-sm mt-3">
         <table className="w-full border-collapse text-sm text-center">
           <thead className="bg-gray-100 sticky top-0">
             <tr>
               <th className="p-3 text-gray-700">Partner</th>
-              <th className="p-3 text-gray-700">W / L</th>
+              <th className="p-3 text-gray-700">W/L</th>
               <th className="p-3 text-gray-700">Last {showLastX}</th>
             </tr>
           </thead>
@@ -66,7 +66,7 @@ export default function PartnerPerformanceTable({
               return (
                 <tr key={partner} className="border-b hover:bg-gray-50 transition">
                   <td className="p-3 font-medium text-gray-800 whitespace-nowrap">{partner}</td>
-                  <td className="p-3 text-gray-700">{`${totalWins} / ${totalLosses}`}</td>
+                  <td className="p-3 text-gray-700">{`${totalWins}-${totalLosses}`}</td>
                   <td className="p-3">
                     <div className="flex justify-center gap-2">
                       {lastX.map((result, i) => (
