@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Dialog,
   DialogTrigger,
@@ -19,9 +19,31 @@ import Link from "next/link";
 
 const FriendRequests = () => {
   const { userId } = useUser();
-  const { friendRequests, isLoading, error } = useFriendRequests(userId);
+  const { friendRequests, isLoading, error, handleAccept, handleReject } =
+    useFriendRequests(userId);
 
-  const badgeCount = friendRequests?.length || 0;
+  const [localRequests, setLocalRequests] = useState<any[]>([]);
+  const [acceptedIds, setAcceptedIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (friendRequests) {
+      setLocalRequests(friendRequests);
+    }
+  }, [friendRequests]);
+
+  const badgeCount = localRequests.length;
+
+  const acceptRequest = async (senderId: string) => {
+    setAcceptedIds((prev) => [...prev, senderId]); // Optimistic "Friends ✅"
+    await handleAccept(senderId);
+  };
+
+  const rejectRequest = async (senderId: string) => {
+    setLocalRequests((prev) =>
+      prev.filter((req) => req.senderId !== senderId)
+    );
+    await handleReject(senderId);
+  };
 
   return (
     <Dialog>
@@ -61,12 +83,13 @@ const FriendRequests = () => {
                 Discover More Players →
               </Link>
             </div>
-            {friendRequests.length === 0 ? (
+
+            {localRequests.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center my-auto">
                 You have no pending friend requests.
               </p>
             ) : (
-              friendRequests.map((req: any) => (
+              localRequests.map((req) => (
                 <div
                   key={req.requestId}
                   className="flex justify-between items-center border rounded-lg p-3"
@@ -83,23 +106,36 @@ const FriendRequests = () => {
                       {req.senderName}
                     </span>
                   </div>
+
                   <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-xs text-muted-foreground"
-                    >
-                      Reject
-                    </Button>
-                    <Button size="sm" variant="outline" className="text-xs">
-                      Accept
-                    </Button>
+                    {acceptedIds.includes(req.senderId) ? (
+                      <span className="text-sm text-green-600 font-medium">
+                        Friends ✅
+                      </span>
+                    ) : (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-xs text-muted-foreground"
+                          onClick={() => rejectRequest(req.senderId)}
+                        >
+                          Reject
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs"
+                          onClick={() => acceptRequest(req.senderId)}
+                        >
+                          Accept
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
               ))
             )}
-
-            
           </div>
         )}
       </DialogContent>
