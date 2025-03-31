@@ -36,7 +36,7 @@ type TransactionsListProps = {
   userId?: string;
   name?: string;
   sessionId?: string;
-  shared?: boolean;
+  sharing?: boolean;
 };
 
 export default function TransactionsList({

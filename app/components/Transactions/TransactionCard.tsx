@@ -79,20 +79,19 @@ export default function TransactionCard({ transaction, sharing = false }: Transa
 
     try {
       const reconciliatedUpdatedTransaction = await editTransaction({
-        transactionId: transaction.id,
-        type: transaction.type,
-        amount: transaction.amount,
-        team1: transaction.team1,
-        team2: transaction.team2,
-        payer: transaction.payer,
-        receiver: transaction.receiver,
-        bettor: transaction.bettor,
-        bookmaker: transaction.bookmaker,
-        bettorWon: transaction.bettorWon,
+        transactionId: updatedTransaction.id,
+        type: updatedTransaction.type,
+        amount: updatedTransaction.amount,
+        team1: updatedTransaction.team1,
+        team2: updatedTransaction.team2,
+        payer: updatedTransaction.payer,
+        receiver: updatedTransaction.receiver,
+        bettor: updatedTransaction.bettor,
+        bookmaker: updatedTransaction.bookmaker,
+        bettorWon: updatedTransaction.bettorWon,
         paid: updatedTransaction.paid,
         paidBy: updatedTransaction.paid ? userId : null,
       });
-      setCurrentTransaction(reconciliatedUpdatedTransaction);
     } catch (error) {
       console.error("Error toggling paid status:", error);
       setCurrentTransaction(previousTransaction);
