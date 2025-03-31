@@ -32,7 +32,6 @@ type TransactionsListProps = {
   lossCount: number; // total losses (unfiltered)
   totalWinsAmount: number; // total $ for all wins
   totalLossesAmount: number; // total $ for all losses
-  // Optionally, if these values are available from parent:
   userId?: string;
   name?: string;
   sessionId?: string;
@@ -57,14 +56,10 @@ export default function TransactionsList({
   const [isOpen, setIsOpen] = useState(false);
 
   // Default sort => timestamp descending
-  const [sortBy, setSortBy] = useState<"timestamp" | "amount" | "">(
-    "timestamp"
-  );
+  const [sortBy, setSortBy] = useState<"timestamp" | "amount" | "">("timestamp");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
   const [searchQuery, setSearchQuery] = useState("");
-  const [friendlyFilter, setFriendlyFilter] = useState<"all" | "friendly">(
-    "all"
-  );
+  const [friendlyFilter, setFriendlyFilter] = useState<"all" | "friendly">("all");
 
   const friendlyOption = friendlyFilter === "friendly" ? true : undefined;
 
@@ -112,9 +107,6 @@ export default function TransactionsList({
     [filteredTransactions.losses]
   );
 
-  const friendlyButtonLabel =
-    friendlyFilter === "friendly" ? "All" : "Friendly Only";
-
   const winsHeader =
     friendlyFilter === "friendly"
       ? `Wins (${filteredWinsCount}/${winCount})`
@@ -141,34 +133,38 @@ export default function TransactionsList({
   };
 
   return (
-    <section className="bg-white p-6 rounded-lg border border-gray-200 shadow-md">
+    <section className="bg-white p-6 rounded-lg border border-gray-200 shadow-md relative">
       <div className="flex justify-between items-center mb-4 ">
         <h2 className="text-lg font-semibold">Matches</h2>
+
+        {/* Desktop+ button (hidden on small screens) */}
         {!sharing && (
-          <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-              <Button
-                onClick={() => setIsOpen(true)}
-                className="flex items-center gap-2"
-                variant="outline"
-              >
-                <Plus className="w-5 h-5" />
-                <span className="text-sm">Add</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg">
-              <DialogHeader>
-                <DialogTitle>Add Match Transaction</DialogTitle>
-              </DialogHeader>
-              <TransactionForm
-                userId={userId}
-                name={name}
-                sessionId={sessionId}
-                onSubmit={handleSubmit}
-                isEditing={false}
-              />
-            </DialogContent>
-          </Dialog>
+          <div className="hidden md:block">
+            <Dialog open={isOpen} onOpenChange={setIsOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  onClick={() => setIsOpen(true)}
+                  className="flex items-center gap-2"
+                  variant="outline"
+                >
+                  <Plus className="w-5 h-5" />
+                  <span className="text-sm">Add</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Add Match</DialogTitle>
+                </DialogHeader>
+                <TransactionForm
+                  userId={userId}
+                  name={name}
+                  sessionId={sessionId}
+                  onSubmit={handleSubmit}
+                  isEditing={false}
+                />
+              </DialogContent>
+            </Dialog>
+          </div>
         )}
       </div>
 
@@ -305,6 +301,34 @@ export default function TransactionsList({
             </div>
           </div>
         </>
+      )}
+
+      {!sharing && (
+        <div className="md:hidden fixed bottom-6 right-6 z-50">
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+              <Button
+                size="icon"
+                className="h-12 w-12 rounded-full shadow-lg flex items-center justify-center bg-blue-600 hover:bg-blue-700"
+                onClick={() => setIsOpen(true)}
+              >
+                <Plus className="w-5 h-5 text-white" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg rounded-lg">
+              <DialogHeader>
+                <DialogTitle>Add Match</DialogTitle>
+              </DialogHeader>
+              <TransactionForm
+                userId={userId}
+                name={name}
+                sessionId={sessionId}
+                onSubmit={handleSubmit}
+                isEditing={false}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
       )}
     </section>
   );

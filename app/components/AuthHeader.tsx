@@ -46,7 +46,7 @@ function AuthHeader() {
       <div className="flex items-center justify-between px-4 md:px-16 py-3">
         {/* Logo */}
         <Link href="/">
-          <h1 className="text-md md:text-2xl font-bold text-slate-700 hover:text-slate-900 transition-colors">
+          <h1 className="hidden md:block text-md md:text-2xl font-bold text-slate-700 hover:text-slate-900 transition-colors">
             DeuceLog
           </h1>
         </Link>

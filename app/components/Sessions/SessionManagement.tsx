@@ -12,7 +12,13 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, ArrowUpDown, Table as TableIcon, Grid, Plus } from "lucide-react";
+import {
+  Search,
+  ArrowUpDown,
+  Table as TableIcon,
+  Grid,
+  Plus,
+} from "lucide-react";
 import { ClipLoader } from "react-spinners";
 import { toast } from "sonner";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -101,7 +107,10 @@ export default function SessionManagement({
     s.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
   );
 
-  const paginatedSessions = filteredSessions // filteredSessions.slice(0, currentPage * ITEMS_PER_PAGE);
+  const paginatedSessions = filteredSessions.slice(
+    0,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   // Toggle asc/desc
   const toggleSortOrder = () =>
@@ -120,24 +129,16 @@ export default function SessionManagement({
             .map((p: string) => p.trim())
             .filter(Boolean)
         : [];
-  
-      // Call the mutation's mutateAsync function
+
       const newSession = await createSession.mutateAsync({
         name: values.name,
         courtFee: parseFloat(values.courtFee),
         players: playersArray,
       });
       setIsModalOpen(false);
-      // Instead of auto-routing, show an interactive toast.
-      toast.success("Session created! Click to view.", {
-        action: {
-          label: "View Session",
-          onClick: () => {
-            router.push(`/session/${newSession.id}`);
-          },
-        },
-      });
-      
+
+      toast.success("Session created! Bringing you to the session...");
+      router.push(`/session/${newSession.id}`);
     } catch (error) {
       console.error("Error creating session:", error);
       toast.error("Error creating session!");
@@ -145,127 +146,156 @@ export default function SessionManagement({
       setIsLoading(false);
     }
   };
-  
 
   return (
-    <Card className="bg-white border border-gray-200 shadow-md rounded-xl">
-      <CardHeader className="bg-gray-50 rounded-t-xl px-6 py-4 flex items-center justify-between">
-        <CardTitle className="flex w-full items-center gap-3 justify-between text-xl font-bold text-slate-600">
-          Sessions
-          {/* New Session Dialog */}
-          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-            <DialogTrigger asChild>
-              <Button className="flex items-center gap-2" disabled={isLoading}>
-                {isLoading ? (
-                  <ClipLoader size={16} color="#fff" />
-                ) : (
-                  <Plus size={16} />
-                )}
-                {isLoading ? "Creating..." : "New Session"}
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg rounded-lg">
-              <DialogHeader>
-                <DialogTitle className="text-gray-800">
-                  Create New Session
-                </DialogTitle>
-              </DialogHeader>
-              <SessionForm onSubmit={handleSubmit} isLoading={isLoading} />
-            </DialogContent>
-          </Dialog>
-        </CardTitle>
-      </CardHeader>
+    <>
+      {/* Card container */}
+      <Card className="bg-white border border-gray-200 shadow-md rounded-xl">
+        <CardHeader className="bg-gray-50 rounded-t-xl px-6 py-4 flex items-center justify-between">
+          <CardTitle className="flex w-full items-center gap-3 justify-between text-xl font-bold text-slate-600">
+            Sessions
+            {/* New Session Button (DESKTOP+ ONLY) */}
+            <div className="hidden md:block">
+              <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                <DialogTrigger asChild>
+                  <Button className="flex items-center gap-2" disabled={isLoading}>
+                    {isLoading ? (
+                      <ClipLoader size={16} color="#fff" />
+                    ) : (
+                      <Plus size={16} />
+                    )}
+                    {isLoading ? "Creating..." : "New Session"}
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-lg rounded-lg">
+                  <DialogHeader>
+                    <DialogTitle className="text-gray-800">
+                      Create New Session
+                    </DialogTitle>
+                  </DialogHeader>
+                  <SessionForm onSubmit={handleSubmit} isLoading={isLoading} />
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardTitle>
+        </CardHeader>
 
-      <CardContent className="p-6 space-y-6">
-        {/* Controls */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          {/* Search */}
-          <div className="relative max-w-sm w-full">
-            <Input
-              type="text"
-              placeholder="Search sessions..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pr-10"
-            />
-            <Search className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
-          </div>
+        <CardContent className="p-6 space-y-6">
+          {/* Controls */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            {/* Search */}
+            <div className="relative max-w-sm w-full">
+              <Input
+                type="text"
+                placeholder="Search sessions..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pr-10"
+              />
+              <Search className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+            </div>
 
-          {/* Sort / View Toggles */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={toggleSortOrder}
-              className="flex items-center gap-2"
-            >
-              Sort by Date <ArrowUpDown className="w-4 h-4" />
-            </Button>
-            {viewMode === "table" ? (
+            {/* Sort / View Toggles */}
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
-                onClick={() => setViewMode("cards")}
+                onClick={toggleSortOrder}
                 className="flex items-center gap-2"
               >
-                <Grid className="w-4 h-4" />
-                Card View
+                Sort by Date <ArrowUpDown className="w-4 h-4" />
               </Button>
-            ) : (
-              <div className="hidden md:block">
-                <Button
-                variant="outline"
-                onClick={() => setViewMode("table")}
-                className="flex items-center gap-2"
-              >
-                <TableIcon className="w-4 h-4" />
-                Table View
-              </Button>
-                </div>
-            )}
-          </div>
-        </div>
-
-        {/* Loading / No Data */}
-        {loading ? (
-          <div className="flex justify-center py-6">
-            <Loader />
-          </div>
-        ) : sessions.length === 0 ? (
-          <div className="text-gray-500 text-center py-6">
-            No sessions created yet.
-          </div>
-        ) : (
-          <>
-            {/* Render Table or Cards */}
-            {viewMode === "table" ? (
-              <SessionListTable
-                sessions={paginatedSessions}
-                handleSessionSelect={handleSessionSelect}
-                handleDeleteSession={handleDeleteSession}
-                formatDate={formatDate}
-              />
-            ) : (
-              <SessionListCards
-                sessions={paginatedSessions}
-                handleSessionSelect={handleSessionSelect}
-                handleDeleteSession={handleDeleteSession}
-                formatDate={formatDate}
-              />
-            )}
-
-            {/* Load More */}
-            {paginatedSessions.length < filteredSessions.length && (
-              <div className="flex justify-center mt-6">
+              {viewMode === "table" ? (
                 <Button
                   variant="outline"
-                  onClick={() => setCurrentPage((p) => p + 1)}
+                  onClick={() => setViewMode("cards")}
+                  className="flex items-center gap-2"
                 >
-                  Load More
+                  <Grid className="w-4 h-4" />
+                  Card View
                 </Button>
-              </div>
-            )}
-          </>
-        )}
-      </CardContent>
-    </Card>
+              ) : (
+                <div className="hidden md:block">
+                  <Button
+                    variant="outline"
+                    onClick={() => setViewMode("table")}
+                    className="flex items-center gap-2"
+                  >
+                    <TableIcon className="w-4 h-4" />
+                    Table View
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Loading / No Data */}
+          {loading ? (
+            <div className="flex justify-center py-6">
+              <Loader />
+            </div>
+          ) : sessions.length === 0 ? (
+            <div className="text-gray-500 text-center py-6">
+              No sessions created yet.
+            </div>
+          ) : (
+            <>
+              {/* Render Table or Cards */}
+              {viewMode === "table" ? (
+                <SessionListTable
+                  sessions={paginatedSessions}
+                  handleSessionSelect={handleSessionSelect}
+                  handleDeleteSession={handleDeleteSession}
+                  formatDate={formatDate}
+                />
+              ) : (
+                <SessionListCards
+                  sessions={paginatedSessions}
+                  handleSessionSelect={handleSessionSelect}
+                  handleDeleteSession={handleDeleteSession}
+                  formatDate={formatDate}
+                />
+              )}
+
+              {/* Load More */}
+              {paginatedSessions.length < filteredSessions.length && (
+                <div className="flex justify-center mt-6">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentPage((p) => p + 1)}
+                  >
+                    Load More
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* FLOATING BUTTON (MOBILE ONLY) */}
+      <div className="md:hidden fixed bottom-6 right-6 z-50">
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogTrigger asChild>
+            <Button
+              size="icon"
+              className="h-12 w-12 rounded-full shadow-lg flex items-center justify-center bg-blue-600 hover:bg-blue-700"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <ClipLoader size={20} color="#fff" />
+              ) : (
+                <Plus className="w-5 h-5 text-white" />
+              )}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-lg rounded-lg">
+            <DialogHeader>
+              <DialogTitle className="text-gray-800">Create New Session</DialogTitle>
+            </DialogHeader>
+            <SessionForm onSubmit={handleSubmit} isLoading={isLoading} />
+          </DialogContent>
+        </Dialog>
+      </div>
+    </>
   );
 }
