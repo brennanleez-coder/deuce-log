@@ -2,24 +2,9 @@
 
 import React from "react";
 import { Card, CardTitle, CardContent, CardHeader } from "@/components/ui/card";
-import { isWithinInterval, startOfWeek, endOfWeek, parseISO } from "date-fns";
 import StreakCard from "./StreakCard";
 import ConsistencyCard from "./ConsistencyCard";
 import NewPartnersCard from "./NewPartnersCard";
-function countSessionsThisWeek(sessions: any[]): number {
-  const now = new Date();
-  const start = startOfWeek(now, { weekStartsOn: 1 }); // Monday
-  const end = endOfWeek(now, { weekStartsOn: 1 }); // Sunday
-
-  return sessions.filter((s) => {
-    const createdAt =
-      typeof s.createdAt === "string"
-        ? parseISO(s.createdAt)
-        : new Date(s.createdAt);
-    return isWithinInterval(createdAt, { start, end });
-  }).length;
-}
-
 
 interface CurrentPerformanceProps {
   name: string;
@@ -27,7 +12,23 @@ interface CurrentPerformanceProps {
 }
 
 const CurrentPerformance: React.FC<CurrentPerformanceProps> = ({ name, sessions }) => {
-
+  sessions = []
+  if (!sessions || sessions.length === 0) {
+    return (
+      <Card className="flex flex-col gap-y-4">
+        <CardHeader className="bg-gray-50 rounded-t-xl px-6 py-4 flex items-center justify-between">
+          <CardTitle className="flex w-full items-center gap-3 justify-between text-xl font-bold text-slate-600">
+            <h2 className="text-xl font-bold text-slate-600 text-center">
+              🏋️‍♂️ Current Performance
+            </h2>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-center text-slate-600">
+          No sessions recorded yet.
+        </CardContent>
+      </Card>
+    );
+  }
   return (
     <Card className="flex flex-col gap-y-4">
       <CardHeader className="bg-gray-50 rounded-t-xl px-6 py-4 flex items-center justify-between">
