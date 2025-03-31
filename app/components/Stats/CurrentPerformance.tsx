@@ -12,7 +12,6 @@ interface CurrentPerformanceProps {
 }
 
 const CurrentPerformance: React.FC<CurrentPerformanceProps> = ({ name, sessions }) => {
-  sessions = []
   if (!sessions || sessions.length === 0) {
     return (
       <Card className="flex flex-col gap-y-4">
