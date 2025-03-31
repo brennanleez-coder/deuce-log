@@ -47,7 +47,10 @@ export default function SessionListCards({
 }: SessionListCardsProps) {
   console.log("sessions", sessions);
   const { name, userId } = useUser();
-  const sessionStats = useAllBadmintonSessionStats(sessions.flatMap(s => s.transactions), name);
+  const sessionStats = useAllBadmintonSessionStats(
+    sessions.flatMap((s) => s.transactions),
+    name
+  );
   const [loading, setLoading] = useState(false);
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -69,16 +72,24 @@ export default function SessionListCards({
             onClick={() => handleSessionSelect(session.id)}
             className="cursor-pointer"
           >
-            <Card className="p-4 shadow-sm hover:shadow-md transition-all border border-gray-200 rounded-lg flex flex-col justify-between h-full">
-              {/* Header: Session Name + Delete Button */}
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">{session.name}</h2>
+            <Card
+              key={session.id}
+              onClick={() => handleSessionSelect(session.id)}
+              className="cursor-pointer p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full group"
+            >
+              {/* Header: Name + Delete */}
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-gray-800 truncate">
+                  {session.name}
+                </h2>
+
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={(e) => e.stopPropagation()}
+                      className="opacity-70 hover:opacity-100 transition"
                     >
                       <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>
@@ -108,49 +119,53 @@ export default function SessionListCards({
                 </AlertDialog>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 text-gray-600">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-gray-500" />
-                    <span>{formatDate(session.createdAt)}</span>
-                  </div>
+              {/* Session Meta (Date, Court Fee) */}
+              <div className="text-sm text-gray-500 space-y-1 mb-4">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-gray-400" />
+                  <span>{formatDate(session.createdAt)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-gray-400" />
+                  <span>${session.courtFee.toFixed(2)}</span>
+                </div>
+              </div>
 
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="w-5 h-5 text-gray-500" />
-                    <span>${session.courtFee.toFixed(2)}</span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <BarChart2 className="w-5 h-5 text-blue-500" />
+              {/* Performance Stats */}
+              <div className="flex justify-between items-end mt-auto pt-2 border-t border-gray-100">
+                <div className="flex flex-col gap-1 text-sm text-gray-600">
+                  <div className="flex items-center gap-1">
+                    <BarChart2 className="w-4 h-4 text-blue-500" />
                     <span>{stats.matchesPlayed} Matches</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-400">Win Rate:</span>
+                    <span
+                      className={`font-medium ${
+                        stats.winCount > stats.lossCount
+                          ? "text-green-600"
+                          : "text-red-500"
+                      }`}
+                    >
+                      {winRate}%
+                    </span>
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-2">
-                  <Badge
-                    className={`text-sm py-1 px-2 w-fit ${
-                      stats.winCount > stats.lossCount
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
-                    }`}
-                  >
-                    {winRate}% 
-                  </Badge>
-
-                  <Badge
-                    className={`text-sm py-1 px-2 w-fit ${
-                      stats.netAmount >= 0
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
-                    }`}
-                  >
-                    {stats.netAmount >= 0 ? (
-                      <TrendingUp className="w-4 h-4 mr-1 inline" />
-                    ) : (
-                      <TrendingDown className="w-4 h-4 mr-1 inline" />
-                    )}
-                    ${stats.netAmount.toFixed(2)}
-                  </Badge>
+                {/* Net Amount Badge */}
+                <div
+                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
+                    stats.netAmount >= 0
+                      ? "bg-green-100 text-green-700"
+                      : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  {stats.netAmount >= 0 ? (
+                    <TrendingUp className="w-4 h-4" />
+                  ) : (
+                    <TrendingDown className="w-4 h-4" />
+                  )}
+                  ${stats.netAmount.toFixed(2)}
                 </div>
               </div>
             </Card>
@@ -159,7 +174,9 @@ export default function SessionListCards({
       })}
 
       {loading && (
-        <div className="text-gray-500 text-center py-4">Loading sessions...</div>
+        <div className="text-gray-500 text-center py-4">
+          Loading sessions...
+        </div>
       )}
     </div>
   );

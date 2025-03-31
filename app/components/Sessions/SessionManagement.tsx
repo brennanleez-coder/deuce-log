@@ -27,8 +27,8 @@ import Loader from "@/components/FullScreenLoader";
 import SessionForm from "@/app/components/Sessions/SessionForm";
 import SessionListTable from "@/app/components/Sessions/SessionListTable";
 import SessionListCards from "@/app/components/Sessions/SessionListCards";
+import { useIsMobile } from "@/hooks/use-mobile";
 
-const ITEMS_PER_PAGE = 6;
 type ViewMode = "table" | "cards";
 
 export default function SessionManagement({
@@ -48,6 +48,8 @@ export default function SessionManagement({
   const { userId } = useUser();
   const router = useRouter();
 
+  const isMobile = useIsMobile();
+  const ITEMS_PER_PAGE = isMobile ? 6 : 12;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -158,7 +160,10 @@ export default function SessionManagement({
             <div className="hidden md:block">
               <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                 <DialogTrigger asChild>
-                  <Button className="flex items-center gap-2" disabled={isLoading}>
+                  <Button
+                    className="flex items-center gap-2"
+                    disabled={isLoading}
+                  >
                     {isLoading ? (
                       <ClipLoader size={16} color="#fff" />
                     ) : (
@@ -290,7 +295,9 @@ export default function SessionManagement({
           </DialogTrigger>
           <DialogContent className="max-w-lg rounded-lg">
             <DialogHeader>
-              <DialogTitle className="text-gray-800">Create New Session</DialogTitle>
+              <DialogTitle className="text-gray-800">
+                Create New Session
+              </DialogTitle>
             </DialogHeader>
             <SessionForm onSubmit={handleSubmit} isLoading={isLoading} />
           </DialogContent>
